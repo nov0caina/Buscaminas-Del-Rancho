@@ -1,0 +1,6 @@
+{
+  "name": "Buscaminas del Rancho",
+  "description": "Buscaminas clásico con estética sinaloense del rancho, niveles configurables, tabla de posiciones, logros y modo offline.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

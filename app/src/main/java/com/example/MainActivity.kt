@@ -1,0 +1,127 @@
+package com.example
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.ui.screens.AchievementsScreen
+import com.example.ui.screens.DifficultySelectionDialog
+import com.example.ui.screens.GameScreen
+import com.example.ui.screens.HomeScreen
+import com.example.ui.screens.LeaderboardScreen
+import com.example.ui.screens.SettingsScreen
+import com.example.ui.theme.RanchoTheme
+import com.example.ui.viewmodel.GameViewModel
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        setContent {
+            RanchoMinesweeperApp()
+        }
+    }
+}
+
+@Composable
+fun RanchoMinesweeperApp(
+    viewModel: GameViewModel = viewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    val topScores by viewModel.topScores.collectAsState()
+    val achievements by viewModel.allAchievements.collectAsState()
+
+    val systemDark = isSystemInDarkTheme()
+    val isDark = uiState.isDarkTheme || systemDark
+
+    RanchoTheme(darkTheme = isDark) {
+        val navController = rememberNavController()
+
+        NavHost(
+            navController = navController,
+            startDestination = "home"
+        ) {
+            composable("home") {
+                androidx.compose.runtime.LaunchedEffect(Unit) {
+                    viewModel.checkSavedGameAvailable()
+                }
+                HomeScreen(
+                    uiState = uiState,
+                    onResumeGame = {
+                        viewModel.resumeSavedGame()
+                        navController.navigate("game")
+                    },
+                    onSelectDifficulty = { difficulty, customRows, customCols, customMines ->
+                        viewModel.startNewGame(
+                            difficulty = difficulty,
+                            customRows = customRows,
+                            customCols = customCols,
+                            customMines = customMines
+                        )
+                        navController.navigate("game")
+                    },
+                    onLeaderboardClick = {
+                        navController.navigate("leaderboard")
+                    },
+                    onAchievementsClick = {
+                        navController.navigate("achievements")
+                    },
+                    onSettingsClick = {
+                        navController.navigate("settings")
+                    }
+                )
+            }
+
+            composable("game") {
+                GameScreen(
+                    uiState = uiState,
+                    onCellClick = { r, c -> viewModel.onCellClick(r, c) },
+                    onCellLongClick = { r, c -> viewModel.onCellLongClick(r, c) },
+                    onCellChord = { r, c -> viewModel.onCellChord(r, c) },
+                    onResetGame = { viewModel.startNewGame(uiState.difficulty, uiState.rows, uiState.cols, uiState.mines) },
+                    onBackToMenu = {
+                        viewModel.autoSaveActiveGame()
+                        viewModel.checkSavedGameAvailable()
+                        navController.popBackStack()
+                    }
+                )
+            }
+
+            composable("leaderboard") {
+                LeaderboardScreen(
+                    localScores = topScores,
+                    globalEntries = viewModel.getGlobalLeaderboard(),
+                    onBack = { navController.popBackStack() }
+                )
+            }
+
+            composable("achievements") {
+                AchievementsScreen(
+                    achievements = achievements,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+
+            composable("settings") {
+                SettingsScreen(
+                    uiState = uiState,
+                    onToggleDarkTheme = { viewModel.setDarkTheme(it) },
+                    onToggleHaptics = { viewModel.setHaptics(it) },
+                    onToggleDailyNotification = { viewModel.setDailyNotification(it) },
+                    onBack = { navController.popBackStack() }
+                )
+            }
+        }
+    }
+}
