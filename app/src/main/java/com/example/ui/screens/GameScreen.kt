@@ -90,11 +90,11 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.data.model.CellState
 import com.example.data.model.ClickMode
-import com.example.data.model.EmojiAnimationStyle
 import com.example.data.model.GameStatus
 import com.example.data.model.RanchFlagIcon
 import com.example.data.model.RevealCluster
 import com.example.data.model.VaqueroFace
+import com.example.ui.components.AnimatedRanchFlagEmoji
 import com.example.ui.particles.DustParticleSystem
 import com.example.ui.particles.ExplosionParticleSystem
 import com.example.ui.theme.Number1Blue
@@ -361,7 +361,6 @@ fun GameScreen(
                                 grid = uiState.grid,
                                 activeRevealCluster = uiState.activeRevealCluster,
                                 ranchFlagIcon = uiState.ranchFlagIcon,
-                                emojiAnimationStyle = uiState.emojiAnimationStyle,
                                 onCellClick = onCellClick,
                                 onCellLongClick = onCellLongClick,
                                 onCellChord = onCellChord
@@ -592,7 +591,6 @@ private fun MinefieldGrid(
     grid: List<CellState>,
     activeRevealCluster: RevealCluster?,
     ranchFlagIcon: RanchFlagIcon,
-    emojiAnimationStyle: EmojiAnimationStyle,
     onCellClick: (row: Int, col: Int) -> Unit,
     onCellLongClick: (row: Int, col: Int) -> Unit,
     onCellChord: (row: Int, col: Int) -> Unit
@@ -624,7 +622,6 @@ private fun MinefieldGrid(
                                 cell = grid[index],
                                 cellDp = cellDp,
                                 ranchFlagIcon = ranchFlagIcon,
-                                emojiAnimationStyle = emojiAnimationStyle,
                                 onClick = { onCellClick(r, c) },
                                 onLongClick = { onCellLongClick(r, c) },
                                 onChord = { onCellChord(r, c) }
@@ -655,7 +652,6 @@ private fun CellItem(
     cell: CellState,
     cellDp: Dp,
     ranchFlagIcon: RanchFlagIcon,
-    emojiAnimationStyle: EmojiAnimationStyle,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onChord: () -> Unit
@@ -720,8 +716,8 @@ private fun CellItem(
             }
         } else {
             if (cell.isFlagged) {
-                Text(
-                    text = ranchFlagIcon.emoji,
+                AnimatedRanchFlagEmoji(
+                    emoji = ranchFlagIcon.emoji,
                     fontSize = fontSizeSp
                 )
             }

@@ -11,7 +11,6 @@ import com.example.data.local.GameScoreEntity
 import com.example.data.local.SavedGameEntity
 import com.example.data.model.CellState
 import com.example.data.model.ClickMode
-import com.example.data.model.EmojiAnimationStyle
 import com.example.data.model.GameDifficulty
 import com.example.data.model.GameStatus
 import com.example.data.model.RanchFlagIcon
@@ -47,7 +46,6 @@ data class GameUiState(
     val isDailyNotificationEnabled: Boolean = true,
     val hasSavedGame: Boolean = false,
     val ranchFlagIcon: RanchFlagIcon = RanchFlagIcon.SOMBRERO,
-    val emojiAnimationStyle: EmojiAnimationStyle = EmojiAnimationStyle.POLVAREDA_GIRO,
     val activeRevealCluster: RevealCluster? = null,
     val detonatedCell: Pair<Int, Int>? = null,
     val explosionEventId: Long = 0L,
@@ -191,10 +189,6 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setRanchFlagIcon(icon: RanchFlagIcon) {
         _uiState.value = _uiState.value.copy(ranchFlagIcon = icon)
-    }
-
-    fun setEmojiAnimationStyle(style: EmojiAnimationStyle) {
-        _uiState.value = _uiState.value.copy(emojiAnimationStyle = style)
     }
 
     private fun triggerVibration(patternType: String) {
