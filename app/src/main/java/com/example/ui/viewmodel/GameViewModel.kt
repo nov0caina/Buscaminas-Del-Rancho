@@ -11,8 +11,11 @@ import com.example.data.local.GameScoreEntity
 import com.example.data.local.SavedGameEntity
 import com.example.data.model.CellState
 import com.example.data.model.ClickMode
+import com.example.data.model.EmojiAnimationStyle
 import com.example.data.model.GameDifficulty
 import com.example.data.model.GameStatus
+import com.example.data.model.RanchFlagIcon
+import com.example.data.model.RevealCluster
 import com.example.data.model.VaqueroFace
 import com.example.data.repository.GameRepository
 import com.example.notification.DailyReminderScheduler
@@ -42,7 +45,13 @@ data class GameUiState(
     val isDarkTheme: Boolean = false,
     val isHapticsEnabled: Boolean = true,
     val isDailyNotificationEnabled: Boolean = true,
-    val hasSavedGame: Boolean = false
+    val hasSavedGame: Boolean = false,
+    val ranchFlagIcon: RanchFlagIcon = RanchFlagIcon.SOMBRERO,
+    val emojiAnimationStyle: EmojiAnimationStyle = EmojiAnimationStyle.POLVAREDA_GIRO,
+    val activeRevealCluster: RevealCluster? = null,
+    val detonatedCell: Pair<Int, Int>? = null,
+    val explosionEventId: Long = 0L,
+    val victoryEventId: Long = 0L
 )
 
 class GameViewModel(application: Application) : AndroidViewModel(application) {
@@ -96,7 +105,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             gameStatus = GameStatus.IDLE,
             timeElapsed = 0,
             flagsPlaced = 0,
-            vaqueroFace = VaqueroFace.HAPPY
+            vaqueroFace = VaqueroFace.HAPPY,
+            activeRevealCluster = null,
+            detonatedCell = null,
+            explosionEventId = 0L,
+            victoryEventId = 0L
         )
     }
 
@@ -137,7 +150,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             gameStatus = GameStatus.IDLE,
             timeElapsed = 0,
             flagsPlaced = 0,
-            vaqueroFace = VaqueroFace.HAPPY
+            vaqueroFace = VaqueroFace.HAPPY,
+            activeRevealCluster = null,
+            detonatedCell = null,
+            explosionEventId = 0L,
+            victoryEventId = 0L
         )
 
         viewModelScope.launch {
@@ -172,6 +189,14 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun setRanchFlagIcon(icon: RanchFlagIcon) {
+        _uiState.value = _uiState.value.copy(ranchFlagIcon = icon)
+    }
+
+    fun setEmojiAnimationStyle(style: EmojiAnimationStyle) {
+        _uiState.value = _uiState.value.copy(emojiAnimationStyle = style)
+    }
+
     private fun triggerVibration(patternType: String) {
         if (!_uiState.value.isHapticsEnabled || vibrator == null || !vibrator.hasVibrator()) return
         try {
@@ -195,6 +220,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         val cell = state.grid[index]
 
         if (cell.isFlagged || cell.isRevealed) return
+
+        if (state.clickMode == ClickMode.FLAG) {
+            onCellLongClick(row, col)
+            return
+        }
 
         if (state.gameStatus == GameStatus.IDLE) {
             generateMinesAndStart(firstRow = row, firstCol = col)
@@ -243,21 +273,55 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         if (flaggedNeighbors == cell.adjacentMines) {
             triggerVibration("click")
             var hitMine = false
+            var detonatedR = -1
+            var detonatedC = -1
+            val newlyRevealedAll = mutableListOf<Pair<Int, Int>>()
+            val grid = state.grid.toMutableList()
+
             for ((r, c) in neighbors) {
                 val nIndex = r * state.cols + c
-                val nCell = state.grid[nIndex]
+                val nCell = grid[nIndex]
                 if (!nCell.isFlagged && !nCell.isRevealed) {
                     if (nCell.isMine) {
                         hitMine = true
+                        detonatedR = r
+                        detonatedC = c
                     } else {
-                        revealCellInternal(r, c)
+                        val revealed = revealCellInternalOnGrid(grid, r, c, state.rows, state.cols)
+                        newlyRevealedAll.addAll(revealed)
                     }
                 }
             }
 
             if (hitMine) {
-                gameOverLoss(detonatedRow = row, detonatedCol = col)
+                gameOverLoss(detonatedRow = detonatedR, detonatedCol = detonatedC)
             } else {
+                if (newlyRevealedAll.isNotEmpty()) {
+                    val minR = newlyRevealedAll.minOf { it.first }
+                    val maxR = newlyRevealedAll.maxOf { it.first }
+                    val minC = newlyRevealedAll.minOf { it.second }
+                    val maxC = newlyRevealedAll.maxOf { it.second }
+                    val centerR = newlyRevealedAll.map { it.first }.average().toFloat()
+                    val centerC = newlyRevealedAll.map { it.second }.average().toFloat()
+                    val cluster = RevealCluster(
+                        id = System.currentTimeMillis() + Random.nextLong(1000),
+                        originRow = row,
+                        originCol = col,
+                        minRow = minR,
+                        maxRow = maxR,
+                        minCol = minC,
+                        maxCol = maxC,
+                        centerRow = centerR,
+                        centerCol = centerC,
+                        cellCount = newlyRevealedAll.size
+                    )
+                    _uiState.value = _uiState.value.copy(
+                        grid = grid,
+                        activeRevealCluster = cluster
+                    )
+                } else {
+                    _uiState.value = _uiState.value.copy(grid = grid)
+                }
                 checkWinCondition()
             }
         }
@@ -322,29 +386,64 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
-        revealCellInternal(row, col)
+        val grid = state.grid.toMutableList()
+        val newlyRevealed = revealCellInternalOnGrid(grid, row, col, state.rows, state.cols)
+
+        if (newlyRevealed.isNotEmpty()) {
+            val minR = newlyRevealed.minOf { it.first }
+            val maxR = newlyRevealed.maxOf { it.first }
+            val minC = newlyRevealed.minOf { it.second }
+            val maxC = newlyRevealed.maxOf { it.second }
+            val centerR = newlyRevealed.map { it.first }.average().toFloat()
+            val centerC = newlyRevealed.map { it.second }.average().toFloat()
+            val cluster = RevealCluster(
+                id = System.currentTimeMillis() + Random.nextLong(1000),
+                originRow = row,
+                originCol = col,
+                minRow = minR,
+                maxRow = maxR,
+                minCol = minC,
+                maxCol = maxC,
+                centerRow = centerR,
+                centerCol = centerC,
+                cellCount = newlyRevealed.size
+            )
+            _uiState.value = _uiState.value.copy(
+                grid = grid,
+                activeRevealCluster = cluster
+            )
+        } else {
+            _uiState.value = _uiState.value.copy(grid = grid)
+        }
+
         checkWinCondition()
     }
 
-    private fun revealCellInternal(startRow: Int, startCol: Int) {
-        val state = _uiState.value
-        val grid = state.grid.toMutableList()
+    private fun revealCellInternalOnGrid(
+        grid: MutableList<CellState>,
+        startRow: Int,
+        startCol: Int,
+        rows: Int,
+        cols: Int
+    ): List<Pair<Int, Int>> {
+        val newlyRevealed = mutableListOf<Pair<Int, Int>>()
         val queue = ArrayDeque<Pair<Int, Int>>()
 
         queue.add(startRow to startCol)
 
         while (queue.isNotEmpty()) {
             val (r, c) = queue.removeFirst()
-            val idx = r * state.cols + c
+            val idx = r * cols + c
             val current = grid[idx]
 
             if (current.isRevealed || current.isFlagged) continue
 
             grid[idx] = current.copy(isRevealed = true)
+            newlyRevealed.add(r to c)
 
             if (current.adjacentMines == 0 && !current.isMine) {
-                for ((nr, nc) in getNeighbors(r, c, state.rows, state.cols)) {
-                    val nIdx = nr * state.cols + nc
+                for ((nr, nc) in getNeighbors(r, c, rows, cols)) {
+                    val nIdx = nr * cols + nc
                     if (!grid[nIdx].isRevealed && !grid[nIdx].isFlagged) {
                         queue.add(nr to nc)
                     }
@@ -352,7 +451,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
 
-        _uiState.value = _uiState.value.copy(grid = grid)
+        return newlyRevealed
     }
 
     private fun checkWinCondition() {
@@ -379,10 +478,14 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
 
+        val eventId = System.currentTimeMillis() + Random.nextLong(1000)
+
         _uiState.value = state.copy(
             grid = newGrid,
             gameStatus = GameStatus.LOST,
-            vaqueroFace = VaqueroFace.DEAD
+            vaqueroFace = VaqueroFace.DEAD,
+            detonatedCell = Pair(detonatedRow, detonatedCol),
+            explosionEventId = eventId
         )
 
         viewModelScope.launch {
@@ -409,11 +512,14 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             if (cell.isMine) cell.copy(isFlagged = true) else cell
         }
 
+        val victoryId = System.currentTimeMillis() + Random.nextLong(1000)
+
         _uiState.value = state.copy(
             grid = newGrid,
             gameStatus = GameStatus.WON,
             flagsPlaced = state.mines,
-            vaqueroFace = VaqueroFace.VICTORIOUS
+            vaqueroFace = VaqueroFace.VICTORIOUS,
+            victoryEventId = victoryId
         )
 
         viewModelScope.launch {

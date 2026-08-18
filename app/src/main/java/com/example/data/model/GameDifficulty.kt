@@ -8,8 +8,8 @@ enum class GameDifficulty(
     val mines: Int,
     val iconEmoji: String
 ) {
-    PRINCIPIANTE("Modo Peladito (Fácil)", "9x9 • 20 Minas (El Porvenir)", 9, 9, 20, "🌵"),
-    INTERMEDIO("Modo Alterado (Intermedio)", "14x16 • 40 Minas (La Sierra)", 16, 14, 40, "🤠"),
+    PRINCIPIANTE("Modo Peladito (Fácil)", "9x9 • 10 Minas (El Porvenir)", 9, 9, 10, "🌵"),
+    INTERMEDIO("Modo Alterado (Intermedio)", "14x16 • 40 Minas (La Sierra)", 16, 14, 35, "🤠"),
     EXPERTO("Modo Belikon (Dificil)", "14x30 • 99 Minas (Mina del Patrón)", 30, 14, 99, "⛏️"),
     PERSONALIZADA("Personalizado", "Tablero a tu gusto", 10, 10, 15, "⚙️");
 

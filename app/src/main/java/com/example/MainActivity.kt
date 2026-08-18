@@ -119,6 +119,8 @@ fun RanchoMinesweeperApp(
                     onToggleDarkTheme = { viewModel.setDarkTheme(it) },
                     onToggleHaptics = { viewModel.setHaptics(it) },
                     onToggleDailyNotification = { viewModel.setDailyNotification(it) },
+                    onSelectRanchFlagIcon = { viewModel.setRanchFlagIcon(it) },
+                    onSelectEmojiAnimationStyle = { viewModel.setEmojiAnimationStyle(it) },
                     onBack = { navController.popBackStack() }
                 )
             }
