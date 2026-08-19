@@ -20,3 +20,4 @@ debug.keystore
 *.sh
 *.jks
 /releases/
+/play_store_assets/
