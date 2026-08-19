@@ -134,8 +134,8 @@ fun GameScreen(
         }
     }
     val shakeVal = shakeProgress.value
-    val shakeOffsetX = if (shakeVal > 0.01f) (kotlin.math.sin(shakeVal * 42f) * 18f * shakeVal).toFloat() else 0f
-    val shakeOffsetY = if (shakeVal > 0.01f) (kotlin.math.cos(shakeVal * 36f) * 14f * shakeVal).toFloat() else 0f
+    val shakeOffsetX = if (shakeVal > 0.01f) (kotlin.math.sin(shakeVal * 42f) * 18f * shakeVal) else 0f
+    val shakeOffsetY = if (shakeVal > 0.01f) (kotlin.math.cos(shakeVal * 36f) * 14f * shakeVal) else 0f
 
     // Smooth timing for End Game Dialog to allow full visual animation to play
     LaunchedEffect(uiState.gameStatus, uiState.explosionEventId, uiState.victoryEventId) {
@@ -368,47 +368,22 @@ fun GameScreen(
                         }
                     }
 
-                    // Floating Zoom and Centering Controls
-                    Column(
+                    // Floating Centering Control
+                    SmallFloatingActionButton(
+                        onClick = {
+                            scale = fitScale
+                            offsetX = 0f
+                            offsetY = 0f
+                        },
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        shape = CircleShape,
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
-                            .padding(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                            .padding(12.dp)
+                            .testTag("btn_zoom_reset")
                     ) {
-                        SmallFloatingActionButton(
-                            onClick = { scale = (scale * 1.25f).coerceAtMost(4.0f) },
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            shape = CircleShape,
-                            modifier = Modifier.testTag("btn_zoom_in")
-                        ) {
-                            Text("+", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
-                        }
-
-                        SmallFloatingActionButton(
-                            onClick = { scale = (scale / 1.25f).coerceAtLeast(fitScale * 0.7f) },
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            shape = CircleShape,
-                            modifier = Modifier.testTag("btn_zoom_out")
-                        ) {
-                            Text("−", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
-                        }
-
-                        SmallFloatingActionButton(
-                            onClick = {
-                                scale = fitScale
-                                offsetX = 0f
-                                offsetY = 0f
-                            },
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            shape = CircleShape,
-                            modifier = Modifier.testTag("btn_zoom_reset")
-                        ) {
-                            Text("🎯", fontSize = 16.sp)
-                        }
+                        Text("🎯", fontSize = 16.sp)
                     }
                 }
             }

@@ -55,7 +55,7 @@ data class GameUiState(
 class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository: GameRepository
-    private val vibrator = application.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+    private val vibrator = application.getSystemService(Vibrator::class.java)
 
     private val _uiState = MutableStateFlow(GameUiState())
     val uiState: StateFlow<GameUiState> = _uiState.asStateFlow()
