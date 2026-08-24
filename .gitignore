@@ -21,3 +21,6 @@ debug.keystore
 *.jks
 /releases/
 /play_store_assets/
+/openspec/
+/.agent/
+/.agents/

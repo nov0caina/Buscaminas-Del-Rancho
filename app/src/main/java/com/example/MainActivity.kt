@@ -24,6 +24,11 @@ import com.example.ui.screens.SettingsScreen
 import com.example.ui.theme.RanchoTheme
 import com.example.ui.viewmodel.GameViewModel
 
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.compose.runtime.DisposableEffect
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,6 +43,19 @@ class MainActivity : ComponentActivity() {
 fun RanchoMinesweeperApp(
     viewModel: GameViewModel = viewModel()
 ) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) {
+                viewModel.autoSaveActiveGame()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
     val uiState by viewModel.uiState.collectAsState()
     val topScores by viewModel.topScores.collectAsState()
     val achievements by viewModel.allAchievements.collectAsState()

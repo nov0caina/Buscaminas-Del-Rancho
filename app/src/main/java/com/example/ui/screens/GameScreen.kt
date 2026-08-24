@@ -1096,7 +1096,7 @@ private fun GameEndOverlayDialog(
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Ver cómo quedó el tablero", fontWeight = FontWeight.Bold)
+                        Text("Ver tablero", fontWeight = FontWeight.Bold)
                     }
                 }
 
