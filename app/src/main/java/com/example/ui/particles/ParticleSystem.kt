@@ -1,6 +1,7 @@
 package com.example.ui.particles
 
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -523,3 +524,220 @@ class ExplosionParticleSystem(capacity: Int = 64) {
         }
     }
 }
+
+/**
+ * Sistema de Partículas de Humo Iluminado con Física de Fluidos (Buoyancy, Vorticity y Disipación).
+ * - Termodinámica y sustentación (buoyancy): El humo asciende acelerando suavemente hacia arriba.
+ * - Vorticity & Turbulencia: Oscilaciones sinusoidales que simulan remolinos y jirones orgánicos.
+ * - Iluminación Volumétrica: Las partículas reflejan luz cian brillante cerca del centro y se enfrían a tonos oscuros al alejarse.
+ * - Expansión y Disipación: Aumento de radio por difusión y desvanecimiento progresivo sin halos circulares.
+ * - Object Pool con CERO asignaciones en tiempo de renderizado (60/120 FPS).
+ */
+class MysticSmokeParticleSystem(capacity: Int = 96) {
+    val pool = ParticlePool(capacity)
+    private var isConfigured: Boolean = false
+
+    fun setupMysticSmoke(centerX: Float, centerY: Float, baseRadius: Float) {
+        if (isConfigured && pool.count() > 0) return
+        isConfigured = true
+        pool.releaseAll()
+
+        // 1. Columnas y flujos de humo principales ascendentes (Emitter continuo desde la base y laterales)
+        val smokePuffCount = 52
+        for (i in 0 until smokePuffCount) {
+            val emitterLayer = i % 4
+            // Emisores distribuidos en la base del rostro y los costados
+            val spawnAngle = Math.toRadians((i * (360.0 / smokePuffCount)) + (i * 13.0))
+            val spawnDistX = (baseRadius * 0.45f) * kotlin.math.cos(spawnAngle).toFloat()
+            val spawnDistY = when (emitterLayer) {
+                0 -> baseRadius * 0.40f // Base inferior
+                1 -> baseRadius * 0.15f // Zona media
+                2 -> baseRadius * 0.55f // Pluma inferior profunda
+                else -> -baseRadius * 0.10f // Laterales superiores
+            }
+
+            pool.acquire()?.apply {
+                type = Particle.TYPE_SMOKE
+                startX = centerX + spawnDistX
+                startY = centerY + spawnDistY
+                // vx: deriva lateral, vy: flotabilidad térmica hacia arriba
+                vx = ((i % 7) - 3f) * 0.28f
+                vy = 0.55f + (i % 5) * 0.18f // Velocidad de ascenso
+                customParam = (i * 0.85f) // Fase turbulenta
+                targetX = 1.3f + (i % 4) * 0.35f // Factor de expansión por difusión
+                targetY = if (i % 2 == 0) 1.2f else -1.2f // Sentido del remolino
+                maxRadius = baseRadius * (0.28f + (i % 5) * 0.06f)
+                maxAlpha = if (emitterLayer == 0 || emitterLayer == 2) 0.52f else 0.38f
+                delay = (i / smokePuffCount.toFloat()) * 0.55f // Emisión escalonada en el tiempo
+            }
+        }
+
+        // 2. Niebla difusa ambiental de fondo atrapada en la turbulencia
+        for (h in 0 until 12) {
+            val hAngle = Math.toRadians(h * 30.0)
+            val hDist = baseRadius * 0.30f
+            pool.acquire()?.apply {
+                type = Particle.TYPE_HAZE
+                startX = centerX + (hDist * kotlin.math.cos(hAngle)).toFloat()
+                startY = centerY + (hDist * kotlin.math.sin(hAngle)).toFloat() + 20f
+                vx = (h % 3 - 1f) * 0.15f
+                vy = 0.35f + (h % 3) * 0.12f
+                customParam = h.toFloat()
+                targetX = 1.6f
+                targetY = if (h % 2 == 0) 0.8f else -0.8f
+                maxRadius = baseRadius * (0.50f + (h % 3) * 0.15f)
+                maxAlpha = 0.32f
+                delay = h * 0.04f
+            }
+        }
+
+        // 3. Chispas y motas de luz cian arrastradas por la corriente térmica ascendente
+        val emberCount = 30
+        for (j in 0 until emberCount) {
+            val eAngle = Math.toRadians((j * (360.0 / emberCount)) + (j * 17.0))
+            val eDist = baseRadius * (0.20f + (j % 5) * 0.15f)
+            pool.acquire()?.apply {
+                type = Particle.TYPE_SPECK
+                startX = centerX + (eDist * kotlin.math.cos(eAngle)).toFloat()
+                startY = centerY + (eDist * kotlin.math.sin(eAngle)).toFloat() + 40f
+                vx = ((j % 5) - 2f) * 0.35f
+                vy = 0.85f + (j % 4) * 0.25f // Ascenso más rápido por menor peso
+                customParam = j * 1.3f
+                maxRadius = 1.6f + (j % 3) * 0.8f
+                maxAlpha = 0.90f
+                delay = (j / emberCount.toFloat()) * 0.60f
+                color = if (j % 2 == 0) Color(0xFFE0FFFF) else Color(0xFF18FFFF)
+            }
+        }
+    }
+
+    fun render(drawScope: DrawScope, progress: Float, width: Float, height: Float) {
+        val lightCenter = Offset(width / 2f, height / 2f - 20f)
+        val maxLightRadius = kotlin.math.min(width, height) * 0.60f
+
+        val particles = pool.activeList
+        val pCount = particles.size
+        for (i in 0 until pCount) {
+            val p = particles[i]
+            if (!p.active) continue
+
+            // Progreso relativo de vida de la partícula (con retardo de emisión)
+            val tau = if (p.delay > 0f) {
+                ((progress - p.delay) / (1f - p.delay)).coerceIn(0f, 1f)
+            } else {
+                progress
+            }
+
+            if (tau <= 0.001f || tau >= 0.999f) continue
+
+            when (p.type) {
+                Particle.TYPE_HAZE -> {
+                    // Ascenso lento y difusión de niebla
+                    val upward = (p.vy * tau * 120f) + (0.5f * 20f * tau * tau)
+                    val swirl = kotlin.math.sin(tau * 3.1416f + p.customParam) * (p.targetY * 30f * tau)
+                    val px = p.startX + (p.vx * tau * 50f) + swirl
+                    val py = p.startY - upward
+                    val currentCenter = Offset(px, py)
+
+                    val currentRadius = p.maxRadius * (1f + p.targetX * tau)
+                    val alphaFade = if (tau < 0.30f) {
+                        (tau / 0.30f) * p.maxAlpha
+                    } else {
+                        ((1f - tau) / 0.70f) * p.maxAlpha
+                    }
+
+                    if (alphaFade > 0.01f) {
+                        // Iluminación volumétrica según proximidad a la fuente de luz
+                        val dx = px - lightCenter.x
+                        val dy = py - lightCenter.y
+                        val dist = kotlin.math.sqrt(dx * dx + dy * dy)
+                        val lightProximity = (1f - (dist / maxLightRadius)).coerceIn(0.1f, 1.0f)
+
+                        val coreColor = Color(0xFF00B4D8).copy(alpha = alphaFade * 0.35f * lightProximity)
+                        val edgeColor = Color(0xFF003844).copy(alpha = alphaFade * 0.12f * lightProximity)
+
+                        drawScope.drawCircle(
+                            brush = Brush.radialGradient(
+                                colors = listOf(coreColor, edgeColor, Color.Transparent),
+                                center = currentCenter,
+                                radius = currentRadius
+                            ),
+                            radius = currentRadius,
+                            center = currentCenter
+                        )
+                    }
+                }
+                Particle.TYPE_SMOKE -> {
+                    // Física de Humo: Ascenso por sustentación térmica + Remolino de vórtice (vorticity)
+                    val upward = (p.vy * tau * 230f) + (0.5f * 50f * tau * tau)
+                    // Frecuencia sinusoidal para ondulación natural
+                    val curl = kotlin.math.sin((tau * 4.5f) + p.customParam) * (p.targetY * 42f * tau)
+                    val px = p.startX + (p.vx * tau * 75f) + curl
+                    val py = p.startY - upward
+                    val puffCenter = Offset(px, py)
+
+                    // Expansión volumétrica al difundirse en el aire
+                    val currentRadius = p.maxRadius * (0.85f + p.targetX * tau)
+
+                    // Curva de densidad óptica (inflow rápido, disipación gradual)
+                    val density = if (tau < 0.22f) {
+                        (tau / 0.22f) * p.maxAlpha
+                    } else {
+                        val fade = (1f - tau) / 0.78f
+                        (fade * fade) * p.maxAlpha
+                    }
+
+                    if (density > 0.01f) {
+                        // Iluminación Volumétrica: La luz interna ilumina el humo desde el centro
+                        val dx = px - lightCenter.x
+                        val dy = py - lightCenter.y
+                        val dist = kotlin.math.sqrt(dx * dx + dy * dy)
+                        val illumFactor = (1f - (dist / maxLightRadius)).coerceIn(0.12f, 1.0f)
+
+                        // Gradiente de color según iluminación física
+                        val litCyan = Color(0xFF00E5FF).copy(alpha = density * 0.65f * illumFactor)
+                        val midTeal = Color(0xFF0077B6).copy(alpha = density * 0.32f * illumFactor)
+                        val darkSmoke = Color(0xFF041018).copy(alpha = density * 0.18f)
+
+                        drawScope.drawCircle(
+                            brush = Brush.radialGradient(
+                                colors = listOf(litCyan, midTeal, darkSmoke, Color.Transparent),
+                                center = puffCenter,
+                                radius = radiusScale(currentRadius, illumFactor)
+                            ),
+                            radius = currentRadius,
+                            center = puffCenter
+                        )
+                    }
+                }
+                Particle.TYPE_SPECK -> {
+                    // Chispas/Motes ligeras que siguen las corrientes de convección del humo
+                    val upward = (p.vy * tau * 300f) + (0.5f * 70f * tau * tau)
+                    val flutter = kotlin.math.cos((tau * 6.0f) + p.customParam) * (18f * tau)
+                    val sx = p.startX + (p.vx * tau * 85f) + flutter
+                    val sy = p.startY - upward
+
+                    val speckAlpha = if (tau < 0.20f) {
+                        (tau / 0.20f) * p.maxAlpha
+                    } else {
+                        ((1f - tau) / 0.80f) * p.maxAlpha
+                    }
+
+                    if (speckAlpha > 0.02f) {
+                        val sRadius = (p.maxRadius * (1f - tau * 0.45f)).coerceAtLeast(0.7f)
+                        drawScope.drawCircle(
+                            color = p.color.copy(alpha = speckAlpha),
+                            radius = sRadius,
+                            center = Offset(sx, sy)
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun radiusScale(base: Float, factor: Float): Float {
+        return (base * (0.75f + 0.25f * factor)).coerceAtLeast(1f)
+    }
+}
+

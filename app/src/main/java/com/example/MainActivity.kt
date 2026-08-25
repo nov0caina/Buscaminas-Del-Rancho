@@ -16,6 +16,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.ui.screens.AchievementsScreen
+import com.example.ui.screens.AnimatedSplashScreen
 import com.example.ui.screens.DifficultySelectionDialog
 import com.example.ui.screens.GameScreen
 import com.example.ui.screens.HomeScreen
@@ -68,8 +69,18 @@ fun RanchoMinesweeperApp(
 
         NavHost(
             navController = navController,
-            startDestination = "home"
+            startDestination = "splash"
         ) {
+            composable("splash") {
+                AnimatedSplashScreen(
+                    onSplashFinished = {
+                        navController.navigate("home") {
+                            popUpTo("splash") { inclusive = true }
+                        }
+                    }
+                )
+            }
+
             composable("home") {
                 androidx.compose.runtime.LaunchedEffect(Unit) {
                     viewModel.checkSavedGameAvailable()
