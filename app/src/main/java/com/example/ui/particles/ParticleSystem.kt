@@ -113,6 +113,39 @@ class DustParticleSystem(capacity: Int = 48) {
     /**
      * Inicializa o reconfigura las partículas reutilizables según los límites del área descubierta.
      */
+    
+    fun setupAmbientDust(width: Float, height: Float) {
+        if (initializedClusterId == -2L && pool.count() > 0) return
+        initializedClusterId = -2L
+        pool.releaseAll()
+
+        pool.acquire()?.apply {
+            type = Particle.TYPE_HAZE
+            startX = width / 2f
+            startY = height / 2f
+            maxRadius = width * 1.5f
+            maxAlpha = 0.08f
+            color = Color(0xFFD4A373)
+            secondaryColor = Color(0xFFE9C46A)
+            delay = 0f
+        }
+
+        val speckCount = 110
+        for (i in 0 until speckCount) {
+            pool.acquire()?.apply {
+                type = Particle.TYPE_SPECK
+                startX = width * Math.random().toFloat()
+                startY = height * Math.random().toFloat()
+                targetX = (Math.random().toFloat() - 0.5f) * width * 0.1f
+                targetY = (Math.random().toFloat() - 0.5f) * height * 0.1f
+                maxRadius = (width * 0.005f) + (Math.random().toFloat() * width * 0.005f)
+                maxAlpha = 0.4f + Math.random().toFloat() * 0.3f
+                delay = Math.random().toFloat() * 0.4f
+                color = if (i % 3 == 0) Color(0xFFE9C46A) else Color(0xFFB08968)
+            }
+        }
+    }
+
     fun setupCluster(
         clusterId: Long,
         cellCount: Int,
@@ -543,7 +576,7 @@ class MysticSmokeParticleSystem(capacity: Int = 96) {
         pool.releaseAll()
 
         // 1. Columnas y flujos de humo principales ascendentes (Emitter continuo desde la base y laterales)
-        val smokePuffCount = 52
+        val smokePuffCount = 90
         for (i in 0 until smokePuffCount) {
             val emitterLayer = i % 4
             // Emisores distribuidos en la base del rostro y los costados
@@ -567,7 +600,7 @@ class MysticSmokeParticleSystem(capacity: Int = 96) {
                 targetX = 1.3f + (i % 4) * 0.35f // Factor de expansión por difusión
                 targetY = if (i % 2 == 0) 1.2f else -1.2f // Sentido del remolino
                 maxRadius = baseRadius * (0.28f + (i % 5) * 0.06f)
-                maxAlpha = if (emitterLayer == 0 || emitterLayer == 2) 0.52f else 0.38f
+                maxAlpha = if (emitterLayer == 0 || emitterLayer == 2) 0.65f else 0.50f
                 delay = (i / smokePuffCount.toFloat()) * 0.55f // Emisión escalonada en el tiempo
             }
         }

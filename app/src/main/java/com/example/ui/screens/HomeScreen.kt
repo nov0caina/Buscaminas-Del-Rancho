@@ -1,9 +1,20 @@
 package com.example.ui.screens
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.CompositingStrategy
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,8 +24,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -24,13 +37,10 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -51,9 +61,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.sin
+import kotlin.math.PI
 import com.example.R
 import com.example.data.model.GameDifficulty
 import com.example.ui.viewmodel.GameUiState
+import androidx.compose.foundation.Canvas
+import com.example.ui.particles.DustParticleSystem
+import com.example.ui.particles.MysticSmokeParticleSystem
 
 @Composable
 fun HomeScreen(
@@ -66,212 +81,286 @@ fun HomeScreen(
     modifier: Modifier = Modifier
 ) {
     var showCustomDialog by remember { mutableStateOf(false) }
+    
+    val isDarkTheme = uiState.isDarkTheme || isSystemInDarkTheme()
+    val dustParticleSystem = remember { DustParticleSystem(150) }
+    val smokeParticleSystem = remember { MysticSmokeParticleSystem(150) }
 
-    Surface(
-        modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+    val scrollState = rememberScrollState()
+
+    val infiniteTransition = rememberInfiniteTransition()
+    val progress by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(15000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "bg_particles"
+    )
+
+    Box(
+        modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(bottom = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Hero Banner Header
-            Box(
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Dynamic Particle Background
+            Canvas(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(240.dp)
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        // Parallax effect: el fondo se mueve a la mitad de velocidad que el scroll
+                        translationY = -scrollState.value * 0.35f
+                        // Movimiento dinámico horizontal (sway) basado en el tiempo
+                        translationX = (sin(progress * 2 * PI) * 30f).toFloat()
+                        // Ligero efecto de escala para que se sienta que "respira"
+                        val scale = 1f + (sin(progress * PI) * 0.05f).toFloat()
+                        scaleX = scale
+                        scaleY = scale
+                    }
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.img_rancho_banner),
-                    contentDescription = "Banner del Rancho Sinaloense",
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(
-                                    Color.Transparent,
-                                    MaterialTheme.colorScheme.background.copy(alpha = 0.85f),
-                                    MaterialTheme.colorScheme.background
-                                )
-                            )
-                        )
-                )
-
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(horizontal = 24.dp, vertical = 12.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "🤠 BUSCAMINAS DEL RANCHO 🤠",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.secondary,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 2.sp
-                    )
-                    Text(
-                        text = "PURO SINALOA VIEJON",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.ExtraBold,
-                        textAlign = TextAlign.Center
-                    )
-                    Text(
-                        text = "Limpia el terreno compa • Estilo Sinaloa",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                if (isDarkTheme) {
+                    smokeParticleSystem.setupMysticSmoke(size.width / 2f, size.height / 2f, size.width * 0.35f)
+                    smokeParticleSystem.render(this, progress, size.width, size.height)
+                } else {
+                    dustParticleSystem.setupAmbientDust(size.width, size.height)
+                    dustParticleSystem.render(this, progress)
                 }
             }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // Main Menu Action Cards
-            Column(
+            
+            // Main Content wrapped with Safe Zones and width constraints
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .fillMaxSize()
+                    .safeDrawingPadding(),
+                contentAlignment = Alignment.TopCenter
             ) {
-                // Resume Game Button (Visible if active saved game exists)
-                AnimatedVisibility(visible = uiState.hasSavedGame) {
-                    Button(
-                        onClick = onResumeGame,
+                Column(
+                    modifier = Modifier
+                        .widthIn(max = 600.dp)
+                        .fillMaxSize()
+                        .verticalScroll(scrollState)
+                        .padding(bottom = 32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Hero Banner Header
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(60.dp)
-                            .testTag("btn_resume_game"),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondary
-                        ),
-                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                            .height(230.dp)
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.img_rancho_banner),
+                            contentDescription = "Banner del Rancho Sinaloense",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
+                                .background(
+                                    Brush.verticalGradient(
+                                        0.0f to Color.Black.copy(alpha = 0.2f),
+                                        0.35f to Color.Transparent,
+                                        0.7f to MaterialTheme.colorScheme.background.copy(alpha = 0.8f),
+                                        1.0f to MaterialTheme.colorScheme.background
+                                    )
+                                )
+                        )
+
+                        Column(
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(horizontal = 24.dp, vertical = 8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "🤠 BUSCAMINAS DEL RANCHO 🤠",
+                                style = MaterialTheme.typography.headlineMedium.copy(
+                                    shadow = androidx.compose.ui.graphics.Shadow(
+                                        color = Color.Black.copy(alpha = 0.9f),
+                                        offset = androidx.compose.ui.geometry.Offset(2f, 4f),
+                                        blurRadius = 8f
+                                    )
+                                ),
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.ExtraBold,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "PURO SINALOA VIEJON",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    shadow = androidx.compose.ui.graphics.Shadow(
+                                        color = Color.Black.copy(alpha = 0.8f),
+                                        offset = androidx.compose.ui.geometry.Offset(1f, 2f),
+                                        blurRadius = 4f
+                                    )
+                                ),
+                                color = MaterialTheme.colorScheme.secondary,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 2.sp
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Limpia el terreno compa • Estilo Sinaloa",
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    shadow = androidx.compose.ui.graphics.Shadow(
+                                        color = Color.Black.copy(alpha = 0.8f),
+                                        offset = androidx.compose.ui.geometry.Offset(1f, 1f),
+                                        blurRadius = 3f
+                                    )
+                                ),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Main Menu Action Cards
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Resume Game Button
+                        AnimatedVisibility(visible = uiState.hasSavedGame) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(60.dp)
+                                    .testTag("btn_resume_game")
+                                    .bounceClick(onClick = onResumeGame)
+                                    .background(
+                                        color = MaterialTheme.colorScheme.secondary,
+                                        shape = RoundedCornerShape(16.dp)
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Refresh,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSecondary,
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Text(
+                                        text = "REANUDAR PARTIDA 🤠",
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSecondary
+                                    )
+                                }
+                            }
+                        }
+
+                        Text(
+                            text = "⛏️ SELECCIONA TU NIVEL:",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.sp,
+                            modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
+                        )
+
+                        // Direct Level Buttons
+                        GameDifficulty.entries.forEach { diff ->
+                            LevelDirectCard(
+                                difficulty = diff,
+                                onClick = {
+                                    if (diff == GameDifficulty.PERSONALIZADA) {
+                                        showCustomDialog = true
+                                    } else {
+                                        onSelectDifficulty(diff, diff.rows, diff.cols, diff.mines)
+                                    }
+                                }
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = "🏆 MÁS OPCIONES:",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.sp,
+                            modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
+                        )
+
+                        // Leaderboards Button
+                        MenuSecondaryButton(
+                            title = "Tabla de Posiciones",
+                            subtitle = "Ranking Global & Sinaloa",
+                            icon = Icons.Default.EmojiEvents,
+                            testTag = "btn_leaderboards",
+                            onClick = onLeaderboardClick
+                        )
+
+                        // Achievements Button
+                        MenuSecondaryButton(
+                            title = "Logros del Rancho",
+                            subtitle = "Medallas de Compadre",
+                            icon = Icons.Default.Star,
+                            testTag = "btn_achievements",
+                            onClick = onAchievementsClick
+                        )
+
+                        // Settings Button
+                        MenuSecondaryButton(
+                            title = "Configuración",
+                            subtitle = "Modo Noche, Sonido & Recordatorio",
+                            icon = Icons.Default.Settings,
+                            testTag = "btn_settings",
+                            onClick = onSettingsClick
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    if (showCustomDialog) {
+                        CustomDifficultyDialog(
+                            onDismiss = { showCustomDialog = false },
+                            onConfirmCustom = { r, c, m ->
+                                showCustomDialog = false
+                                onSelectDifficulty(GameDifficulty.PERSONALIZADA, r, c, m)
+                            }
+                        )
+                    }
+
+                    // Footer Badge
+                    Card(
+                        modifier = Modifier
+                            .padding(horizontal = 24.dp)
+                            .fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        )
                     ) {
                         Row(
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = null,
-                                modifier = Modifier.size(28.dp)
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
                             Text(
-                                text = "REANUDAR PARTIDA 🤠",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold
+                                text = "🌵 100% Offline • Sin Anuncios Intrusivos ",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
                             )
                         }
                     }
-                }
-
-                Text(
-                    text = "⛏️ SELECCIONA TU NIVEL:",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp,
-                    modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
-                )
-
-                // Direct Level Buttons
-                GameDifficulty.entries.forEach { diff ->
-                    LevelDirectCard(
-                        difficulty = diff,
-                        onClick = {
-                            if (diff == GameDifficulty.PERSONALIZADA) {
-                                showCustomDialog = true
-                            } else {
-                                onSelectDifficulty(diff, diff.rows, diff.cols, diff.mines)
-                            }
-                        }
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = "🏆 MÁS OPCIONES:",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp,
-                    modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
-                )
-
-                // Leaderboards Button
-                MenuSecondaryButton(
-                    title = "Tabla de Posiciones",
-                    subtitle = "Ranking Global & Sinaloa",
-                    icon = Icons.Default.EmojiEvents,
-                    testTag = "btn_leaderboards",
-                    onClick = onLeaderboardClick
-                )
-
-                // Achievements Button
-                MenuSecondaryButton(
-                    title = "Logros del Rancho",
-                    subtitle = "Medallas de Compadre",
-                    icon = Icons.Default.Star,
-                    testTag = "btn_achievements",
-                    onClick = onAchievementsClick
-                )
-
-                // Settings Button
-                MenuSecondaryButton(
-                    title = "Configuración",
-                    subtitle = "Modo Noche, Sonido & Recordatorio",
-                    icon = Icons.Default.Settings,
-                    testTag = "btn_settings",
-                    onClick = onSettingsClick
-                )
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Custom difficulty dialog when user selects PERSONALIZADA
-            if (showCustomDialog) {
-                CustomDifficultyDialog(
-                    onDismiss = { showCustomDialog = false },
-                    onConfirmCustom = { r, c, m ->
-                        showCustomDialog = false
-                        onSelectDifficulty(GameDifficulty.PERSONALIZADA, r, c, m)
-                    }
-                )
-            }
-
-            // Footer Badge
-            Card(
-                modifier = Modifier
-                    .padding(horizontal = 24.dp)
-                    .fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                )
-            ) {
-                Row(
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "🌵 100% Offline • Sin Anuncios Intrusivos ",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
                 }
             }
         }
@@ -302,18 +391,15 @@ private fun LevelDirectCard(
         )
     }
 
-    Card(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(64.dp)
-            .testTag("btn_level_${difficulty.name.lowercase()}"),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = containerColor,
-            contentColor = contentColor
-        ),
-        onClick = onClick,
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+            .height(68.dp)
+            .testTag("btn_level_${difficulty.name.lowercase()}")
+            .bounceClick(onClick = onClick)
+            .background(color = Color.Black.copy(alpha = 0.25f), shape = RoundedCornerShape(16.dp))
+            .padding(bottom = 5.dp)
+            .background(color = containerColor, shape = RoundedCornerShape(16.dp))
     ) {
         Row(
             modifier = Modifier
@@ -332,7 +418,8 @@ private fun LevelDirectCard(
                     Text(
                         text = difficulty.displayName,
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = contentColor
                     )
                     Text(
                         text = difficulty.subtitle,
@@ -369,23 +456,25 @@ private fun MenuSecondaryButton(
     testTag: String,
     onClick: () -> Unit
 ) {
-    OutlinedButton(
-        onClick = onClick,
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(64.dp)
-            .testTag(testTag),
-        shape = RoundedCornerShape(16.dp),
-        colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        border = androidx.compose.foundation.BorderStroke(
-            1.5.dp,
-            MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
-        )
+            .height(68.dp)
+            .testTag(testTag)
+            .bounceClick(onClick = onClick)
+            .background(color = Color.Black.copy(alpha = 0.2f), shape = RoundedCornerShape(16.dp))
+            .padding(bottom = 5.dp)
+            .background(color = MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(16.dp))
+            .border(
+                width = 1.5.dp,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                shape = RoundedCornerShape(16.dp)
+            )
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start
         ) {

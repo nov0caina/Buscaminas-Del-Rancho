@@ -129,6 +129,7 @@ fun RanchoMinesweeperApp(
 
             composable("leaderboard") {
                 LeaderboardScreen(
+                    isDarkTheme = isDark,
                     localScores = topScores,
                     globalEntries = viewModel.getGlobalLeaderboard(),
                     onBack = { navController.popBackStack() }
@@ -137,6 +138,7 @@ fun RanchoMinesweeperApp(
 
             composable("achievements") {
                 AchievementsScreen(
+                    isDarkTheme = isDark,
                     achievements = achievements,
                     onBack = { navController.popBackStack() }
                 )

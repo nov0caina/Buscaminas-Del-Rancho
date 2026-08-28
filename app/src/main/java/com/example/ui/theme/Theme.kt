@@ -15,7 +15,9 @@ private val DarkColorScheme = darkColorScheme(
     tertiary = RanchoNightTerracottaTertiary,
     background = RanchoNightBackground,
     surface = RanchoNightSurface,
+    onSurface = androidx.compose.ui.graphics.Color.White,
     surfaceVariant = RanchoNightSurfaceVariant
+    ,onSurfaceVariant = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.8f)
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -30,6 +32,7 @@ private val LightColorScheme = lightColorScheme(
     tertiaryContainer = RanchoTerracottaContainer,
     background = RanchoSunBackground,
     surface = RanchoWoodSurface,
+    onSurface = androidx.compose.ui.graphics.Color(0xFF3E2723),
     surfaceVariant = RanchoSandSurfaceVariant
 )
 
