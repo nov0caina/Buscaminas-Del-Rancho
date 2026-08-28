@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.local.AchievementEntity
@@ -151,6 +152,9 @@ fun AchievementsScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            val unlockedCount = achievements.count { it.isUnlocked }
+            val totalCount = achievements.size
+
             LazyColumn(
                 state = listState,
                 modifier = Modifier
@@ -158,6 +162,15 @@ fun AchievementsScreen(
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                // Global Progress Header Card
+                item {
+                    AchievementProgressCard(
+                        unlockedCount = unlockedCount,
+                        totalCount = totalCount,
+                        isDarkTheme = isDarkTheme
+                    )
+                }
+
                 items(achievements) { achievement ->
                     AchievementCard(achievement = achievement, isDarkTheme = isDarkTheme)
                 }
@@ -170,9 +183,85 @@ fun AchievementsScreen(
 }
 
 @Composable
+private fun AchievementProgressCard(
+    unlockedCount: Int,
+    totalCount: Int,
+    isDarkTheme: Boolean
+) {
+    val percentage = if (totalCount > 0) (unlockedCount * 100 / totalCount) else 0
+    val progressRatio = if (totalCount > 0) unlockedCount.toFloat() / totalCount.toFloat() else 0f
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.Black.copy(alpha = 0.25f), RoundedCornerShape(16.dp))
+            .padding(bottom = 6.dp)
+            .background(
+                if (isDarkTheme) Color(0xFF2C221E) else MaterialTheme.colorScheme.surfaceVariant,
+                RoundedCornerShape(16.dp)
+            )
+            .padding(16.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "🏆",
+                        fontSize = 20.sp
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Progreso del Rancho",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                Text(
+                    text = "$unlockedCount de $totalCount ($percentage%)",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = if (isDarkTheme) Color(0xFFFFD166) else MaterialTheme.colorScheme.primary
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Custom Rounded Global Progress Bar
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(10.dp)
+                    .clip(RoundedCornerShape(5.dp))
+                    .background(Color.Black.copy(alpha = 0.25f))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(progressRatio)
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(5.dp))
+                        .background(MaterialTheme.colorScheme.primary)
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun AchievementCard(achievement: AchievementEntity, isDarkTheme: Boolean) {
     val isUnlocked = achievement.isUnlocked
-    val surfaceCol = if (isUnlocked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
+    val surfaceCol = if (isUnlocked) {
+        if (isDarkTheme) Color(0xFF3E2D26) else MaterialTheme.colorScheme.primaryContainer
+    } else {
+        if (isDarkTheme) Color(0xFF1E1714) else MaterialTheme.colorScheme.surface
+    }
 
     Box(
         modifier = Modifier
@@ -194,14 +283,17 @@ private fun AchievementCard(achievement: AchievementEntity, isDarkTheme: Boolean
                     .background(Color.Black.copy(alpha = 0.2f), CircleShape)
                     .padding(bottom = 4.dp)
                     .background(
-                        if (isUnlocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                        if (isUnlocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
                         CircleShape
                     ),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = achievement.iconEmoji,
-                    fontSize = 28.sp
+                    fontSize = 28.sp,
+                    modifier = Modifier.graphicsLayer {
+                        if (!isUnlocked) alpha = 0.65f
+                    }
                 )
             }
 
@@ -219,22 +311,30 @@ private fun AchievementCard(achievement: AchievementEntity, isDarkTheme: Boolean
                         text = achievement.title,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = if (isUnlocked && isDarkTheme) Color.White else MaterialTheme.colorScheme.onSurface
+                        color = if (isUnlocked && isDarkTheme) Color.White else MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f, fill = false).padding(end = 8.dp),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
 
                     if (isUnlocked) {
                         Box(
                             modifier = Modifier
-                                .background(Color.Black.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
+                                .background(Color.Black.copy(alpha = 0.25f), RoundedCornerShape(8.dp))
                                 .padding(bottom = 3.dp)
-                                .background(MaterialTheme.colorScheme.secondary, RoundedCornerShape(8.dp))
+                                .background(
+                                    if (isDarkTheme) Color(0xFF2E7D32) else Color(0xFF388E3C),
+                                    RoundedCornerShape(8.dp)
+                                )
                         ) {
                             Text(
-                                text = "¡DESBLOQUEADO!",
+                                text = "✓ Listo",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSecondary,
+                                color = Color.White,
                                 fontWeight = FontWeight.ExtraBold,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                maxLines = 1,
+                                softWrap = false
                             )
                         }
                     }
@@ -249,21 +349,26 @@ private fun AchievementCard(achievement: AchievementEntity, isDarkTheme: Boolean
                 )
 
                 if (!isUnlocked && achievement.maxProgress > 1) {
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box(modifier = Modifier.weight(1f).height(10.dp)) {
-                            // Track
-                            Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.2f), RoundedCornerShape(5.dp)))
-                            // Progress
-                            Box(modifier = Modifier
-                                .fillMaxWidth(achievement.progress.toFloat() / achievement.maxProgress)
-                                .fillMaxSize()
-                                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(5.dp))
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(8.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(Color.Black.copy(alpha = 0.25f))
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth((achievement.progress.toFloat() / achievement.maxProgress).coerceIn(0f, 1f))
+                                    .fillMaxSize()
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(MaterialTheme.colorScheme.primary)
                             )
                         }
-                        Spacer(modifier = Modifier.width(12.dp))
+                        Spacer(modifier = Modifier.width(10.dp))
                         Text(
                             text = "${achievement.progress}/${achievement.maxProgress}",
                             style = MaterialTheme.typography.labelMedium,
