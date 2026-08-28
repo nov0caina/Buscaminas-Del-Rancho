@@ -1,8 +1,11 @@
 package com.example.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,15 +15,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Slider
-import androidx.compose.material3.Surface
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -29,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -47,25 +53,35 @@ fun DifficultySelectionDialog(
     var customCols by remember { mutableFloatStateOf(10f) }
     var customMines by remember { mutableFloatStateOf(15f) }
 
+    val isDarkTheme = isSystemInDarkTheme()
+
     Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 6.dp,
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
+                .background(Color.Black.copy(alpha = 0.35f), RoundedCornerShape(24.dp))
+                .padding(bottom = 6.dp)
+                .background(
+                    if (isDarkTheme) Color(0xFF2C221E) else MaterialTheme.colorScheme.surface,
+                    RoundedCornerShape(24.dp)
+                )
+                .border(
+                    1.5.dp,
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                    RoundedCornerShape(24.dp)
+                )
         ) {
             Column(
                 modifier = Modifier
-                    .padding(24.dp)
+                    .padding(20.dp)
                     .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     text = "🤠 Selecciona la Dificultad",
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.primary
                 )
 
@@ -79,12 +95,13 @@ fun DifficultySelectionDialog(
                             .padding(vertical = 4.dp)
                             .clickable { selectedDifficulty = diff }
                             .testTag("diff_card_${diff.name.lowercase()}"),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(14.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = if (isSelected)
-                                MaterialTheme.colorScheme.primaryContainer
-                            else
-                                MaterialTheme.colorScheme.surfaceVariant
+                            containerColor = if (isSelected) {
+                                if (isDarkTheme) Color(0xFF3E2D26) else MaterialTheme.colorScheme.primaryContainer
+                            } else {
+                                if (isDarkTheme) Color(0xFF1E1714) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                            }
                         )
                     ) {
                         Row(
@@ -107,12 +124,13 @@ fun DifficultySelectionDialog(
                                 Text(
                                     text = diff.displayName,
                                     style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isSelected && isDarkTheme) Color.White else MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
                                     text = diff.subtitle,
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = if (isDarkTheme) Color.White.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
@@ -122,50 +140,62 @@ fun DifficultySelectionDialog(
                 // Custom settings options if PERSONALIZADA is chosen
                 if (selectedDifficulty == GameDifficulty.PERSONALIZADA) {
                     Spacer(modifier = Modifier.height(12.dp))
+                    val maxMines = ((customRows * customCols) * 0.8f).coerceAtLeast(1f)
+                    val totalCells = (customRows * customCols).toInt()
+                    val currentMines = customMines.toInt().coerceAtMost(maxMines.toInt())
+                    val density = if (totalCells > 0) (currentMines * 100 / totalCells) else 0
+
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                RoundedCornerShape(12.dp)
-                            )
-                            .padding(12.dp)
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text(
-                            text = "Filas: ${customRows.toInt()}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Slider(
+                        CustomSliderRow(
+                            icon = "📏",
+                            label = "Filas",
                             value = customRows,
+                            range = 5f..25f,
                             onValueChange = { customRows = it },
-                            valueRange = 5f..25f,
-                            steps = 20
+                            isDarkTheme = isDarkTheme
                         )
 
-                        Text(
-                            text = "Columnas: ${customCols.toInt()}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Slider(
+                        CustomSliderRow(
+                            icon = "📐",
+                            label = "Columnas",
                             value = customCols,
+                            range = 5f..16f,
                             onValueChange = { customCols = it },
-                            valueRange = 5f..16f,
-                            steps = 11
+                            isDarkTheme = isDarkTheme
                         )
 
-                        val maxMines = ((customRows * customCols) * 0.8f).coerceAtLeast(1f)
-                        Text(
-                            text = "Minas: ${customMines.toInt().coerceAtMost(maxMines.toInt())}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Slider(
+                        CustomSliderRow(
+                            icon = "💣",
+                            label = "Minas",
                             value = customMines.coerceAtMost(maxMines),
+                            range = 1f..maxMines,
                             onValueChange = { customMines = it },
-                            valueRange = 1f..maxMines
+                            isDarkTheme = isDarkTheme
                         )
+
+                        // Summary Pill
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color.Black.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
+                                .padding(bottom = 2.dp)
+                                .background(
+                                    if (isDarkTheme) Color(0xFF1E1714) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                    RoundedCornerShape(8.dp)
+                                )
+                                .padding(horizontal = 10.dp, vertical = 5.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "▦ Total: $totalCells casillas • $currentMines minas ($density% peligro)",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                 }
 
@@ -173,25 +203,58 @@ fun DifficultySelectionDialog(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TextButton(onClick = onDismiss) {
-                        Text("Cancelar")
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(
-                        onClick = {
-                            onSelectDifficulty(
-                                selectedDifficulty,
-                                customRows.toInt(),
-                                customCols.toInt(),
-                                customMines.toInt()
-                            )
-                        },
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.testTag("btn_confirm_difficulty")
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp)
+                            .bounceClick(onClick = onDismiss)
+                            .background(Color.Black.copy(alpha = 0.2f), RoundedCornerShape(14.dp))
+                            .padding(bottom = 4.dp)
+                            .background(
+                                if (isDarkTheme) Color(0xFF3E2D26) else MaterialTheme.colorScheme.surfaceVariant,
+                                RoundedCornerShape(14.dp)
+                            ),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text("¡A Jugar! ⛏️", fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "Cancelar",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1.3f)
+                            .height(48.dp)
+                            .testTag("btn_confirm_difficulty")
+                            .bounceClick(onClick = {
+                                val maxMines = ((customRows * customCols) * 0.8f).coerceAtLeast(1f)
+                                onSelectDifficulty(
+                                    selectedDifficulty,
+                                    customRows.toInt(),
+                                    customCols.toInt(),
+                                    customMines.toInt().coerceAtMost(maxMines.toInt())
+                                )
+                            })
+                            .background(Color.Black.copy(alpha = 0.25f), RoundedCornerShape(14.dp))
+                            .padding(bottom = 4.dp)
+                            .background(
+                                MaterialTheme.colorScheme.primary,
+                                RoundedCornerShape(14.dp)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "¡A Jugar! ⛏️",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
                     }
                 }
             }
@@ -208,73 +271,104 @@ fun CustomDifficultyDialog(
     var customCols by remember { mutableFloatStateOf(10f) }
     var customMines by remember { mutableFloatStateOf(15f) }
 
+    val isDarkTheme = isSystemInDarkTheme()
+
     Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 6.dp,
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
+                .background(Color.Black.copy(alpha = 0.35f), RoundedCornerShape(24.dp))
+                .padding(bottom = 6.dp)
+                .background(
+                    if (isDarkTheme) Color(0xFF2C221E) else MaterialTheme.colorScheme.surface,
+                    RoundedCornerShape(24.dp)
+                )
+                .border(
+                    1.5.dp,
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                    RoundedCornerShape(24.dp)
+                )
         ) {
             Column(
                 modifier = Modifier
-                    .padding(24.dp)
+                    .padding(20.dp)
                     .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = "⚙️ Tablero Personalizado",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(text = "⚙️", fontSize = 24.sp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Tablero Personalizado",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                val maxMines = ((customRows * customCols) * 0.8f).coerceAtLeast(1f)
+                val totalCells = (customRows * customCols).toInt()
+                val currentMines = customMines.toInt().coerceAtMost(maxMines.toInt())
+                val density = if (totalCells > 0) (currentMines * 100 / totalCells) else 0
+
                 Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    CustomSliderRow(
+                        icon = "📏",
+                        label = "Filas",
+                        value = customRows,
+                        range = 5f..25f,
+                        onValueChange = { customRows = it },
+                        isDarkTheme = isDarkTheme
+                    )
+
+                    CustomSliderRow(
+                        icon = "📐",
+                        label = "Columnas",
+                        value = customCols,
+                        range = 5f..16f,
+                        onValueChange = { customCols = it },
+                        isDarkTheme = isDarkTheme
+                    )
+
+                    CustomSliderRow(
+                        icon = "💣",
+                        label = "Minas",
+                        value = customMines.coerceAtMost(maxMines),
+                        range = 1f..maxMines,
+                        onValueChange = { customMines = it },
+                        isDarkTheme = isDarkTheme
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Board Summary Pill
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .background(Color.Black.copy(alpha = 0.2f), RoundedCornerShape(10.dp))
+                        .padding(bottom = 2.dp)
                         .background(
-                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                            RoundedCornerShape(12.dp)
+                            if (isDarkTheme) Color(0xFF1E1714) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            RoundedCornerShape(10.dp)
                         )
-                        .padding(14.dp)
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Filas: ${customRows.toInt()}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Slider(
-                        value = customRows,
-                        onValueChange = { customRows = it },
-                        valueRange = 5f..25f,
-                        steps = 20
-                    )
-
-                    Text(
-                        text = "Columnas: ${customCols.toInt()}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Slider(
-                        value = customCols,
-                        onValueChange = { customCols = it },
-                        valueRange = 5f..16f,
-                        steps = 11
-                    )
-
-                    val maxMines = ((customRows * customCols) * 0.8f).coerceAtLeast(1f)
-                    Text(
-                        text = "Minas: ${customMines.toInt().coerceAtMost(maxMines.toInt())}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Slider(
-                        value = customMines.coerceAtMost(maxMines),
-                        onValueChange = { customMines = it },
-                        valueRange = 1f..maxMines
+                        text = "▦ Total: $totalCells casillas • $currentMines minas ($density% peligro)",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
 
@@ -282,28 +376,191 @@ fun CustomDifficultyDialog(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TextButton(onClick = onDismiss) {
-                        Text("Cancelar")
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(
-                        onClick = {
-                            val maxMines = ((customRows * customCols) * 0.8f).coerceAtLeast(1f)
-                            onConfirmCustom(
-                                customRows.toInt(),
-                                customCols.toInt(),
-                                customMines.toInt().coerceAtMost(maxMines.toInt())
-                            )
-                        },
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.testTag("btn_confirm_custom")
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp)
+                            .bounceClick(onClick = onDismiss)
+                            .background(Color.Black.copy(alpha = 0.2f), RoundedCornerShape(14.dp))
+                            .padding(bottom = 4.dp)
+                            .background(
+                                if (isDarkTheme) Color(0xFF3E2D26) else MaterialTheme.colorScheme.surfaceVariant,
+                                RoundedCornerShape(14.dp)
+                            ),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text("¡A Jugar! ⛏️", fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "Cancelar",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1.3f)
+                            .height(48.dp)
+                            .testTag("btn_confirm_custom")
+                            .bounceClick(onClick = {
+                                onConfirmCustom(
+                                    customRows.toInt(),
+                                    customCols.toInt(),
+                                    currentMines
+                                )
+                            })
+                            .background(Color.Black.copy(alpha = 0.25f), RoundedCornerShape(14.dp))
+                            .padding(bottom = 4.dp)
+                            .background(
+                                MaterialTheme.colorScheme.primary,
+                                RoundedCornerShape(14.dp)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "¡A Jugar! ⛏️",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
                     }
                 }
             }
         }
     }
 }
+
+@Composable
+private fun CustomSliderRow(
+    icon: String,
+    label: String,
+    value: Float,
+    range: ClosedFloatingPointRange<Float>,
+    onValueChange: (Float) -> Unit,
+    isDarkTheme: Boolean,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(Color.Black.copy(alpha = 0.2f), RoundedCornerShape(14.dp))
+            .padding(bottom = 3.dp)
+            .background(
+                if (isDarkTheme) Color(0xFF1E1714) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f),
+                RoundedCornerShape(14.dp)
+            )
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = icon, fontSize = 18.sp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
+                // Numeric Badge
+                Box(
+                    modifier = Modifier
+                        .background(Color.Black.copy(alpha = 0.25f), RoundedCornerShape(8.dp))
+                        .padding(bottom = 2.dp)
+                        .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp))
+                        .padding(horizontal = 10.dp, vertical = 3.dp)
+                ) {
+                    Text(
+                        text = "${value.toInt()}",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(2.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Stepper Minus
+                Box(
+                    modifier = Modifier
+                        .size(30.dp)
+                        .bounceClick(onClick = {
+                            val nextVal = (value - 1f).coerceIn(range.start, range.endInclusive)
+                            onValueChange(nextVal)
+                        })
+                        .background(Color.Black.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
+                        .padding(bottom = 2.dp)
+                        .background(
+                            if (isDarkTheme) Color(0xFF3E2D26) else MaterialTheme.colorScheme.surface,
+                            RoundedCornerShape(8.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Remove,
+                        contentDescription = "Disminuir",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(4.dp))
+
+                Slider(
+                    value = value,
+                    onValueChange = onValueChange,
+                    valueRange = range,
+                    colors = SliderDefaults.colors(
+                        thumbColor = MaterialTheme.colorScheme.primary,
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                        inactiveTrackColor = if (isDarkTheme) Color.Black.copy(alpha = 0.35f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.25f),
+                        activeTickColor = Color.Transparent,
+                        inactiveTickColor = Color.Transparent
+                    ),
+                    modifier = Modifier.weight(1f)
+                )
+
+                Spacer(modifier = Modifier.width(4.dp))
+
+                // Stepper Plus
+                Box(
+                    modifier = Modifier
+                        .size(30.dp)
+                        .bounceClick(onClick = {
+                            val nextVal = (value + 1f).coerceIn(range.start, range.endInclusive)
+                            onValueChange(nextVal)
+                        })
+                        .background(Color.Black.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
+                        .padding(bottom = 2.dp)
+                        .background(
+                            if (isDarkTheme) Color(0xFF3E2D26) else MaterialTheme.colorScheme.surface,
+                            RoundedCornerShape(8.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Aumentar",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+

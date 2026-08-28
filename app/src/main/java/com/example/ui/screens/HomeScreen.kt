@@ -180,7 +180,7 @@ fun HomeScreen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = "🤠 BUSCAMINAS DEL RANCHO 🤠",
+                                text = "BUSCAMINAS DEL RANCHO\n🤠",
                                 style = MaterialTheme.typography.headlineMedium.copy(
                                     shadow = androidx.compose.ui.graphics.Shadow(
                                         color = Color.Black.copy(alpha = 0.9f),
