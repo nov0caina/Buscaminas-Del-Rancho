@@ -63,12 +63,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.sin
 import kotlin.math.PI
+import com.example.ui.theme.RanchoBannerTitleDay
+import com.example.ui.theme.RanchoBannerTitleNight
 import com.example.R
 import com.example.data.model.GameDifficulty
 import com.example.ui.viewmodel.GameUiState
 import androidx.compose.foundation.Canvas
 import com.example.ui.particles.DustParticleSystem
-import com.example.ui.particles.MysticSmokeParticleSystem
+import com.example.ui.particles.RanchoSmokeParticleSystem
 
 @Composable
 fun HomeScreen(
@@ -84,7 +86,7 @@ fun HomeScreen(
     
     val isDarkTheme = uiState.isDarkTheme || isSystemInDarkTheme()
     val dustParticleSystem = remember { DustParticleSystem(150) }
-    val smokeParticleSystem = remember { MysticSmokeParticleSystem(150) }
+    val smokeParticleSystem = remember { RanchoSmokeParticleSystem(150) }
 
     val scrollState = rememberScrollState()
 
@@ -93,8 +95,8 @@ fun HomeScreen(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(15000, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
+            animation = tween(7500, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
         ),
         label = "bg_particles"
     )
@@ -119,7 +121,7 @@ fun HomeScreen(
                     }
             ) {
                 if (isDarkTheme) {
-                    smokeParticleSystem.setupMysticSmoke(size.width / 2f, size.height / 2f, size.width * 0.35f)
+                    smokeParticleSystem.setupRanchoSmoke(size.width / 2f, size.height / 2f, size.width * 0.45f)
                     smokeParticleSystem.render(this, progress, size.width, size.height)
                 } else {
                     dustParticleSystem.setupAmbientDust(size.width, size.height)
@@ -185,7 +187,7 @@ fun HomeScreen(
                                         blurRadius = 8f
                                     )
                                 ),
-                                color = MaterialTheme.colorScheme.primary,
+                                color = if (isDarkTheme) RanchoBannerTitleNight else RanchoBannerTitleDay,
                                 fontWeight = FontWeight.ExtraBold,
                                 textAlign = TextAlign.Center
                             )

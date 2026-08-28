@@ -136,11 +136,11 @@ class DustParticleSystem(capacity: Int = 48) {
                 type = Particle.TYPE_SPECK
                 startX = width * Math.random().toFloat()
                 startY = height * Math.random().toFloat()
-                targetX = (Math.random().toFloat() - 0.5f) * width * 0.1f
-                targetY = (Math.random().toFloat() - 0.5f) * height * 0.1f
+                targetX = (Math.random().toFloat() - 0.5f) * width * 0.15f
+                targetY = (Math.random().toFloat() - 0.5f) * height * 0.15f
                 maxRadius = (width * 0.005f) + (Math.random().toFloat() * width * 0.005f)
-                maxAlpha = 0.4f + Math.random().toFloat() * 0.3f
-                delay = Math.random().toFloat() * 0.4f
+                maxAlpha = 0.45f + Math.random().toFloat() * 0.35f
+                delay = i.toFloat() / speckCount.toFloat()
                 color = if (i % 3 == 0) Color(0xFFE9C46A) else Color(0xFFB08968)
             }
         }
@@ -262,14 +262,11 @@ class DustParticleSystem(capacity: Int = 48) {
 
             when (p.type) {
                 Particle.TYPE_HAZE -> {
-                    val hazeAlpha = if (globalProgress < 0.2f) {
-                        (globalProgress / 0.2f) * p.maxAlpha
-                    } else {
-                        ((1f - globalProgress) / 0.8f).coerceIn(0f, 1f) * p.maxAlpha
-                    }
-                    if (hazeAlpha > 0.01f) {
-                        val currentRadius = p.maxRadius * (0.6f + 0.5f * globalProgress)
-                        val cy = p.startY - globalProgress * 16f
+                    val localProgress = (globalProgress + p.delay) % 1.0f
+                    val hazeAlpha = kotlin.math.sin(localProgress * 3.14159f) * p.maxAlpha
+                    if (hazeAlpha > 0.005f) {
+                        val currentRadius = p.maxRadius * (0.8f + 0.3f * localProgress)
+                        val cy = p.startY - localProgress * 16f
                         val centerOffset = Offset(p.startX, cy)
 
                         drawScope.drawCircle(
@@ -316,11 +313,12 @@ class DustParticleSystem(capacity: Int = 48) {
                     }
                 }
                 Particle.TYPE_SPECK -> {
-                    val sAlpha = (1f - globalProgress).coerceIn(0f, 1f) * p.maxAlpha
-                    if (sAlpha > 0.02f) {
-                        val cx = p.startX + (p.targetX * globalProgress * 1.3f)
-                        val cy = p.startY + (p.targetY * globalProgress * 1.3f) - (globalProgress * 18f)
-                        val sRadius = (p.maxRadius * (1f - globalProgress)).coerceAtLeast(0.8f)
+                    val localProgress = (globalProgress + p.delay) % 1.0f
+                    val sAlpha = kotlin.math.sin(localProgress * 3.14159f) * p.maxAlpha
+                    if (sAlpha > 0.01f) {
+                        val cx = p.startX + (p.targetX * localProgress * 1.3f)
+                        val cy = p.startY + (p.targetY * localProgress * 1.3f) - (localProgress * 18f)
+                        val sRadius = (p.maxRadius * (1f - localProgress * 0.3f)).coerceAtLeast(0.8f)
 
                         drawScope.drawCircle(
                             color = p.color.copy(alpha = sAlpha),
@@ -773,4 +771,117 @@ class MysticSmokeParticleSystem(capacity: Int = 96) {
         return (base * (0.75f + 0.25f * factor)).coerceAtLeast(1f)
     }
 }
+
+/**
+ * Sistema de Partículas Campiranas Ligeras para Modo Noche y Menús Secundarios.
+ * Aplica la misma física y estilo de partículas ligeras (TYPE_SPECK) del modo día,
+ * distribuidas por toda la pantalla con colores cálidos de rancho (ámbar, oro, ascuas y polvo).
+ */
+class RanchoSmokeParticleSystem(capacity: Int = 150) {
+    val pool = ParticlePool(capacity)
+    private var isConfigured: Boolean = false
+
+    fun setupRanchoSmoke(width: Float, height: Float) {
+        if (isConfigured && pool.count() > 0) return
+        isConfigured = true
+        pool.releaseAll()
+
+        // 1. Neblina ambiental difusa de fondo
+        pool.acquire()?.apply {
+            type = Particle.TYPE_HAZE
+            startX = width / 2f
+            startY = height / 2f
+            maxRadius = width * 1.5f
+            maxAlpha = 0.08f
+            color = Color(0xFF8B5E3C)
+            secondaryColor = Color(0xFFD4A373)
+            delay = 0f
+        }
+
+        // 2. Briznas de polvo nocturno y ascuas flotantes estilo modo día
+        val speckCount = 130
+        for (i in 0 until speckCount) {
+            pool.acquire()?.apply {
+                type = Particle.TYPE_SPECK
+                startX = width * Math.random().toFloat()
+                startY = height * Math.random().toFloat()
+                // Deriva dinámica de viento (horizontal y vertical)
+                targetX = (Math.random().toFloat() - 0.45f) * width * 0.25f
+                targetY = -((0.15f + Math.random().toFloat() * 0.45f) * height * 0.30f)
+                maxRadius = (width * 0.004f) + (Math.random().toFloat() * width * 0.0055f)
+                maxAlpha = 0.45f + Math.random().toFloat() * 0.40f
+                delay = i.toFloat() / speckCount.toFloat()
+                // Tonalidades de noche en el rancho: Oro ámbar, Ascua cálida, Terracota, Polvo arena
+                color = when (i % 4) {
+                    0 -> Color(0xFFFFD166) // Ámbar oro brillante
+                    1 -> Color(0xFFF4A261) // Naranja cálido
+                    2 -> Color(0xFFE76F51) // Ascua terracota
+                    else -> Color(0xFFD4A373) // Polvo dorado suave
+                }
+            }
+        }
+    }
+
+    fun setupRanchoSmoke(centerX: Float, centerY: Float, baseRadius: Float) {
+        setupRanchoSmoke(centerX * 2f, centerY * 2f)
+    }
+
+    fun setupMysticSmoke(centerX: Float, centerY: Float, baseRadius: Float) {
+        setupRanchoSmoke(centerX * 2f, centerY * 2f)
+    }
+
+    fun render(drawScope: DrawScope, progress: Float, width: Float, height: Float) {
+        val particles = pool.activeList
+        val pCount = particles.size
+        for (i in 0 until pCount) {
+            val p = particles[i]
+            if (!p.active) continue
+
+            val localProgress = (progress + p.delay) % 1.0f
+
+            when (p.type) {
+                Particle.TYPE_HAZE -> {
+                    val hazeAlpha = kotlin.math.sin(localProgress * 3.14159f) * p.maxAlpha
+                    if (hazeAlpha > 0.005f) {
+                        val currentRadius = p.maxRadius * (0.85f + 0.3f * localProgress)
+                        val cy = p.startY - localProgress * 20f
+                        val centerOffset = Offset(p.startX, cy)
+
+                        drawScope.drawCircle(
+                            color = p.color.copy(alpha = hazeAlpha * 0.4f),
+                            radius = currentRadius,
+                            center = centerOffset
+                        )
+                        drawScope.drawCircle(
+                            color = p.secondaryColor.copy(alpha = hazeAlpha * 0.6f),
+                            radius = currentRadius * 0.65f,
+                            center = centerOffset
+                        )
+                    }
+                }
+                Particle.TYPE_SPECK -> {
+                    val sAlpha = kotlin.math.sin(localProgress * 3.14159f) * p.maxAlpha
+                    if (sAlpha > 0.01f) {
+                        val sway = kotlin.math.sin((localProgress * 4.0f) + (p.delay * 10f)) * (width * 0.03f)
+                        val cx = (p.startX + (p.targetX * localProgress) + sway)
+                        val cy = (p.startY + (p.targetY * localProgress)) - (localProgress * 30f)
+
+                        val wrappedCx = if (cx < 0) cx + width else if (cx > width) cx % width else cx
+                        val wrappedCy = if (cy < 0) cy + height else if (cy > height) cy % height else cy
+                        val sRadius = (p.maxRadius * (0.8f + kotlin.math.sin(localProgress * 3.14159f) * 0.4f)).coerceAtLeast(0.8f)
+
+                        drawScope.drawCircle(
+                            color = p.color.copy(alpha = sAlpha),
+                            radius = sRadius,
+                            center = Offset(wrappedCx, wrappedCy)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+
 

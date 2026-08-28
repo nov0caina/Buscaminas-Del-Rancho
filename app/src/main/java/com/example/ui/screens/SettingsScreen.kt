@@ -50,7 +50,7 @@ import androidx.compose.ui.unit.sp
 import com.example.data.model.RanchFlagIcon
 import com.example.ui.viewmodel.GameUiState
 import com.example.ui.particles.DustParticleSystem
-import com.example.ui.particles.MysticSmokeParticleSystem
+import com.example.ui.particles.RanchoSmokeParticleSystem
 import kotlin.math.PI
 import kotlin.math.sin
 
@@ -67,15 +67,15 @@ fun SettingsScreen(
     val scrollState = rememberScrollState()
 
     val dustParticleSystem = remember { DustParticleSystem(150) }
-    val smokeParticleSystem = remember { MysticSmokeParticleSystem(150) }
+    val smokeParticleSystem = remember { RanchoSmokeParticleSystem(150) }
 
     val infiniteTransition = rememberInfiniteTransition()
     val progress by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(15000, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
+            animation = tween(7500, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
         ),
         label = "bg_particles_settings"
     )
@@ -98,7 +98,7 @@ fun SettingsScreen(
                 }
         ) {
             if (uiState.isDarkTheme) {
-                smokeParticleSystem.setupMysticSmoke(size.width / 2f, size.height / 2f, size.width * 0.35f)
+                smokeParticleSystem.setupRanchoSmoke(size.width / 2f, size.height / 2f, size.width * 0.45f)
                 smokeParticleSystem.render(this, progress, size.width, size.height)
             } else {
                 dustParticleSystem.setupAmbientDust(size.width, size.height)
