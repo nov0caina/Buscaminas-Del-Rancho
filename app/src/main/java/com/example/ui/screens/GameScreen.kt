@@ -6,6 +6,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -200,24 +201,26 @@ fun GameScreen(
             )
         },
         bottomBar = {
-            Surface(
-                tonalElevation = 4.dp,
-                color = MaterialTheme.colorScheme.surface
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
+            if (uiState.gameStatus == GameStatus.PLAYING || uiState.gameStatus == GameStatus.IDLE) {
+                Surface(
+                    tonalElevation = 4.dp,
+                    color = MaterialTheme.colorScheme.surface
                 ) {
-                    Text(
-                        text = "⛏️ Clic simple: Revelar  •  ${uiState.ranchFlagIcon.emoji} Mantén presionado: Poner ${uiState.ranchFlagIcon.title}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Medium,
-                        textAlign = TextAlign.Center
-                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "⛏️ Clic simple: Revelar  •  ${uiState.ranchFlagIcon.emoji} Mantén presionado: Poner ${uiState.ranchFlagIcon.title}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Medium,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
         },
@@ -368,6 +371,13 @@ fun GameScreen(
                         }
                     }
 
+                    val isViewingBoard = !showEndDialog && (uiState.gameStatus == GameStatus.WON || uiState.gameStatus == GameStatus.LOST)
+                    val fabBottomPadding by animateDpAsState(
+                        targetValue = if (isViewingBoard) 80.dp else 12.dp,
+                        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+                        label = "fab_bottom_padding"
+                    )
+
                     // Floating Centering Control
                     SmallFloatingActionButton(
                         onClick = {
@@ -380,7 +390,7 @@ fun GameScreen(
                         shape = CircleShape,
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
-                            .padding(12.dp)
+                            .padding(end = 12.dp, bottom = fabBottomPadding)
                             .testTag("btn_zoom_reset")
                     ) {
                         Text("🎯", fontSize = 16.sp)
