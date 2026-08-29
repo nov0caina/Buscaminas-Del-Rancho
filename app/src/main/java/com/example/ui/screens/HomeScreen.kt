@@ -145,37 +145,60 @@ fun HomeScreen(
                         .padding(bottom = 32.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Hero Banner Header
+                    // Hero Banner Header with seamless Alpha DstIn mask and atmospheric scrim
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(240.dp)
+                            .height(290.dp)
                     ) {
+                        // 1. Banner Image with Alpha Mask (DstIn) that fades out completely before the bottom edge
                         Image(
                             painter = painterResource(id = R.drawable.img_rancho_banner),
                             contentDescription = "Banner del Rancho Sinaloense",
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer {
+                                    compositingStrategy = CompositingStrategy.Offscreen
+                                }
+                                .drawWithContent {
+                                    drawContent()
+                                    drawRect(
+                                        brush = Brush.verticalGradient(
+                                            0.0f to Color.Black,
+                                            0.22f to Color.Black,
+                                            0.45f to Color.Black.copy(alpha = 0.65f),
+                                            0.65f to Color.Black.copy(alpha = 0.30f),
+                                            0.82f to Color.Black.copy(alpha = 0.08f),
+                                            0.94f to Color.Transparent,
+                                            1.0f to Color.Transparent
+                                        ),
+                                        blendMode = BlendMode.DstIn
+                                    )
+                                },
                             contentScale = ContentScale.Crop
                         )
+
+                        // 2. Extra Atmospheric Theme Scrim for enhanced color harmony in Day/Night
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .background(
                                     Brush.verticalGradient(
-                                        0.0f to Color.Black.copy(alpha = 0.25f),
+                                        0.0f to Color.Black.copy(alpha = 0.20f),
                                         0.28f to Color.Transparent,
-                                        0.52f to MaterialTheme.colorScheme.background.copy(alpha = 0.30f),
-                                        0.72f to MaterialTheme.colorScheme.background.copy(alpha = 0.75f),
-                                        0.88f to MaterialTheme.colorScheme.background.copy(alpha = 0.95f),
+                                        0.55f to MaterialTheme.colorScheme.background.copy(alpha = 0.35f),
+                                        0.75f to MaterialTheme.colorScheme.background.copy(alpha = 0.75f),
+                                        0.92f to MaterialTheme.colorScheme.background.copy(alpha = 0.96f),
                                         1.0f to MaterialTheme.colorScheme.background
                                     )
                                 )
                         )
 
+                        // 3. Title and Slogans
                         Column(
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
-                                .padding(horizontal = 24.dp, vertical = 8.dp),
+                                .padding(horizontal = 24.dp, vertical = 12.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
@@ -191,17 +214,17 @@ fun HomeScreen(
                                 fontWeight = FontWeight.ExtraBold,
                                 textAlign = TextAlign.Center
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(6.dp))
                             Text(
                                 text = "PURO SINALOA VIEJON",
                                 style = MaterialTheme.typography.titleMedium.copy(
                                     shadow = androidx.compose.ui.graphics.Shadow(
-                                        color = Color.Black.copy(alpha = 0.8f),
+                                        color = Color.Black.copy(alpha = 0.9f),
                                         offset = androidx.compose.ui.geometry.Offset(1f, 2f),
                                         blurRadius = 4f
                                     )
                                 ),
-                                color = MaterialTheme.colorScheme.secondary,
+                                color = if (isDarkTheme) Color(0xFFFFD166) else MaterialTheme.colorScheme.secondary,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 2.sp
                             )
