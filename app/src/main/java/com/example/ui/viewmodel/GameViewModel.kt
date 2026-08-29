@@ -20,9 +20,11 @@ import com.example.data.repository.GameRepository
 import com.example.notification.DailyReminderScheduler
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -59,6 +61,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(GameUiState())
     val uiState: StateFlow<GameUiState> = _uiState.asStateFlow()
+
+    private val _achievementUnlockEvents = MutableSharedFlow<com.example.data.local.AchievementEntity>(extraBufferCapacity = 6)
+    val achievementUnlockEvents = _achievementUnlockEvents.asSharedFlow()
 
     private var timerJob: Job? = null
 
@@ -199,6 +204,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 "flag" -> vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
                 "explode" -> vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 100, 50, 200), -1))
                 "win" -> vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 50, 50, 100, 50, 150), -1))
+                "achievement" -> vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 60, 80, 100), -1))
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -517,7 +523,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         )
 
         viewModelScope.launch {
-            repository.recordGameFinished(
+            val newlyUnlocked = repository.recordGameFinished(
                 difficulty = state.difficulty,
                 timeSeconds = state.timeElapsed,
                 isWin = true,
@@ -526,6 +532,12 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 mines = state.mines,
                 flagsPlaced = state.flagsPlaced
             )
+            if (newlyUnlocked.isNotEmpty()) {
+                triggerVibration("achievement")
+                newlyUnlocked.forEach { achievement ->
+                    _achievementUnlockEvents.emit(achievement)
+                }
+            }
             repository.clearSavedGame()
             checkSavedGameAvailable()
         }

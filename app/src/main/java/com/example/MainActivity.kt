@@ -4,7 +4,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.ui.Modifier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -15,6 +18,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.ui.components.AchievementUnlockOverlay
 import com.example.ui.screens.AchievementsScreen
 import com.example.ui.screens.AnimatedSplashScreen
 import com.example.ui.screens.DifficultySelectionDialog
@@ -67,93 +71,103 @@ fun RanchoMinesweeperApp(
     RanchoTheme(darkTheme = isDark) {
         val navController = rememberNavController()
 
-        NavHost(
-            navController = navController,
-            startDestination = "splash"
-        ) {
-            composable("splash") {
-                AnimatedSplashScreen(
-                    onSplashFinished = {
-                        navController.navigate("home") {
-                            popUpTo("splash") { inclusive = true }
+        Box(modifier = Modifier.fillMaxSize()) {
+            NavHost(
+                navController = navController,
+                startDestination = "splash"
+            ) {
+                composable("splash") {
+                    AnimatedSplashScreen(
+                        onSplashFinished = {
+                            navController.navigate("home") {
+                                popUpTo("splash") { inclusive = true }
+                            }
                         }
-                    }
-                )
-            }
-
-            composable("home") {
-                androidx.compose.runtime.LaunchedEffect(Unit) {
-                    viewModel.checkSavedGameAvailable()
+                    )
                 }
-                HomeScreen(
-                    uiState = uiState,
-                    onResumeGame = {
-                        viewModel.resumeSavedGame()
-                        navController.navigate("game")
-                    },
-                    onSelectDifficulty = { difficulty, customRows, customCols, customMines ->
-                        viewModel.startNewGame(
-                            difficulty = difficulty,
-                            customRows = customRows,
-                            customCols = customCols,
-                            customMines = customMines
-                        )
-                        navController.navigate("game")
-                    },
-                    onLeaderboardClick = {
-                        navController.navigate("leaderboard")
-                    },
-                    onAchievementsClick = {
-                        navController.navigate("achievements")
-                    },
-                    onSettingsClick = {
-                        navController.navigate("settings")
-                    }
-                )
-            }
 
-            composable("game") {
-                GameScreen(
-                    uiState = uiState,
-                    onCellClick = { r, c -> viewModel.onCellClick(r, c) },
-                    onCellLongClick = { r, c -> viewModel.onCellLongClick(r, c) },
-                    onCellChord = { r, c -> viewModel.onCellChord(r, c) },
-                    onResetGame = { viewModel.startNewGame(uiState.difficulty, uiState.rows, uiState.cols, uiState.mines) },
-                    onBackToMenu = {
-                        viewModel.autoSaveActiveGame()
+                composable("home") {
+                    androidx.compose.runtime.LaunchedEffect(Unit) {
                         viewModel.checkSavedGameAvailable()
-                        navController.popBackStack()
                     }
-                )
+                    HomeScreen(
+                        uiState = uiState,
+                        onResumeGame = {
+                            viewModel.resumeSavedGame()
+                            navController.navigate("game")
+                        },
+                        onSelectDifficulty = { difficulty, customRows, customCols, customMines ->
+                            viewModel.startNewGame(
+                                difficulty = difficulty,
+                                customRows = customRows,
+                                customCols = customCols,
+                                customMines = customMines
+                            )
+                            navController.navigate("game")
+                        },
+                        onLeaderboardClick = {
+                            navController.navigate("leaderboard")
+                        },
+                        onAchievementsClick = {
+                            navController.navigate("achievements")
+                        },
+                        onSettingsClick = {
+                            navController.navigate("settings")
+                        }
+                    )
+                }
+
+                composable("game") {
+                    GameScreen(
+                        uiState = uiState,
+                        onCellClick = { r, c -> viewModel.onCellClick(r, c) },
+                        onCellLongClick = { r, c -> viewModel.onCellLongClick(r, c) },
+                        onCellChord = { r, c -> viewModel.onCellChord(r, c) },
+                        onResetGame = { viewModel.startNewGame(uiState.difficulty, uiState.rows, uiState.cols, uiState.mines) },
+                        onBackToMenu = {
+                            viewModel.autoSaveActiveGame()
+                            viewModel.checkSavedGameAvailable()
+                            navController.popBackStack()
+                        }
+                    )
+                }
+
+                composable("leaderboard") {
+                    LeaderboardScreen(
+                        isDarkTheme = isDark,
+                        localScores = topScores,
+                        globalEntries = viewModel.getGlobalLeaderboard(),
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+
+                composable("achievements") {
+                    AchievementsScreen(
+                        isDarkTheme = isDark,
+                        achievements = achievements,
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+
+                composable("settings") {
+                    SettingsScreen(
+                        uiState = uiState,
+                        onToggleDarkTheme = { viewModel.setDarkTheme(it) },
+                        onToggleHaptics = { viewModel.setHaptics(it) },
+                        onToggleDailyNotification = { viewModel.setDailyNotification(it) },
+                        onSelectRanchFlagIcon = { viewModel.setRanchFlagIcon(it) },
+                        onBack = { navController.popBackStack() }
+                    )
+                }
             }
 
-            composable("leaderboard") {
-                LeaderboardScreen(
-                    isDarkTheme = isDark,
-                    localScores = topScores,
-                    globalEntries = viewModel.getGlobalLeaderboard(),
-                    onBack = { navController.popBackStack() }
-                )
-            }
-
-            composable("achievements") {
-                AchievementsScreen(
-                    isDarkTheme = isDark,
-                    achievements = achievements,
-                    onBack = { navController.popBackStack() }
-                )
-            }
-
-            composable("settings") {
-                SettingsScreen(
-                    uiState = uiState,
-                    onToggleDarkTheme = { viewModel.setDarkTheme(it) },
-                    onToggleHaptics = { viewModel.setHaptics(it) },
-                    onToggleDailyNotification = { viewModel.setDailyNotification(it) },
-                    onSelectRanchFlagIcon = { viewModel.setRanchFlagIcon(it) },
-                    onBack = { navController.popBackStack() }
-                )
-            }
+            // Global Achievement Unlock Notification Overlay
+            AchievementUnlockOverlay(
+                unlockEvents = viewModel.achievementUnlockEvents,
+                onAchievementClick = {
+                    navController.navigate("achievements")
+                }
+            )
         }
     }
 }

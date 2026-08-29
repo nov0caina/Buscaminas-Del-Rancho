@@ -84,7 +84,7 @@ class GameRepository(private val gameDao: GameDao) {
         cols: Int,
         mines: Int,
         flagsPlaced: Int
-    ) {
+    ): List<AchievementEntity> {
         val score = GameScoreEntity(
             difficultyName = difficulty.displayName,
             timeInSeconds = timeSeconds,
@@ -95,8 +95,10 @@ class GameRepository(private val gameDao: GameDao) {
         )
         gameDao.insertScore(score)
 
-        if (isWin) {
+        return if (isWin) {
             checkAndUnlockAchievements(difficulty, timeSeconds, flagsPlaced)
+        } else {
+            emptyList()
         }
     }
 
@@ -104,9 +106,10 @@ class GameRepository(private val gameDao: GameDao) {
         difficulty: GameDifficulty,
         timeSeconds: Int,
         flagsPlaced: Int
-    ) {
+    ): List<AchievementEntity> {
         val currentAchievements = gameDao.getAllAchievements().firstOrNull() ?: emptyList()
         val wins = (gameDao.getWinCount().firstOrNull() ?: 0) + 1
+        val newlyUnlocked = mutableListOf<AchievementEntity>()
 
         for (achievement in currentAchievements) {
             var updated = achievement
@@ -145,8 +148,12 @@ class GameRepository(private val gameDao: GameDao) {
 
             if (updated != achievement) {
                 gameDao.insertOrUpdateAchievement(updated)
+                if (!achievement.isUnlocked && updated.isUnlocked) {
+                    newlyUnlocked.add(updated)
+                }
             }
         }
+        return newlyUnlocked
     }
 
     suspend fun saveActiveGame(
