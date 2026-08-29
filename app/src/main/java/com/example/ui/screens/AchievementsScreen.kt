@@ -53,9 +53,14 @@ import com.example.ui.particles.RanchoSmokeParticleSystem
 import kotlin.math.PI
 import kotlin.math.sin
 
+import androidx.compose.foundation.border
+import androidx.compose.ui.res.painterResource
+import com.example.R
+
 @Composable
 fun AchievementsScreen(
     achievements: List<AchievementEntity>,
+    onOpenPlayGamesAchievements: () -> Unit = {},
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     isDarkTheme: Boolean = isSystemInDarkTheme()
@@ -65,7 +70,7 @@ fun AchievementsScreen(
     val dustParticleSystem = remember { DustParticleSystem(150) }
     val smokeParticleSystem = remember { RanchoSmokeParticleSystem(150) }
 
-    val infiniteTransition = rememberInfiniteTransition()
+    val infiniteTransition = rememberInfiniteTransition(label = "infiniteTransitionAchievements")
     val progress by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
@@ -114,40 +119,72 @@ fun AchievementsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Chunky Back Button
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .bounceClick(onClick = onBack)
-                        .background(Color.Black.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
-                        .padding(bottom = 5.dp)
-                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Volver",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Chunky Back Button
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .bounceClick(onClick = onBack)
+                            .background(Color.Black.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
+                            .padding(bottom = 5.dp)
+                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Text(
+                        text = "Logros",
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            shadow = Shadow(
+                                color = Color.Black.copy(alpha = 0.5f),
+                                offset = Offset(2f, 4f),
+                                blurRadius = 6f
+                            )
+                        ),
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
 
-                Spacer(modifier = Modifier.width(16.dp))
-
-                Text(
-                    text = "Logros",
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        shadow = Shadow(
-                            color = Color.Black.copy(alpha = 0.5f),
-                            offset = Offset(2f, 4f),
-                            blurRadius = 6f
+                // Google Play Games Achievements Overlay Button
+                Box(
+                    modifier = Modifier
+                        .height(44.dp)
+                        .bounceClick(onClick = onOpenPlayGamesAchievements)
+                        .background(Color.Black.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
+                        .padding(bottom = 4.dp)
+                        .background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(12.dp))
+                        .border(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                        .padding(horizontal = 12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_google_play_games),
+                            contentDescription = "Google Play Games",
+                            tint = Color.Unspecified,
+                            modifier = Modifier.size(20.dp)
                         )
-                    ),
-                    fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Play Games",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))

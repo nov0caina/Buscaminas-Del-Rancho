@@ -72,9 +72,22 @@ fun RanchoMinesweeperApp(
         }
     }
 
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val activity = context as? android.app.Activity
+
+    DisposableEffect(activity) {
+        activity?.let { viewModel.playGamesManager.attachActivity(it) }
+        onDispose {
+            activity?.let { viewModel.playGamesManager.detachActivity(it) }
+        }
+    }
+
     val uiState by viewModel.uiState.collectAsState()
     val topScores by viewModel.topScores.collectAsState()
+    val recentMatches by viewModel.recentMatches.collectAsState()
     val achievements by viewModel.allAchievements.collectAsState()
+    val isAuthenticatedPlayGames by viewModel.playGamesManager.isAuthenticated.collectAsState()
+    val playerNamePlayGames by viewModel.playGamesManager.playerName.collectAsState()
 
     val systemDark = isSystemInDarkTheme()
     val isDark = uiState.isDarkTheme || systemDark
@@ -147,7 +160,19 @@ fun RanchoMinesweeperApp(
                     LeaderboardScreen(
                         isDarkTheme = isDark,
                         localScores = topScores,
+                        recentMatches = recentMatches,
                         globalEntries = viewModel.getGlobalLeaderboard(),
+                        isAuthenticatedPlayGames = isAuthenticatedPlayGames,
+                        playerNamePlayGames = playerNamePlayGames,
+                        onSignInPlayGames = {
+                            activity?.let { viewModel.playGamesManager.signIn(it) }
+                        },
+                        onOpenPlayGamesLeaderboards = {
+                            activity?.let { viewModel.playGamesManager.showAllLeaderboardsOverlay(it) }
+                        },
+                        onFilterChange = { diff, isTime ->
+                            viewModel.getGlobalLeaderboard(diff, isTime)
+                        },
                         onBack = { navController.popBackStack() }
                     )
                 }
@@ -156,6 +181,9 @@ fun RanchoMinesweeperApp(
                     AchievementsScreen(
                         isDarkTheme = isDark,
                         achievements = achievements,
+                        onOpenPlayGamesAchievements = {
+                            activity?.let { viewModel.playGamesManager.showAchievementsOverlay(it) }
+                        },
                         onBack = { navController.popBackStack() }
                     )
                 }

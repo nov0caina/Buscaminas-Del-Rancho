@@ -12,7 +12,8 @@ data class GlobalLeaderboardEntry(
     val rank: Int,
     val playerName: String,
     val location: String,
-    val timeSeconds: Int,
+    val timeSeconds: Int = 0,
+    val winCount: Int = 0,
     val difficulty: String,
     val avatarEmoji: String
 )
@@ -20,12 +21,17 @@ data class GlobalLeaderboardEntry(
 class GameRepository(private val gameDao: GameDao) {
 
     val topScores: Flow<List<GameScoreEntity>> = gameDao.getAllTopScores()
+    val recentMatches: Flow<List<GameScoreEntity>> = gameDao.getRecentMatches()
     val allAchievements: Flow<List<AchievementEntity>> = gameDao.getAllAchievements()
     val totalGamesPlayed: Flow<Int> = gameDao.getTotalGamesPlayed()
     val winCount: Flow<Int> = gameDao.getWinCount()
 
     fun getTopScoresByDifficulty(difficulty: String): Flow<List<GameScoreEntity>> {
         return gameDao.getTopScoresByDifficulty(difficulty)
+    }
+
+    fun getWinCountByDifficulty(difficulty: String): Flow<Int> {
+        return gameDao.getWinCountByDifficulty(difficulty)
     }
 
     suspend fun initDefaultAchievementsIfNeeded() {
@@ -182,12 +188,19 @@ class GameRepository(private val gameDao: GameDao) {
     suspend fun clearSavedGame() = gameDao.clearSavedGame()
 
     // Simulated Sinaloa Global Leaderboard (Google Play Games Global Standings)
-    fun getGlobalSinaloaLeaderboard(difficulty: GameDifficulty): List<GlobalLeaderboardEntry> {
+    fun getGlobalSinaloaLeaderboard(difficulty: GameDifficulty, isTimeMetric: Boolean = true): List<GlobalLeaderboardEntry> {
         val baseTimes = when (difficulty) {
             GameDifficulty.PRINCIPIANTE -> listOf(12, 18, 25, 31, 42, 50, 65, 80, 95, 110)
             GameDifficulty.INTERMEDIO -> listOf(85, 102, 120, 145, 170, 195, 210, 240, 280, 310)
             GameDifficulty.EXPERTO -> listOf(210, 245, 280, 320, 360, 410, 460, 520, 590, 650)
             GameDifficulty.PERSONALIZADA -> listOf(45, 60, 75, 90, 120, 150, 180, 210, 240, 300)
+        }
+
+        val baseWins = when (difficulty) {
+            GameDifficulty.PRINCIPIANTE -> listOf(142, 118, 95, 78, 64, 52, 41, 30, 22, 15)
+            GameDifficulty.INTERMEDIO -> listOf(98, 85, 71, 60, 48, 39, 29, 21, 14, 9)
+            GameDifficulty.EXPERTO -> listOf(54, 46, 38, 30, 25, 19, 14, 10, 7, 4)
+            GameDifficulty.PERSONALIZADA -> listOf(60, 45, 35, 28, 20, 15, 12, 8, 5, 2)
         }
 
         val vaqueros = listOf(
@@ -209,6 +222,7 @@ class GameRepository(private val gameDao: GameDao) {
                 playerName = pair.first,
                 location = pair.second,
                 timeSeconds = baseTimes[index],
+                winCount = baseWins[index],
                 difficulty = difficulty.displayName,
                 avatarEmoji = if (index == 0) "👑" else if (index < 3) "🥇" else "🤠"
             )

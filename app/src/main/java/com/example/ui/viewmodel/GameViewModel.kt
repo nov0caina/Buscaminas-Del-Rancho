@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.json.JSONArray
@@ -69,6 +70,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     private val repository: GameRepository
     private val vibrator = application.getSystemService(Vibrator::class.java)
     val soundManager = com.example.audio.SoundManager.getInstance(application)
+    val playGamesManager = com.example.games.PlayGamesManager.getInstance(application)
     private val appPrefs = application.getSharedPreferences(APP_PREFS_NAME, Context.MODE_PRIVATE)
 
     private val _uiState = MutableStateFlow(
@@ -98,6 +100,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     private var idleJob: Job? = null
 
     val topScores: StateFlow<List<GameScoreEntity>>
+    val recentMatches: StateFlow<List<GameScoreEntity>>
     val allAchievements = MutableStateFlow<List<com.example.data.local.AchievementEntity>>(emptyList())
 
     init {
@@ -110,13 +113,22 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             initialValue = emptyList()
         )
 
+        recentMatches = repository.recentMatches.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
         viewModelScope.launch {
             repository.initDefaultAchievementsIfNeeded()
             repository.allAchievements.collect { achievements ->
                 allAchievements.value = achievements
+                val unlockedIds = achievements.filter { it.isUnlocked }.map { it.id }
+                playGamesManager.syncAllUnlockedAchievements(unlockedIds)
             }
         }
 
+        playGamesManager.checkAuthentication()
         checkSavedGameAvailable()
         resetUiStateToDefaultGrid(GameDifficulty.PRINCIPIANTE)
     }
@@ -616,8 +628,15 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 triggerVibration("achievement")
                 newlyUnlocked.forEach { achievement ->
                     _achievementUnlockEvents.emit(achievement)
+                    playGamesManager.unlockAchievement(achievement.id)
                 }
             }
+
+            // Enviar mejores tiempos y acumulado de victorias a Google Play Games
+            playGamesManager.submitBestTime(state.difficulty, state.timeElapsed)
+            val currentWins = repository.getWinCountByDifficulty(state.difficulty.displayName).firstOrNull() ?: 1
+            playGamesManager.submitWinCount(state.difficulty, currentWins)
+
             repository.clearSavedGame()
             checkSavedGameAvailable()
         }
@@ -737,7 +756,10 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun getGlobalLeaderboard(): List<com.example.data.repository.GlobalLeaderboardEntry> {
-        return repository.getGlobalSinaloaLeaderboard(_uiState.value.difficulty)
+    fun getGlobalLeaderboard(
+        difficulty: GameDifficulty = _uiState.value.difficulty,
+        isTimeMetric: Boolean = true
+    ): List<com.example.data.repository.GlobalLeaderboardEntry> {
+        return repository.getGlobalSinaloaLeaderboard(difficulty, isTimeMetric)
     }
 }
