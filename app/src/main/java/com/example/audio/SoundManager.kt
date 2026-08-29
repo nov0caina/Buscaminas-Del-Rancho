@@ -2,7 +2,6 @@ package com.example.audio
 
 import android.content.Context
 import android.media.AudioAttributes
-import android.media.AudioManager
 import android.media.MediaPlayer
 import android.media.SoundPool
 import android.util.Log
@@ -58,20 +57,8 @@ class SoundManager private constructor(private val appContext: Context) {
     }
 
     private fun loadAudioPreferences() {
-        val audioManager = appContext.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
-        val systemVolumeRatio = if (audioManager != null) {
-            val current = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC).toFloat()
-            val max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC).toFloat().coerceAtLeast(1f)
-            (current / max).coerceIn(0f, 1f)
-        } else {
-            0.5f
-        }
-
-        // Default initial values on first run:
-        // - Music: 10% base (0.10f), slightly boosted up to +6% depending on system volume
-        val defaultMusicVol = (0.10f + (systemVolumeRatio * 0.06f)).coerceIn(0.10f, 0.20f)
-        // - SFX: 20% base (0.20f), slightly boosted up to +10% depending on system volume
-        val defaultSfxVol = (0.20f + (systemVolumeRatio * 0.10f)).coerceIn(0.20f, 0.35f)
+        val defaultMusicVol = 0.10f // Exact 10%
+        val defaultSfxVol = 0.20f   // Exact 20%
 
         if (!prefs.contains(KEY_MUSIC_VOLUME)) {
             musicVolume = defaultMusicVol
