@@ -46,6 +46,10 @@ data class GameUiState(
     val isDarkTheme: Boolean = false,
     val isHapticsEnabled: Boolean = true,
     val isDailyNotificationEnabled: Boolean = true,
+    val isMusicEnabled: Boolean = true,
+    val musicVolume: Float = 0.6f,
+    val isSfxEnabled: Boolean = true,
+    val sfxVolume: Float = 1.0f,
     val hasSavedGame: Boolean = false,
     val ranchFlagIcon: RanchFlagIcon = RanchFlagIcon.SOMBRERO,
     val activeRevealCluster: RevealCluster? = null,
@@ -54,18 +58,44 @@ data class GameUiState(
     val victoryEventId: Long = 0L
 )
 
+private const val APP_PREFS_NAME = "rancho_app_preferences"
+private const val KEY_PREF_DARK_THEME = "pref_dark_theme"
+private const val KEY_PREF_HAPTICS = "pref_haptics"
+private const val KEY_PREF_DAILY_NOTIF = "pref_daily_notif"
+private const val KEY_PREF_FLAG_ICON = "pref_flag_icon"
+
 class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository: GameRepository
     private val vibrator = application.getSystemService(Vibrator::class.java)
+    val soundManager = com.example.audio.SoundManager.getInstance(application)
+    private val appPrefs = application.getSharedPreferences(APP_PREFS_NAME, Context.MODE_PRIVATE)
 
-    private val _uiState = MutableStateFlow(GameUiState())
+    private val _uiState = MutableStateFlow(
+        GameUiState(
+            isDarkTheme = appPrefs.getBoolean(KEY_PREF_DARK_THEME, false),
+            isHapticsEnabled = appPrefs.getBoolean(KEY_PREF_HAPTICS, true),
+            isDailyNotificationEnabled = appPrefs.getBoolean(KEY_PREF_DAILY_NOTIF, true),
+            ranchFlagIcon = try {
+                RanchFlagIcon.valueOf(
+                    appPrefs.getString(KEY_PREF_FLAG_ICON, RanchFlagIcon.SOMBRERO.name) ?: RanchFlagIcon.SOMBRERO.name
+                )
+            } catch (e: Exception) {
+                RanchFlagIcon.SOMBRERO
+            },
+            isMusicEnabled = soundManager.isMusicEnabled,
+            musicVolume = soundManager.musicVolume,
+            isSfxEnabled = soundManager.isSfxEnabled,
+            sfxVolume = soundManager.sfxVolume
+        )
+    )
     val uiState: StateFlow<GameUiState> = _uiState.asStateFlow()
 
     private val _achievementUnlockEvents = MutableSharedFlow<com.example.data.local.AchievementEntity>(extraBufferCapacity = 6)
     val achievementUnlockEvents = _achievementUnlockEvents.asSharedFlow()
 
     private var timerJob: Job? = null
+    private var idleJob: Job? = null
 
     val topScores: StateFlow<List<GameScoreEntity>>
     val allAchievements = MutableStateFlow<List<com.example.data.local.AchievementEntity>>(emptyList())
@@ -123,6 +153,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         customMines: Int? = null
     ) {
         timerJob?.cancel()
+        idleJob?.cancel()
 
         val defaultR = if (_uiState.value.difficulty == GameDifficulty.PERSONALIZADA) _uiState.value.rows else 10
         val defaultC = if (_uiState.value.difficulty == GameDifficulty.PERSONALIZADA) _uiState.value.cols else 10
@@ -176,14 +207,37 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun setDarkTheme(enabled: Boolean) {
+        appPrefs.edit().putBoolean(KEY_PREF_DARK_THEME, enabled).apply()
         _uiState.value = _uiState.value.copy(isDarkTheme = enabled)
     }
 
     fun setHaptics(enabled: Boolean) {
+        appPrefs.edit().putBoolean(KEY_PREF_HAPTICS, enabled).apply()
         _uiState.value = _uiState.value.copy(isHapticsEnabled = enabled)
     }
 
+    fun setMusicEnabled(enabled: Boolean) {
+        soundManager.setMusicEnabled(enabled)
+        _uiState.value = _uiState.value.copy(isMusicEnabled = enabled)
+    }
+
+    fun setMusicVolume(volume: Float) {
+        soundManager.setMusicVolume(volume)
+        _uiState.value = _uiState.value.copy(musicVolume = volume)
+    }
+
+    fun setSfxEnabled(enabled: Boolean) {
+        soundManager.setSfxEnabled(enabled)
+        _uiState.value = _uiState.value.copy(isSfxEnabled = enabled)
+    }
+
+    fun setSfxVolume(volume: Float) {
+        soundManager.setSfxVolume(volume)
+        _uiState.value = _uiState.value.copy(sfxVolume = volume)
+    }
+
     fun setDailyNotification(enabled: Boolean) {
+        appPrefs.edit().putBoolean(KEY_PREF_DAILY_NOTIF, enabled).apply()
         _uiState.value = _uiState.value.copy(isDailyNotificationEnabled = enabled)
         if (enabled) {
             DailyReminderScheduler.scheduleDailyReminder(getApplication())
@@ -193,7 +247,21 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun setRanchFlagIcon(icon: RanchFlagIcon) {
+        appPrefs.edit().putString(KEY_PREF_FLAG_ICON, icon.name).apply()
         _uiState.value = _uiState.value.copy(ranchFlagIcon = icon)
+    }
+
+    private fun resetIdleTimer() {
+        idleJob?.cancel()
+        if (_uiState.value.gameStatus == GameStatus.PLAYING) {
+            idleJob = viewModelScope.launch {
+                delay(25000L) // 25 seconds of inactivity
+                if (_uiState.value.gameStatus == GameStatus.PLAYING) {
+                    soundManager.playWaitingSound()
+                    resetIdleTimer()
+                }
+            }
+        }
     }
 
     private fun triggerVibration(patternType: String) {
@@ -226,6 +294,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
+        resetIdleTimer()
+
         if (state.gameStatus == GameStatus.IDLE) {
             generateMinesAndStart(firstRow = row, firstCol = col)
             triggerVibration("click")
@@ -247,6 +317,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
         if (cell.isRevealed) return
 
+        resetIdleTimer()
         triggerVibration("flag")
 
         val newGrid = state.grid.toMutableList()
@@ -262,6 +333,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     fun onCellChord(row: Int, col: Int) {
         val state = _uiState.value
         if (state.gameStatus != GameStatus.PLAYING) return
+
+        resetIdleTimer()
 
         val index = row * state.cols + col
         val cell = state.grid[index]
@@ -297,6 +370,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 gameOverLoss(detonatedRow = detonatedR, detonatedCol = detonatedC)
             } else {
                 if (newlyRevealedAll.isNotEmpty()) {
+                    soundManager.playCellReveal()
                     val minR = newlyRevealedAll.minOf { it.first }
                     val maxR = newlyRevealedAll.maxOf { it.first }
                     val minC = newlyRevealedAll.minOf { it.second }
@@ -386,6 +460,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
+        soundManager.playCellReveal()
+
         val grid = state.grid.toMutableList()
         val newlyRevealed = revealCellInternalOnGrid(grid, row, col, state.rows, state.cols)
 
@@ -467,7 +543,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun gameOverLoss(detonatedRow: Int, detonatedCol: Int) {
         timerJob?.cancel()
+        idleJob?.cancel()
         triggerVibration("explode")
+        soundManager.playExplosionSequence()
 
         val state = _uiState.value
         val newGrid = state.grid.map { cell ->
@@ -505,7 +583,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun gameOverWin() {
         timerJob?.cancel()
+        idleJob?.cancel()
         triggerVibration("win")
+        soundManager.playVictorySequence()
 
         val state = _uiState.value
         val newGrid = state.grid.map { cell ->
@@ -653,6 +733,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             )
 
             startTimer()
+            resetIdleTimer()
         }
     }
 

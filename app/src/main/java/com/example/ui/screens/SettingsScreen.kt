@@ -26,12 +26,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -60,6 +64,10 @@ fun SettingsScreen(
     onToggleDarkTheme: (Boolean) -> Unit,
     onToggleHaptics: (Boolean) -> Unit,
     onToggleDailyNotification: (Boolean) -> Unit,
+    onToggleMusic: (Boolean) -> Unit,
+    onMusicVolumeChange: (Float) -> Unit,
+    onToggleSfx: (Boolean) -> Unit,
+    onSfxVolumeChange: (Float) -> Unit,
     onSelectRanchFlagIcon: (RanchFlagIcon) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
@@ -263,6 +271,42 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(36.dp))
 
                 Text(
+                    text = "Sonido & Música",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                SettingsAudioCard(
+                    title = "Música de Fondo",
+                    subtitle = "Banda y corridos sinaloenses",
+                    icon = Icons.Default.MusicNote,
+                    enabled = uiState.isMusicEnabled,
+                    onToggleEnabled = onToggleMusic,
+                    volume = uiState.musicVolume,
+                    onVolumeChange = onMusicVolumeChange,
+                    testTag = "card_music_volume"
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                SettingsAudioCard(
+                    title = "Efectos de Sonido (SFX)",
+                    subtitle = "Pops, explosiones y fanfarrias",
+                    icon = Icons.AutoMirrored.Filled.VolumeUp,
+                    enabled = uiState.isSfxEnabled,
+                    onToggleEnabled = onToggleSfx,
+                    volume = uiState.sfxVolume,
+                    onVolumeChange = onSfxVolumeChange,
+                    testTag = "card_sfx_volume"
+                )
+
+                Spacer(modifier = Modifier.height(36.dp))
+
+                Text(
                     text = "Preferencias",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
@@ -438,5 +482,109 @@ private fun MechanicalToggleSwitch(checked: Boolean) {
                 .padding(bottom = 3.dp)
                 .background(Color.White, RoundedCornerShape(4.dp))
         )
+    }
+}
+
+@Composable
+private fun SettingsAudioCard(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    enabled: Boolean,
+    onToggleEnabled: (Boolean) -> Unit,
+    volume: Float,
+    onVolumeChange: (Float) -> Unit,
+    testTag: String
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag(testTag)
+            .background(Color.Black.copy(alpha = 0.25f), RoundedCornerShape(16.dp))
+            .padding(bottom = 6.dp)
+            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                    modifier = Modifier.size(28.dp)
+                )
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Box(
+                    modifier = Modifier.bounceClick(onClick = { onToggleEnabled(!enabled) })
+                ) {
+                    MechanicalToggleSwitch(checked = enabled)
+                }
+            }
+
+            if (enabled) {
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Slider(
+                        value = volume,
+                        onValueChange = onVolumeChange,
+                        valueRange = 0f..1f,
+                        modifier = Modifier.weight(1f),
+                        colors = SliderDefaults.colors(
+                            thumbColor = Color(0xFFFFD166),
+                            activeTrackColor = Color(0xFFF4A261),
+                            inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                            activeTickColor = Color.Transparent,
+                            inactiveTickColor = Color.Transparent
+                        )
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .background(Color(0xFF2C221E), RoundedCornerShape(8.dp))
+                            .border(1.dp, Color(0xFFFFD166).copy(alpha = 0.6f), RoundedCornerShape(8.dp))
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "${(volume * 100).toInt()}%",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFFFD166)
+                        )
+                    }
+                }
+            }
+        }
     }
 }

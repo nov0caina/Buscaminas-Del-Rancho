@@ -51,11 +51,22 @@ fun RanchoMinesweeperApp(
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_STOP) {
-                viewModel.autoSaveActiveGame()
+            when (event) {
+                Lifecycle.Event.ON_START, Lifecycle.Event.ON_RESUME -> {
+                    viewModel.soundManager.resumeMusic()
+                }
+                Lifecycle.Event.ON_PAUSE -> {
+                    viewModel.soundManager.pauseMusic()
+                }
+                Lifecycle.Event.ON_STOP -> {
+                    viewModel.autoSaveActiveGame()
+                    viewModel.soundManager.pauseMusic()
+                }
+                else -> {}
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
+        viewModel.soundManager.startSoundtrack()
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
@@ -155,6 +166,10 @@ fun RanchoMinesweeperApp(
                         onToggleDarkTheme = { viewModel.setDarkTheme(it) },
                         onToggleHaptics = { viewModel.setHaptics(it) },
                         onToggleDailyNotification = { viewModel.setDailyNotification(it) },
+                        onToggleMusic = { viewModel.setMusicEnabled(it) },
+                        onMusicVolumeChange = { viewModel.setMusicVolume(it) },
+                        onToggleSfx = { viewModel.setSfxEnabled(it) },
+                        onSfxVolumeChange = { viewModel.setSfxVolume(it) },
                         onSelectRanchFlagIcon = { viewModel.setRanchFlagIcon(it) },
                         onBack = { navController.popBackStack() }
                     )

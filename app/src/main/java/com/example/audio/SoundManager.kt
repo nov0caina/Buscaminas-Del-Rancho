@@ -1,0 +1,466 @@
+package com.example.audio
+
+import android.content.Context
+import android.media.AudioAttributes
+import android.media.AudioManager
+import android.media.MediaPlayer
+import android.media.SoundPool
+import android.util.Log
+import com.example.R
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlin.random.Random
+
+private const val PREFS_NAME = "rancho_audio_prefs"
+private const val KEY_MUSIC_ENABLED = "key_music_enabled"
+private const val KEY_MUSIC_VOLUME = "key_music_volume"
+private const val KEY_SFX_ENABLED = "key_sfx_enabled"
+private const val KEY_SFX_VOLUME = "key_sfx_volume"
+
+class SoundManager private constructor(private val appContext: Context) {
+
+    private val audioScope = CoroutineScope(Dispatchers.Main + Job())
+    private val prefs = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
+    // SoundPool for low-latency SFX
+    private var soundPool: SoundPool? = null
+    private val soundIds = mutableMapOf<Int, Int>()
+    private val loadedSounds = mutableSetOf<Int>()
+
+    // Volume & Settings (Persisted)
+    var isSfxEnabled: Boolean = true
+        private set
+    var sfxVolume: Float = 0.20f
+        private set
+
+    var isMusicEnabled: Boolean = true
+        private set
+    var musicVolume: Float = 0.10f
+        private set
+
+    // Soundtrack Management
+    private val soundtracks = listOf(
+        R.raw.soundtrack_banda_sinaloense,
+        R.raw.soundtrack_corrido_tumbado
+    )
+    private var currentTrackIndex = Random.nextInt(soundtracks.size)
+    private var currentPlayer: MediaPlayer? = null
+    private var fadingPlayer: MediaPlayer? = null
+    private var crossfadeJob: Job? = null
+    private var isAppInForeground: Boolean = true
+
+    init {
+        loadAudioPreferences()
+        initSoundPool()
+    }
+
+    private fun loadAudioPreferences() {
+        val audioManager = appContext.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+        val systemVolumeRatio = if (audioManager != null) {
+            val current = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC).toFloat()
+            val max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC).toFloat().coerceAtLeast(1f)
+            (current / max).coerceIn(0f, 1f)
+        } else {
+            0.5f
+        }
+
+        // Default initial values on first run:
+        // - Music: 10% base (0.10f), slightly boosted up to +6% depending on system volume
+        val defaultMusicVol = (0.10f + (systemVolumeRatio * 0.06f)).coerceIn(0.10f, 0.20f)
+        // - SFX: 20% base (0.20f), slightly boosted up to +10% depending on system volume
+        val defaultSfxVol = (0.20f + (systemVolumeRatio * 0.10f)).coerceIn(0.20f, 0.35f)
+
+        if (!prefs.contains(KEY_MUSIC_VOLUME)) {
+            musicVolume = defaultMusicVol
+            prefs.edit().putFloat(KEY_MUSIC_VOLUME, defaultMusicVol).apply()
+        } else {
+            musicVolume = prefs.getFloat(KEY_MUSIC_VOLUME, defaultMusicVol)
+        }
+
+        if (!prefs.contains(KEY_SFX_VOLUME)) {
+            sfxVolume = defaultSfxVol
+            prefs.edit().putFloat(KEY_SFX_VOLUME, defaultSfxVol).apply()
+        } else {
+            sfxVolume = prefs.getFloat(KEY_SFX_VOLUME, defaultSfxVol)
+        }
+
+        isMusicEnabled = prefs.getBoolean(KEY_MUSIC_ENABLED, true)
+        isSfxEnabled = prefs.getBoolean(KEY_SFX_ENABLED, true)
+    }
+
+    private fun initSoundPool() {
+        val audioAttributes = AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_GAME)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+            .build()
+
+        soundPool = SoundPool.Builder()
+            .setMaxStreams(10)
+            .setAudioAttributes(audioAttributes)
+            .build().apply {
+                setOnLoadCompleteListener { _, sampleId, status ->
+                    if (status == 0) {
+                        loadedSounds.add(sampleId)
+                    }
+                }
+            }
+
+        // Preload all SFX
+        val allSfx = listOf(
+            R.raw.pop_01,
+            R.raw.pop_double_01,
+            R.raw.pop_double_02,
+            R.raw.explosion_01,
+            R.raw.explosion_02,
+            R.raw.explosion_03,
+            R.raw.lose_funny_sad_aaay,
+            R.raw.lose_funny_trumpet_01,
+            R.raw.lose_funny_trumpet_02,
+            R.raw.victory_woooow,
+            R.raw.victory_celebration_01,
+            R.raw.victory_celebration_02,
+            R.raw.waiting_a_few_moments_later,
+            R.raw.waiting_two_hours_later
+        )
+
+        allSfx.forEach { resId ->
+            soundPool?.let { pool ->
+                val sampleId = pool.load(appContext, resId, 1)
+                soundIds[resId] = sampleId
+            }
+        }
+    }
+
+    // ================= SFX Playback =================
+
+    private fun playSfx(resId: Int, volumeMultiplier: Float = 1.0f): Int {
+        if (!isSfxEnabled) return 0
+        val sampleId = soundIds[resId] ?: return 0
+        val vol = (sfxVolume * volumeMultiplier).coerceIn(0.0f, 1.0f)
+        return soundPool?.play(sampleId, vol, vol, 1, 0, 1.0f) ?: 0
+    }
+
+    fun playButtonClick() {
+        playSfx(R.raw.pop_double_01, 0.9f)
+    }
+
+    fun playCellReveal() {
+        // Layered unison pop for minefield cells
+        playSfx(R.raw.pop_double_01, 1.0f)
+        //playSfx(R.raw.pop_01, 0.85f)
+    }
+
+    private var duckJob: Job? = null
+    private var isDucked: Boolean = false
+
+    /**
+     * Temporarily ducks (reduces) the background music volume during high-impact SFX sequences
+     * (like defeat explosions or victory celebrations) and smoothly restores it when done.
+     */
+    fun duckMusicForDuration(durationMillis: Long, duckRatio: Float = 0.10f) {
+        if (!isMusicEnabled || !isAppInForeground) return
+        duckJob?.cancel()
+        duckJob = audioScope.launch {
+            try {
+                isDucked = true
+                val targetDuckedVol = (musicVolume * duckRatio).coerceIn(0.0f, 1.0f)
+                val normalVol = musicVolume
+
+                // Quick smooth fade down (~200ms)
+                val fadeSteps = 5
+                for (step in 1..fadeSteps) {
+                    val currentRatio = 1f - (step.toFloat() / fadeSteps)
+                    val vol = targetDuckedVol + (normalVol - targetDuckedVol) * currentRatio
+                    try {
+                        currentPlayer?.setVolume(vol, vol)
+                    } catch (e: Exception) {}
+                    delay(40L)
+                }
+                try {
+                    currentPlayer?.setVolume(targetDuckedVol, targetDuckedVol)
+                } catch (e: Exception) {}
+
+                // Hold ducked level during sequence
+                delay((durationMillis - 600L).coerceAtLeast(100L))
+
+                // Smooth fade back up (~600ms)
+                val restoreSteps = 10
+                for (step in 1..restoreSteps) {
+                    val progress = step.toFloat() / restoreSteps
+                    val vol = targetDuckedVol + (musicVolume - targetDuckedVol) * progress
+                    try {
+                        currentPlayer?.setVolume(vol, vol)
+                    } catch (e: Exception) {}
+                    delay(60L)
+                }
+                try {
+                    currentPlayer?.setVolume(musicVolume, musicVolume)
+                } catch (e: Exception) {}
+            } finally {
+                isDucked = false
+            }
+        }
+    }
+
+    fun playExplosionSequence() {
+        if (!isSfxEnabled) return
+        duckMusicForDuration(durationMillis = 4000L, duckRatio = 0.10f)
+        audioScope.launch {
+            val explosions = listOf(R.raw.explosion_01, R.raw.explosion_02, R.raw.explosion_03)
+            val randomExplosion = explosions.random()
+            playSfx(randomExplosion, 1.0f)
+
+            delay(450L) // Timing between explosion impact and funny trumpet
+
+            val funnySounds = listOf(
+                R.raw.lose_funny_trumpet_01,
+                R.raw.lose_funny_trumpet_02,
+                R.raw.lose_funny_sad_aaay
+            )
+            val randomFunny = funnySounds.random()
+            playSfx(randomFunny, 0.95f)
+        }
+    }
+
+    fun playVictorySequence() {
+        if (!isSfxEnabled) return
+        duckMusicForDuration(durationMillis = 7500L, duckRatio = 0.05f)
+        audioScope.launch {
+            playSfx(R.raw.victory_woooow, 1.0f)
+
+            delay(1300L) // Timing just before woooow ends
+
+            val celebrations = listOf(
+                R.raw.victory_celebration_01,
+                R.raw.victory_celebration_02
+            )
+            val randomCelebration = celebrations.random()
+            playSfx(randomCelebration, 1.0f)
+        }
+    }
+
+    fun playWaitingSound() {
+        if (!isSfxEnabled) return
+        val waitings = listOf(
+            R.raw.waiting_a_few_moments_later,
+            R.raw.waiting_two_hours_later
+        )
+        playSfx(waitings.random(), 1.0f)
+    }
+
+    // ================= Soundtrack Management =================
+
+    fun startSoundtrack() {
+        if (currentPlayer != null || !isAppInForeground) return
+        playCurrentTrackWithFade(fadeIn = true)
+    }
+
+    private fun playCurrentTrackWithFade(fadeIn: Boolean = true) {
+        if (!isMusicEnabled || !isAppInForeground) return
+        try {
+            val trackRes = soundtracks[currentTrackIndex]
+            val player = MediaPlayer.create(appContext, trackRes).apply {
+                isLooping = false
+                val startVol = if (fadeIn) 0.0f else musicVolume
+                setVolume(startVol, startVol)
+                setOnCompletionListener {
+                    advanceToNextTrackWithCrossfade()
+                }
+                start()
+            }
+
+            currentPlayer = player
+
+            if (fadeIn) {
+                audioScope.launch {
+                    val steps = 20
+                    val targetVol = musicVolume
+                    for (i in 1..steps) {
+                        if (currentPlayer != player) break
+                        val currentVol = targetVol * (i.toFloat() / steps)
+                        try {
+                            player.setVolume(currentVol, currentVol)
+                        } catch (e: Exception) {
+                            break
+                        }
+                        delay(100L)
+                    }
+                }
+            }
+
+            // Schedule crossfade ~4 seconds before track end
+            monitorTrackForCrossfade(player)
+
+        } catch (e: Exception) {
+            Log.e("SoundManager", "Error starting soundtrack", e)
+        }
+    }
+
+    private fun monitorTrackForCrossfade(player: MediaPlayer) {
+        crossfadeJob?.cancel()
+        crossfadeJob = audioScope.launch {
+            try {
+                while (player.isPlaying) {
+                    val duration = player.duration
+                    val currentPos = player.currentPosition
+                    if (duration > 0 && duration - currentPos <= 3500) {
+                        advanceToNextTrackWithCrossfade()
+                        break
+                    }
+                    delay(1000L)
+                }
+            } catch (e: Exception) {
+                // Player might have been released
+            }
+        }
+    }
+
+    private fun advanceToNextTrackWithCrossfade() {
+        if (!isMusicEnabled || !isAppInForeground) return
+
+        val oldPlayer = currentPlayer
+        currentTrackIndex = (currentTrackIndex + 1) % soundtracks.size
+        val nextTrackRes = soundtracks[currentTrackIndex]
+
+        try {
+            val newPlayer = MediaPlayer.create(appContext, nextTrackRes).apply {
+                isLooping = false
+                setVolume(0.0f, 0.0f)
+                setOnCompletionListener {
+                    advanceToNextTrackWithCrossfade()
+                }
+                start()
+            }
+
+            currentPlayer = newPlayer
+            fadingPlayer = oldPlayer
+
+            audioScope.launch {
+                val steps = 25
+                val targetVol = musicVolume
+                for (i in 1..steps) {
+                    val fadeInRatio = i.toFloat() / steps
+                    val fadeOutRatio = 1.0f - fadeInRatio
+
+                    try {
+                        newPlayer.setVolume(targetVol * fadeInRatio, targetVol * fadeInRatio)
+                    } catch (e: Exception) {}
+
+                    try {
+                        oldPlayer?.setVolume(targetVol * fadeOutRatio, targetVol * fadeOutRatio)
+                    } catch (e: Exception) {}
+
+                    delay(120L)
+                }
+
+                try {
+                    oldPlayer?.stop()
+                    oldPlayer?.release()
+                } catch (e: Exception) {}
+
+                if (fadingPlayer == oldPlayer) {
+                    fadingPlayer = null
+                }
+            }
+
+            monitorTrackForCrossfade(newPlayer)
+
+        } catch (e: Exception) {
+            Log.e("SoundManager", "Error in crossfade", e)
+        }
+    }
+
+    fun pauseMusic() {
+        isAppInForeground = false
+        crossfadeJob?.cancel()
+        duckJob?.cancel()
+        isDucked = false
+        try {
+            currentPlayer?.pause()
+            fadingPlayer?.pause()
+        } catch (e: Exception) {
+            Log.e("SoundManager", "Error pausing music", e)
+        }
+    }
+
+    fun resumeMusic() {
+        isAppInForeground = true
+        duckJob?.cancel()
+        isDucked = false
+        if (isMusicEnabled) {
+            if (currentPlayer != null) {
+                try {
+                    currentPlayer?.setVolume(musicVolume, musicVolume)
+                    currentPlayer?.start()
+                } catch (e: Exception) {
+                    playCurrentTrackWithFade(fadeIn = false)
+                }
+            } else {
+                playCurrentTrackWithFade(fadeIn = true)
+            }
+        }
+    }
+
+    fun setMusicVolume(volume: Float) {
+        musicVolume = volume.coerceIn(0.0f, 1.0f)
+        prefs.edit().putFloat(KEY_MUSIC_VOLUME, musicVolume).apply()
+        if (isMusicEnabled && isAppInForeground && !isDucked) {
+            try {
+                currentPlayer?.setVolume(musicVolume, musicVolume)
+            } catch (e: Exception) {}
+        }
+    }
+
+    fun setMusicEnabled(enabled: Boolean) {
+        isMusicEnabled = enabled
+        prefs.edit().putBoolean(KEY_MUSIC_ENABLED, enabled).apply()
+        if (enabled) {
+            resumeMusic()
+        } else {
+            duckJob?.cancel()
+            isDucked = false
+            try {
+                currentPlayer?.pause()
+                fadingPlayer?.pause()
+            } catch (e: Exception) {}
+        }
+    }
+
+    fun setSfxVolume(volume: Float) {
+        sfxVolume = volume.coerceIn(0.0f, 1.0f)
+        prefs.edit().putFloat(KEY_SFX_VOLUME, sfxVolume).apply()
+    }
+
+    fun setSfxEnabled(enabled: Boolean) {
+        isSfxEnabled = enabled
+        prefs.edit().putBoolean(KEY_SFX_ENABLED, enabled).apply()
+    }
+
+    fun release() {
+        crossfadeJob?.cancel()
+        duckJob?.cancel()
+        isDucked = false
+        try {
+            currentPlayer?.release()
+            currentPlayer = null
+            fadingPlayer?.release()
+            fadingPlayer = null
+            soundPool?.release()
+            soundPool = null
+        } catch (e: Exception) {}
+    }
+
+    companion object {
+        @Volatile
+        private var instance: SoundManager? = null
+
+        fun getInstance(context: Context): SoundManager {
+            return instance ?: synchronized(this) {
+                instance ?: SoundManager(context.applicationContext).also { instance = it }
+            }
+        }
+    }
+}

@@ -33,6 +33,8 @@ fun Modifier.bounceClick(
     bounceScale: Float = 0.88f,
     reboundDelayMillis: Long = 100L
 ): Modifier = composed {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val soundManager = remember { com.example.audio.SoundManager.getInstance(context) }
     val isPressed by interactionSource.collectIsPressedAsState()
     val isFocused by interactionSource.collectIsFocusedAsState()
     val coroutineScope = rememberCoroutineScope()
@@ -82,6 +84,7 @@ fun Modifier.bounceClick(
             onClick = {
                 if (!isHandlingClick) {
                     isHandlingClick = true
+                    soundManager.playButtonClick()
                     coroutineScope.launch {
                         // 1. Force the button to squash down noticeably even on 5ms taps
                         animScale.animateTo(
