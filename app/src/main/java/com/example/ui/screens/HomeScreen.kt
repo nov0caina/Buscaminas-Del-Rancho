@@ -145,11 +145,11 @@ fun HomeScreen(
                         .padding(bottom = 32.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Hero Banner Header with seamless Alpha DstIn mask and atmospheric scrim
+                    // Hero Banner Header with long-range seamless Alpha DstIn mask
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(290.dp)
+                            .height(310.dp)
                     ) {
                         // 1. Banner Image with Alpha Mask (DstIn) that fades out completely before the bottom edge
                         Image(
@@ -165,11 +165,12 @@ fun HomeScreen(
                                     drawRect(
                                         brush = Brush.verticalGradient(
                                             0.0f to Color.Black,
-                                            0.22f to Color.Black,
-                                            0.45f to Color.Black.copy(alpha = 0.65f),
-                                            0.65f to Color.Black.copy(alpha = 0.30f),
-                                            0.82f to Color.Black.copy(alpha = 0.08f),
-                                            0.94f to Color.Transparent,
+                                            0.15f to Color.Black,
+                                            0.32f to Color.Black.copy(alpha = 0.80f),
+                                            0.48f to Color.Black.copy(alpha = 0.45f),
+                                            0.62f to Color.Black.copy(alpha = 0.18f),
+                                            0.74f to Color.Black.copy(alpha = 0.04f),
+                                            0.84f to Color.Transparent,
                                             1.0f to Color.Transparent
                                         ),
                                         blendMode = BlendMode.DstIn
@@ -178,18 +179,15 @@ fun HomeScreen(
                             contentScale = ContentScale.Crop
                         )
 
-                        // 2. Extra Atmospheric Theme Scrim for enhanced color harmony in Day/Night
+                        // 2. Subtle top vignette for status bar readability
                         Box(
                             modifier = Modifier
-                                .fillMaxSize()
+                                .fillMaxWidth()
+                                .height(90.dp)
                                 .background(
                                     Brush.verticalGradient(
-                                        0.0f to Color.Black.copy(alpha = 0.20f),
-                                        0.28f to Color.Transparent,
-                                        0.55f to MaterialTheme.colorScheme.background.copy(alpha = 0.35f),
-                                        0.75f to MaterialTheme.colorScheme.background.copy(alpha = 0.75f),
-                                        0.92f to MaterialTheme.colorScheme.background.copy(alpha = 0.96f),
-                                        1.0f to MaterialTheme.colorScheme.background
+                                        0.0f to Color.Black.copy(alpha = 0.35f),
+                                        1.0f to Color.Transparent
                                     )
                                 )
                         )
