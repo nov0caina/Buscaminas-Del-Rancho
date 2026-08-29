@@ -149,25 +149,24 @@ fun HomeScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(230.dp)
+                            .height(240.dp)
                     ) {
                         Image(
                             painter = painterResource(id = R.drawable.img_rancho_banner),
                             contentDescription = "Banner del Rancho Sinaloense",
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)),
+                            modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop
                         )
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
                                 .background(
                                     Brush.verticalGradient(
-                                        0.0f to Color.Black.copy(alpha = 0.2f),
-                                        0.35f to Color.Transparent,
-                                        0.7f to MaterialTheme.colorScheme.background.copy(alpha = 0.8f),
+                                        0.0f to Color.Black.copy(alpha = 0.25f),
+                                        0.28f to Color.Transparent,
+                                        0.52f to MaterialTheme.colorScheme.background.copy(alpha = 0.30f),
+                                        0.72f to MaterialTheme.colorScheme.background.copy(alpha = 0.75f),
+                                        0.88f to MaterialTheme.colorScheme.background.copy(alpha = 0.95f),
                                         1.0f to MaterialTheme.colorScheme.background
                                     )
                                 )
