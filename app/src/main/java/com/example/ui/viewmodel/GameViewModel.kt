@@ -33,6 +33,12 @@ import org.json.JSONArray
 import org.json.JSONObject
 import kotlin.random.Random
 
+enum class ThemeMode(val title: String, val emoji: String) {
+    SYSTEM("Sistema", "⚙️"),
+    LIGHT("Día", "☀️"),
+    DARK("Noche", "🌙")
+}
+
 data class GameUiState(
     val difficulty: GameDifficulty = GameDifficulty.PRINCIPIANTE,
     val rows: Int = 9,
@@ -44,6 +50,7 @@ data class GameUiState(
     val timeElapsed: Int = 0,
     val flagsPlaced: Int = 0,
     val vaqueroFace: VaqueroFace = VaqueroFace.HAPPY,
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val isDarkTheme: Boolean = false,
     val isHapticsEnabled: Boolean = true,
     val isDailyNotificationEnabled: Boolean = true,
@@ -60,6 +67,7 @@ data class GameUiState(
 )
 
 private const val APP_PREFS_NAME = "rancho_app_preferences"
+private const val KEY_PREF_THEME_MODE = "pref_theme_mode"
 private const val KEY_PREF_DARK_THEME = "pref_dark_theme"
 private const val KEY_PREF_HAPTICS = "pref_haptics"
 private const val KEY_PREF_DAILY_NOTIF = "pref_daily_notif"
@@ -75,6 +83,13 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(
         GameUiState(
+            themeMode = try {
+                ThemeMode.valueOf(
+                    appPrefs.getString(KEY_PREF_THEME_MODE, ThemeMode.SYSTEM.name) ?: ThemeMode.SYSTEM.name
+                )
+            } catch (e: Exception) {
+                ThemeMode.SYSTEM
+            },
             isDarkTheme = appPrefs.getBoolean(KEY_PREF_DARK_THEME, false),
             isHapticsEnabled = appPrefs.getBoolean(KEY_PREF_HAPTICS, true),
             isDailyNotificationEnabled = appPrefs.getBoolean(KEY_PREF_DAILY_NOTIF, true),
@@ -218,9 +233,13 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.value = _uiState.value.copy(clickMode = newMode)
     }
 
+    fun setThemeMode(mode: ThemeMode) {
+        appPrefs.edit().putString(KEY_PREF_THEME_MODE, mode.name).apply()
+        _uiState.value = _uiState.value.copy(themeMode = mode, isDarkTheme = mode == ThemeMode.DARK)
+    }
+
     fun setDarkTheme(enabled: Boolean) {
-        appPrefs.edit().putBoolean(KEY_PREF_DARK_THEME, enabled).apply()
-        _uiState.value = _uiState.value.copy(isDarkTheme = enabled)
+        setThemeMode(if (enabled) ThemeMode.DARK else ThemeMode.LIGHT)
     }
 
     fun setHaptics(enabled: Boolean) {
@@ -291,7 +310,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun onCellClick(row: Int, col: Int) {
+    fun onCellClick(row: Int, col: Int, pressure: Float = 0.5f) {
         val state = _uiState.value
         if (state.gameStatus == GameStatus.WON || state.gameStatus == GameStatus.LOST) return
 
@@ -311,12 +330,12 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         if (state.gameStatus == GameStatus.IDLE) {
             generateMinesAndStart(firstRow = row, firstCol = col)
             triggerVibration("click")
-            revealCell(row, col)
+            revealCell(row, col, pressure)
             return
         }
 
         triggerVibration("click")
-        revealCell(row, col)
+        revealCell(row, col, pressure)
     }
 
     fun onCellLongClick(row: Int, col: Int) {
@@ -382,7 +401,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 gameOverLoss(detonatedRow = detonatedR, detonatedCol = detonatedC)
             } else {
                 if (newlyRevealedAll.isNotEmpty()) {
-                    soundManager.playCellReveal()
+                    soundManager.playCellReveal(0.6f)
                     val minR = newlyRevealedAll.minOf { it.first }
                     val maxR = newlyRevealedAll.maxOf { it.first }
                     val minC = newlyRevealedAll.minOf { it.second }
@@ -462,7 +481,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         startTimer()
     }
 
-    private fun revealCell(row: Int, col: Int) {
+    private fun revealCell(row: Int, col: Int, pressure: Float = 0.5f) {
         val state = _uiState.value
         val index = row * state.cols + col
         val cell = state.grid[index]
@@ -472,7 +491,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
-        soundManager.playCellReveal()
+        soundManager.playCellReveal(pressure)
 
         val grid = state.grid.toMutableList()
         val newlyRevealed = revealCellInternalOnGrid(grid, row, col, state.rows, state.cols)

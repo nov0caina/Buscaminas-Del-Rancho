@@ -10,6 +10,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.RanchFlagIcon
 import com.example.ui.viewmodel.GameUiState
+import com.example.ui.viewmodel.ThemeMode
 import com.example.ui.particles.DustParticleSystem
 import com.example.ui.particles.RanchoSmokeParticleSystem
 import kotlin.math.PI
@@ -61,7 +63,9 @@ import kotlin.math.sin
 @Composable
 fun SettingsScreen(
     uiState: GameUiState,
-    onToggleDarkTheme: (Boolean) -> Unit,
+    isDarkTheme: Boolean = isSystemInDarkTheme(),
+    onSelectThemeMode: (ThemeMode) -> Unit = {},
+    onToggleDarkTheme: (Boolean) -> Unit = {},
     onToggleHaptics: (Boolean) -> Unit,
     onToggleDailyNotification: (Boolean) -> Unit,
     onToggleMusic: (Boolean) -> Unit,
@@ -73,6 +77,7 @@ fun SettingsScreen(
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
+    val isDarkTheme = isSystemInDarkTheme()
 
     val dustParticleSystem = remember { DustParticleSystem(150) }
     val smokeParticleSystem = remember { RanchoSmokeParticleSystem(150) }
@@ -105,7 +110,7 @@ fun SettingsScreen(
                     scaleY = scale
                 }
         ) {
-            if (uiState.isDarkTheme) {
+            if (isDarkTheme) {
                 smokeParticleSystem.setupRanchoSmoke(size.width / 2f, size.height / 2f, size.width * 0.45f)
                 smokeParticleSystem.render(this, progress, size.width, size.height)
             } else {
@@ -316,14 +321,107 @@ fun SettingsScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                SettingsToggleCard(
-                    title = "Modo Rancho Noche",
-                    subtitle = "Estética nocturna del desierto",
-                    icon = Icons.Default.DarkMode,
-                    checked = uiState.isDarkTheme,
-                    onCheckedChange = onToggleDarkTheme,
-                    testTag = "switch_dark_theme"
-                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color.Black.copy(alpha = 0.15f), RoundedCornerShape(20.dp))
+                        .padding(bottom = 6.dp)
+                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(20.dp))
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.DarkMode,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(28.dp)
+                            )
+                            Spacer(modifier = Modifier.width(14.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Tema Día / Noche",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                val subtitleText = when (uiState.themeMode) {
+                                    ThemeMode.SYSTEM -> if (isDarkTheme) "Sincronizado: Noche del Desierto 🌙" else "Sincronizado: Sol Campirano ☀️"
+                                    ThemeMode.LIGHT -> "Fijo: Sol Campirano ☀️"
+                                    ThemeMode.DARK -> "Fijo: Noche del Desierto 🌙"
+                                }
+                                Text(
+                                    text = subtitleText,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        // 3D tactile segmented options: Sistema, Día, Noche
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            ThemeMode.entries.forEach { mode ->
+                                val isSelected = uiState.themeMode == mode
+
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(46.dp)
+                                        .testTag("btn_theme_${mode.name.lowercase()}")
+                                        .bounceClick(onClick = { onSelectThemeMode(mode) })
+                                        .background(
+                                            if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.35f) else Color.Black.copy(alpha = 0.20f),
+                                            RoundedCornerShape(12.dp)
+                                        )
+                                        .padding(bottom = if (isSelected) 1.dp else 4.dp)
+                                        .background(
+                                            if (isSelected) {
+                                                MaterialTheme.colorScheme.primary
+                                            } else {
+                                                if (isDarkTheme) Color(0xFF3E2D26) else MaterialTheme.colorScheme.surface
+                                            },
+                                            RoundedCornerShape(12.dp)
+                                        )
+                                        .border(
+                                            width = if (isSelected) 1.5.dp else 1.dp,
+                                            color = if (isSelected) Color.White.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                                            shape = RoundedCornerShape(12.dp)
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center
+                                    ) {
+                                        Text(text = mode.emoji, fontSize = 15.sp)
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = mode.title,
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
+                                            color = if (isSelected) {
+                                                MaterialTheme.colorScheme.onPrimary
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurface
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 

@@ -45,11 +45,29 @@ class SoundManager private constructor(private val appContext: Context) {
         R.raw.soundtrack_banda_sinaloense,
         R.raw.soundtrack_corrido_tumbado
     )
-    private var currentTrackIndex = Random.nextInt(soundtracks.size)
+    private var currentTrackIndex = 0
     private var currentPlayer: MediaPlayer? = null
     private var fadingPlayer: MediaPlayer? = null
     private var crossfadeJob: Job? = null
+    private var isCrossfading: Boolean = false
     private var isAppInForeground: Boolean = true
+
+    // Sequential Non-Repeating SFX Decks
+    private class SequentialAudioDeck(private val sounds: List<Int>) {
+        private var currentIndex = 0
+        @Synchronized
+        fun next(): Int {
+            if (sounds.isEmpty()) return 0
+            val sound = sounds[currentIndex % sounds.size]
+            currentIndex = (currentIndex + 1) % sounds.size
+            return sound
+        }
+    }
+
+    private val explosionDeck = SequentialAudioDeck(listOf(R.raw.explosion_01, R.raw.explosion_02, R.raw.explosion_03))
+    private val defeatTrumpetDeck = SequentialAudioDeck(listOf(R.raw.lose_funny_trumpet_01, R.raw.lose_funny_trumpet_02, R.raw.lose_funny_sad_aaay))
+    private val victoryCelebrationDeck = SequentialAudioDeck(listOf(R.raw.victory_celebration_01, R.raw.victory_celebration_02))
+    private val waitingDeck = SequentialAudioDeck(listOf(R.raw.waiting_a_few_moments_later, R.raw.waiting_two_hours_later))
 
     init {
         loadAudioPreferences()
@@ -123,21 +141,33 @@ class SoundManager private constructor(private val appContext: Context) {
 
     // ================= SFX Playback =================
 
-    private fun playSfx(resId: Int, volumeMultiplier: Float = 1.0f): Int {
+    private fun playSfx(resId: Int, volumeMultiplier: Float = 1.0f, pitch: Float = 1.0f): Int {
         if (!isSfxEnabled) return 0
         val sampleId = soundIds[resId] ?: return 0
         val vol = (sfxVolume * volumeMultiplier).coerceIn(0.0f, 1.0f)
-        return soundPool?.play(sampleId, vol, vol, 1, 0, 1.0f) ?: 0
+        return soundPool?.play(sampleId, vol, vol, 1, 0, pitch) ?: 0
     }
 
-    fun playButtonClick() {
-        playSfx(R.raw.pop_double_01, 0.9f)
+    /**
+     * Reproduce el sonido de clic de botón con volumen suave y modulación por presión táctil.
+     * @param pressure Presión táctil (0.1f a 1.0f).
+     */
+    fun playButtonClick(pressure: Float = 0.5f) {
+        val normalizedPressure = pressure.coerceIn(0.1f, 1.0f)
+        // Reducido a volumen suave y agradable
+        val volumeMultiplier = 0.10f + (normalizedPressure * 0.28f)
+        val pitch = (0.92f + normalizedPressure * 0.14f).coerceIn(0.85f, 1.15f)
+        playSfx(R.raw.pop_double_01, volumeMultiplier, pitch)
     }
 
-    fun playCellReveal() {
-        // Layered unison pop for minefield cells
-        playSfx(R.raw.pop_double_01, 1.0f)
-        //playSfx(R.raw.pop_01, 0.85f)
+    /**
+     * Reproduce el sonido de revelado de casilla con sensibilidad a la presión táctil.
+     */
+    fun playCellReveal(pressure: Float = 0.5f) {
+        val normalizedPressure = pressure.coerceIn(0.1f, 1.0f)
+        val volumeMultiplier = 0.12f + (normalizedPressure * 0.30f)
+        val pitch = (0.94f + normalizedPressure * 0.12f).coerceIn(0.85f, 1.15f)
+        playSfx(R.raw.pop_double_01, volumeMultiplier, pitch)
     }
 
     private var duckJob: Job? = null
@@ -196,19 +226,13 @@ class SoundManager private constructor(private val appContext: Context) {
         if (!isSfxEnabled) return
         duckMusicForDuration(durationMillis = 4000L, duckRatio = 0.10f)
         audioScope.launch {
-            val explosions = listOf(R.raw.explosion_01, R.raw.explosion_02, R.raw.explosion_03)
-            val randomExplosion = explosions.random()
-            playSfx(randomExplosion, 1.0f)
+            val explosionRes = explosionDeck.next()
+            playSfx(explosionRes, 1.0f)
 
             delay(450L) // Timing between explosion impact and funny trumpet
 
-            val funnySounds = listOf(
-                R.raw.lose_funny_trumpet_01,
-                R.raw.lose_funny_trumpet_02,
-                R.raw.lose_funny_sad_aaay
-            )
-            val randomFunny = funnySounds.random()
-            playSfx(randomFunny, 0.95f)
+            val funnyRes = defeatTrumpetDeck.next()
+            playSfx(funnyRes, 0.95f)
         }
     }
 
@@ -220,22 +244,15 @@ class SoundManager private constructor(private val appContext: Context) {
 
             delay(1300L) // Timing just before woooow ends
 
-            val celebrations = listOf(
-                R.raw.victory_celebration_01,
-                R.raw.victory_celebration_02
-            )
-            val randomCelebration = celebrations.random()
-            playSfx(randomCelebration, 1.0f)
+            val celebrationRes = victoryCelebrationDeck.next()
+            playSfx(celebrationRes, 1.0f)
         }
     }
 
     fun playWaitingSound() {
         if (!isSfxEnabled) return
-        val waitings = listOf(
-            R.raw.waiting_a_few_moments_later,
-            R.raw.waiting_two_hours_later
-        )
-        playSfx(waitings.random(), 1.0f)
+        val waitingRes = waitingDeck.next()
+        playSfx(waitingRes, 1.0f)
     }
 
     // ================= Soundtrack Management =================
@@ -305,8 +322,10 @@ class SoundManager private constructor(private val appContext: Context) {
         }
     }
 
+    @Synchronized
     private fun advanceToNextTrackWithCrossfade() {
-        if (!isMusicEnabled || !isAppInForeground) return
+        if (!isMusicEnabled || !isAppInForeground || isCrossfading) return
+        isCrossfading = true
 
         val oldPlayer = currentPlayer
         currentTrackIndex = (currentTrackIndex + 1) % soundtracks.size
@@ -327,7 +346,7 @@ class SoundManager private constructor(private val appContext: Context) {
 
             audioScope.launch {
                 val steps = 25
-                val targetVol = musicVolume
+                val targetVol = if (isDucked) (musicVolume * 0.10f) else musicVolume
                 for (i in 1..steps) {
                     val fadeInRatio = i.toFloat() / steps
                     val fadeOutRatio = 1.0f - fadeInRatio
@@ -351,12 +370,14 @@ class SoundManager private constructor(private val appContext: Context) {
                 if (fadingPlayer == oldPlayer) {
                     fadingPlayer = null
                 }
+                isCrossfading = false
             }
 
             monitorTrackForCrossfade(newPlayer)
 
         } catch (e: Exception) {
             Log.e("SoundManager", "Error in crossfade", e)
+            isCrossfading = false
         }
     }
 

@@ -7,6 +7,8 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -22,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -40,6 +43,7 @@ fun Modifier.bounceClick(
     val coroutineScope = rememberCoroutineScope()
     val animScale = remember { Animatable(1f) }
     var isHandlingClick by remember { mutableStateOf(false) }
+    var touchPressure by remember { mutableStateOf(0.5f) }
 
     // Respond immediately to touch down / touch up
     LaunchedEffect(isPressed) {
@@ -78,13 +82,19 @@ fun Modifier.bounceClick(
                 Modifier
             }
         )
+        .pointerInput(Unit) {
+            awaitEachGesture {
+                val down = awaitFirstDown(requireUnconsumed = false)
+                touchPressure = down.pressure.coerceIn(0.1f, 1.0f)
+            }
+        }
         .clickable(
             interactionSource = interactionSource,
             indication = null,
             onClick = {
                 if (!isHandlingClick) {
                     isHandlingClick = true
-                    soundManager.playButtonClick()
+                    soundManager.playButtonClick(touchPressure)
                     coroutineScope.launch {
                         // 1. Force the button to squash down noticeably even on 5ms taps
                         animScale.animateTo(

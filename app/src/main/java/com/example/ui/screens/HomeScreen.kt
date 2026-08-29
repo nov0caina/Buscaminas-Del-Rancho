@@ -85,7 +85,7 @@ fun HomeScreen(
 ) {
     var showCustomDialog by remember { mutableStateOf(false) }
     
-    val isDarkTheme = uiState.isDarkTheme || isSystemInDarkTheme()
+    val isDarkTheme = isSystemInDarkTheme()
     val dustParticleSystem = remember { DustParticleSystem(150) }
     val smokeParticleSystem = remember { RanchoSmokeParticleSystem(150) }
 

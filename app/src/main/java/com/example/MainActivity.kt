@@ -28,6 +28,7 @@ import com.example.ui.screens.LeaderboardScreen
 import com.example.ui.screens.SettingsScreen
 import com.example.ui.theme.RanchoTheme
 import com.example.ui.viewmodel.GameViewModel
+import com.example.ui.viewmodel.ThemeMode
 
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -90,7 +91,11 @@ fun RanchoMinesweeperApp(
     val playerNamePlayGames by viewModel.playGamesManager.playerName.collectAsState()
 
     val systemDark = isSystemInDarkTheme()
-    val isDark = uiState.isDarkTheme || systemDark
+    val isDark = when (uiState.themeMode) {
+        ThemeMode.SYSTEM -> systemDark
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+    }
 
     RanchoTheme(darkTheme = isDark) {
         val navController = rememberNavController()
@@ -144,7 +149,7 @@ fun RanchoMinesweeperApp(
                 composable("game") {
                     GameScreen(
                         uiState = uiState,
-                        onCellClick = { r, c -> viewModel.onCellClick(r, c) },
+                        onCellClick = { r, c, pressure -> viewModel.onCellClick(r, c, pressure) },
                         onCellLongClick = { r, c -> viewModel.onCellLongClick(r, c) },
                         onCellChord = { r, c -> viewModel.onCellChord(r, c) },
                         onResetGame = { viewModel.startNewGame(uiState.difficulty, uiState.rows, uiState.cols, uiState.mines) },
@@ -191,6 +196,8 @@ fun RanchoMinesweeperApp(
                 composable("settings") {
                     SettingsScreen(
                         uiState = uiState,
+                        isDarkTheme = isDark,
+                        onSelectThemeMode = { viewModel.setThemeMode(it) },
                         onToggleDarkTheme = { viewModel.setDarkTheme(it) },
                         onToggleHaptics = { viewModel.setHaptics(it) },
                         onToggleDailyNotification = { viewModel.setDailyNotification(it) },
