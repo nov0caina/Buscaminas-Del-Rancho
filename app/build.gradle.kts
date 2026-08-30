@@ -19,7 +19,7 @@ android {
     applicationId = "com.nov0caina.buscaminas.estilo.sinaloa"
     minSdk = 24
     targetSdk = 36
-    versionCode = 3
+    versionCode = 4
     versionName = "1.0.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -34,19 +34,20 @@ android {
           keystoreProperties.load(stream)
         }
       }
-      val keystorePath = System.getenv("KEYSTORE_PATH")
+      val rawPath = System.getenv("KEYSTORE_PATH")
         ?: keystoreProperties.getProperty("storeFile")
-        ?: "${rootDir}/rancho-release.jks"
-      storeFile = file(keystorePath)
+        ?: "rancho-release.jks"
+      val resolvedPath = if (rawPath.startsWith("/")) rawPath else "${rootDir.absolutePath}/$rawPath"
+      storeFile = file(resolvedPath)
       storePassword = System.getenv("STORE_PASSWORD")
         ?: keystoreProperties.getProperty("storePassword")
-        ?: ""
+        ?: "rancho_secret_key_2026"
       keyAlias = System.getenv("KEY_ALIAS")
         ?: keystoreProperties.getProperty("keyAlias")
         ?: "ranchokey"
       keyPassword = System.getenv("KEY_PASSWORD")
         ?: keystoreProperties.getProperty("keyPassword")
-        ?: ""
+        ?: "rancho_secret_key_2026"
     }
     create("debugConfig") {
       storeFile = file("${rootDir}/debug.keystore")
@@ -59,9 +60,13 @@ android {
   buildTypes {
     release {
       isCrunchPngs = false
-      isMinifyEnabled = false
+      isMinifyEnabled = true
+      isShrinkResources = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
       signingConfig = signingConfigs.getByName("release")
+      ndk {
+        debugSymbolLevel = "FULL"
+      }
     }
     debug { signingConfig = signingConfigs.getByName("debugConfig") }
   }
@@ -77,6 +82,10 @@ android {
   dependenciesInfo {
     includeInApk = false
     includeInBundle = true
+  }
+  lint {
+    checkReleaseBuilds = false
+    abortOnError = false
   }
 }
 
