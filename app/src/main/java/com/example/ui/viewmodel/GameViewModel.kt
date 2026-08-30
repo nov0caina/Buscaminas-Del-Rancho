@@ -267,6 +267,18 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.value = _uiState.value.copy(sfxVolume = volume)
     }
 
+    fun startBackgroundMusic() {
+        soundManager.startSoundtrack()
+    }
+
+    fun resumeBackgroundMusic() {
+        soundManager.resumeMusic()
+    }
+
+    fun pauseBackgroundMusic() {
+        soundManager.pauseMusic()
+    }
+
     fun setDailyNotification(enabled: Boolean) {
         appPrefs.edit().putBoolean(KEY_PREF_DAILY_NOTIF, enabled).apply()
         _uiState.value = _uiState.value.copy(isDailyNotificationEnabled = enabled)

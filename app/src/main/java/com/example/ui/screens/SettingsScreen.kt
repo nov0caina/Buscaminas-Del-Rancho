@@ -79,7 +79,6 @@ fun SettingsScreen(
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
-    val isDarkTheme = isSystemInDarkTheme()
 
     val dustParticleSystem = remember { DustParticleSystem(150) }
     val smokeParticleSystem = remember { RanchoSmokeParticleSystem(150) }

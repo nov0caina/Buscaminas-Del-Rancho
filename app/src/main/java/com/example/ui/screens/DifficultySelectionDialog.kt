@@ -45,15 +45,14 @@ import com.example.data.model.GameDifficulty
 @Composable
 fun DifficultySelectionDialog(
     onDismiss: () -> Unit,
-    onSelectDifficulty: (difficulty: GameDifficulty, customRows: Int, customCols: Int, customMines: Int) -> Unit
+    onSelectDifficulty: (difficulty: GameDifficulty, customRows: Int, customCols: Int, customMines: Int) -> Unit,
+    isDarkTheme: Boolean = isSystemInDarkTheme()
 ) {
     var selectedDifficulty by remember { mutableStateOf(GameDifficulty.PRINCIPIANTE) }
 
     var customRows by remember { mutableFloatStateOf(10f) }
     var customCols by remember { mutableFloatStateOf(10f) }
     var customMines by remember { mutableFloatStateOf(15f) }
-
-    val isDarkTheme = isSystemInDarkTheme()
 
     Dialog(onDismissRequest = onDismiss) {
         Box(
@@ -265,13 +264,12 @@ fun DifficultySelectionDialog(
 @Composable
 fun CustomDifficultyDialog(
     onDismiss: () -> Unit,
-    onConfirmCustom: (customRows: Int, customCols: Int, customMines: Int) -> Unit
+    onConfirmCustom: (customRows: Int, customCols: Int, customMines: Int) -> Unit,
+    isDarkTheme: Boolean = isSystemInDarkTheme()
 ) {
     var customRows by remember { mutableFloatStateOf(10f) }
     var customCols by remember { mutableFloatStateOf(10f) }
     var customMines by remember { mutableFloatStateOf(15f) }
-
-    val isDarkTheme = isSystemInDarkTheme()
 
     Dialog(onDismissRequest = onDismiss) {
         Box(

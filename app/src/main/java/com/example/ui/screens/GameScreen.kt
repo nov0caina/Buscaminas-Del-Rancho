@@ -116,6 +116,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun GameScreen(
     uiState: GameUiState,
+    isDarkTheme: Boolean = isSystemInDarkTheme(),
     onCellClick: (row: Int, col: Int, pressure: Float) -> Unit,
     onCellLongClick: (row: Int, col: Int) -> Unit,
     onCellChord: (row: Int, col: Int) -> Unit,
@@ -426,12 +427,12 @@ fun GameScreen(
                         gameStatus = uiState.gameStatus,
                         timeElapsed = uiState.timeElapsed,
                         difficultyName = uiState.difficulty.displayName,
+                        isDarkTheme = isDarkTheme,
                         onPlayAgain = onResetGame,
                         onBackToMenu = onBackToMenu,
                         onViewBoard = { showEndDialog = false }
                     )
                 } else {
-                    val isDarkTheme = isSystemInDarkTheme()
                     Box(
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
@@ -1079,10 +1080,10 @@ private fun GameEndOverlayDialog(
     difficultyName: String,
     onPlayAgain: () -> Unit,
     onBackToMenu: () -> Unit,
-    onViewBoard: () -> Unit
+    onViewBoard: () -> Unit,
+    isDarkTheme: Boolean = isSystemInDarkTheme()
 ) {
     val isWin = gameStatus == GameStatus.WON
-    val isDarkTheme = isSystemInDarkTheme()
 
     val borderColor = if (isWin) {
         if (isDarkTheme) Color(0xFF81C784).copy(alpha = 0.55f) else Color(0xFF388E3C).copy(alpha = 0.6f)

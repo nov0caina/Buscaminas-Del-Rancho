@@ -76,6 +76,7 @@ import com.example.ui.particles.RanchoSmokeParticleSystem
 @Composable
 fun HomeScreen(
     uiState: GameUiState,
+    isDarkTheme: Boolean = isSystemInDarkTheme(),
     onResumeGame: () -> Unit,
     onSelectDifficulty: (difficulty: GameDifficulty, customRows: Int, customCols: Int, customMines: Int) -> Unit,
     onLeaderboardClick: () -> Unit,
@@ -85,7 +86,6 @@ fun HomeScreen(
 ) {
     var showCustomDialog by remember { mutableStateOf(false) }
     
-    val isDarkTheme = isSystemInDarkTheme()
     val dustParticleSystem = remember { DustParticleSystem(150) }
     val smokeParticleSystem = remember { RanchoSmokeParticleSystem(150) }
 
@@ -391,6 +391,7 @@ fun HomeScreen(
 
                     if (showCustomDialog) {
                         CustomDifficultyDialog(
+                            isDarkTheme = isDarkTheme,
                             onDismiss = { showCustomDialog = false },
                             onConfirmCustom = { r, c, m ->
                                 showCustomDialog = false

@@ -29,6 +29,7 @@ import com.example.ui.screens.LeaderboardScreen
 import com.example.ui.screens.SettingsScreen
 import com.example.ui.theme.RanchoTheme
 import com.example.ui.viewmodel.GameViewModel
+import com.example.ui.viewmodel.ThemeMode
 
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -52,8 +53,15 @@ fun RanchoMinesweeperApp(
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_STOP) {
-                viewModel.autoSaveActiveGame()
+            when (event) {
+                Lifecycle.Event.ON_START, Lifecycle.Event.ON_RESUME -> {
+                    viewModel.resumeBackgroundMusic()
+                }
+                Lifecycle.Event.ON_STOP -> {
+                    viewModel.pauseBackgroundMusic()
+                    viewModel.autoSaveActiveGame()
+                }
+                else -> {}
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -67,7 +75,11 @@ fun RanchoMinesweeperApp(
     val achievements by viewModel.allAchievements.collectAsState()
 
     val systemDark = isSystemInDarkTheme()
-    val isDark = uiState.isDarkTheme || systemDark
+    val isDark = when (uiState.themeMode) {
+        ThemeMode.SYSTEM -> systemDark
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+    }
 
     RanchoTheme(darkTheme = isDark) {
         val navController = rememberNavController()
@@ -80,6 +92,7 @@ fun RanchoMinesweeperApp(
                 composable("splash") {
                     AnimatedSplashScreen(
                         onSplashFinished = {
+                            viewModel.startBackgroundMusic()
                             navController.navigate("home") {
                                 popUpTo("splash") { inclusive = true }
                             }
@@ -93,6 +106,7 @@ fun RanchoMinesweeperApp(
                     }
                     HomeScreen(
                         uiState = uiState,
+                        isDarkTheme = isDark,
                         onResumeGame = {
                             viewModel.resumeSavedGame()
                             navController.navigate("game")
@@ -121,6 +135,7 @@ fun RanchoMinesweeperApp(
                 composable("game") {
                     GameScreen(
                         uiState = uiState,
+                        isDarkTheme = isDark,
                         onCellClick = { r, c, pressure -> viewModel.onCellClick(r, c, pressure) },
                         onCellLongClick = { r, c -> viewModel.onCellLongClick(r, c) },
                         onCellChord = { r, c -> viewModel.onCellChord(r, c) },
