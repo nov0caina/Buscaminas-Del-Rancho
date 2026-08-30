@@ -102,6 +102,7 @@ dependencies {
   implementation(libs.converter.moshi)
   implementation(libs.firebase.ai)
   implementation(libs.play.services.games.v2)
+  implementation("com.android.billingclient:billing-ktx:7.1.1")
   // Uncomment to use Firestore:
   // implementation(libs.firebase.firestore)
 
