@@ -1,5 +1,4 @@
 package com.example.ui.viewmodel
-
 import android.app.Application
 import android.content.Context
 import android.os.VibrationEffect
@@ -17,6 +16,7 @@ import com.example.data.model.RanchFlagIcon
 import com.example.data.model.RevealCluster
 import com.example.data.model.VaqueroFace
 import com.example.data.repository.GameRepository
+import com.example.notification.AchievementNotificationHelper
 import com.example.notification.DailyReminderScheduler
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -315,7 +315,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 "flag" -> vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
                 "explode" -> vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 100, 50, 200), -1))
                 "win" -> vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 50, 50, 100, 50, 150), -1))
-                "achievement" -> vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 60, 80, 100), -1))
+                "achievement" -> vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 100, 60, 120, 60, 200), -1))
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -657,9 +657,16 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             )
             if (newlyUnlocked.isNotEmpty()) {
                 triggerVibration("achievement")
+                soundManager.playVictorySound()
                 newlyUnlocked.forEach { achievement ->
                     _achievementUnlockEvents.emit(achievement)
                     playGamesManager.unlockAchievement(achievement.id)
+                    if (_uiState.value.isDailyNotificationEnabled) {
+                        AchievementNotificationHelper.sendAchievementNotification(
+                            context = getApplication<Application>().applicationContext,
+                            achievement = achievement
+                        )
+                    }
                 }
             }
 

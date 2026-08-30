@@ -51,6 +51,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         PlayGamesManager.getInstance(applicationContext).detachActivity(this)
@@ -102,6 +107,18 @@ fun RanchoMinesweeperApp(
 
     RanchoTheme(darkTheme = isDark) {
         val navController = rememberNavController()
+        val activity = context as? Activity
+
+        androidx.compose.runtime.LaunchedEffect(activity?.intent) {
+            val dest = activity?.intent?.getStringExtra("destination")
+            if (dest == "achievements") {
+                activity.intent?.removeExtra("destination")
+                viewModel.startBackgroundMusic()
+                navController.navigate("achievements") {
+                    popUpTo("splash") { inclusive = true }
+                }
+            }
+        }
 
         Box(modifier = Modifier.fillMaxSize()) {
             NavHost(
