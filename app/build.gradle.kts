@@ -25,10 +25,24 @@ android {
 
   signingConfigs {
     create("release") {
-      storeFile = file("${rootDir}/rancho-release.jks")
-      storePassword = "rancho_secret_key_2026"
-      keyAlias = "ranchokey"
-      keyPassword = "rancho_secret_key_2026"
+      val keystorePropsFile = rootProject.file("keystore.properties")
+      val keystoreProperties = java.util.Properties()
+      if (keystorePropsFile.exists()) {
+        keystorePropsFile.inputStream().use { keystoreProperties.load(it) }
+      }
+      val keystorePath = System.getenv("KEYSTORE_PATH")
+        ?: keystoreProperties.getProperty("storeFile")
+        ?: "${rootDir}/rancho-release.jks"
+      storeFile = file(keystorePath)
+      storePassword = System.getenv("STORE_PASSWORD")
+        ?: keystoreProperties.getProperty("storePassword")
+        ?: ""
+      keyAlias = System.getenv("KEY_ALIAS")
+        ?: keystoreProperties.getProperty("keyAlias")
+        ?: "ranchokey"
+      keyPassword = System.getenv("KEY_PASSWORD")
+        ?: keystoreProperties.getProperty("keyPassword")
+        ?: ""
     }
     create("debugConfig") {
       storeFile = file("${rootDir}/debug.keystore")
