@@ -51,6 +51,8 @@ class SoundManager private constructor(private val appContext: Context) {
     private var crossfadeJob: Job? = null
     private var isCrossfading: Boolean = false
     private var isAppInForeground: Boolean = true
+    var hasStartedPlayback: Boolean = false
+        private set
 
     // Sequential Non-Repeating SFX Decks
     private class SequentialAudioDeck(private val sounds: List<Int>) {
@@ -258,11 +260,12 @@ class SoundManager private constructor(private val appContext: Context) {
     // ================= Soundtrack Management =================
 
     fun startSoundtrack() {
+        hasStartedPlayback = true
         if (currentPlayer != null || !isAppInForeground) return
-        playCurrentTrackWithFade(fadeIn = true)
+        playCurrentTrackWithFade(fadeIn = true, isCrescendo = true)
     }
 
-    private fun playCurrentTrackWithFade(fadeIn: Boolean = true) {
+    private fun playCurrentTrackWithFade(fadeIn: Boolean = true, isCrescendo: Boolean = false) {
         if (!isMusicEnabled || !isAppInForeground) return
         try {
             val trackRes = soundtracks[currentTrackIndex]
@@ -280,18 +283,28 @@ class SoundManager private constructor(private val appContext: Context) {
 
             if (fadeIn) {
                 audioScope.launch {
-                    val steps = 20
+                    val steps = if (isCrescendo) 30 else 20
+                    val delayMs = 100L
                     val targetVol = musicVolume
                     for (i in 1..steps) {
                         if (currentPlayer != player) break
-                        val currentVol = targetVol * (i.toFloat() / steps)
+                        val linearRatio = i.toFloat() / steps
+                        val progress = if (isCrescendo) {
+                            Math.pow(linearRatio.toDouble(), 1.5).toFloat()
+                        } else {
+                            linearRatio
+                        }
+                        val currentVol = targetVol * progress
                         try {
                             player.setVolume(currentVol, currentVol)
                         } catch (e: Exception) {
                             break
                         }
-                        delay(100L)
+                        delay(delayMs)
                     }
+                    try {
+                        player.setVolume(targetVol, targetVol)
+                    } catch (e: Exception) {}
                 }
             }
 
@@ -398,16 +411,16 @@ class SoundManager private constructor(private val appContext: Context) {
         isAppInForeground = true
         duckJob?.cancel()
         isDucked = false
-        if (isMusicEnabled) {
+        if (isMusicEnabled && hasStartedPlayback) {
             if (currentPlayer != null) {
                 try {
                     currentPlayer?.setVolume(musicVolume, musicVolume)
                     currentPlayer?.start()
                 } catch (e: Exception) {
-                    playCurrentTrackWithFade(fadeIn = false)
+                    playCurrentTrackWithFade(fadeIn = false, isCrescendo = false)
                 }
             } else {
-                playCurrentTrackWithFade(fadeIn = true)
+                playCurrentTrackWithFade(fadeIn = false, isCrescendo = false)
             }
         }
     }
