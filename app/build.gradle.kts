@@ -25,11 +25,10 @@ android {
 
   signingConfigs {
     create("release") {
-      val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
-      storeFile = file(keystorePath)
-      storePassword = System.getenv("STORE_PASSWORD")
-      keyAlias = "upload"
-      keyPassword = System.getenv("KEY_PASSWORD")
+      storeFile = file("${rootDir}/rancho-release.jks")
+      storePassword = "rancho_secret_key_2026"
+      keyAlias = "ranchokey"
+      keyPassword = "rancho_secret_key_2026"
     }
     create("debugConfig") {
       storeFile = file("${rootDir}/debug.keystore")
