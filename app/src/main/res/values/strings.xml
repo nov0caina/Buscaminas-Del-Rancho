@@ -1,21 +1,21 @@
 <resources>
     <string name="app_name">Buscaminas del Rancho</string>
 
-    <!-- Google Play Games Services Configuration (Reemplazar con tu ID de Google Play Console) -->
-    <string name="game_services_project_id" translatable="false">000000000000</string>
+    <!-- Google Play Games Services Configuration (ID real de Google Play Console) -->
+    <string name="game_services_project_id" translatable="false">911613681449</string>
 
     <!-- Leaderboard IDs (Marcadores Globales de Google Play Games) -->
-    <string name="leaderboard_principiante_tiempo" translatable="false">CgkI_placeholder_principiante_tiempo</string>
-    <string name="leaderboard_intermedio_tiempo" translatable="false">CgkI_placeholder_intermedio_tiempo</string>
-    <string name="leaderboard_experto_tiempo" translatable="false">CgkI_placeholder_experto_tiempo</string>
+    <string name="leaderboard_principiante_tiempo" translatable="false">CgkIqb6jg8QaEAIQAQ</string>
+    <string name="leaderboard_intermedio_tiempo" translatable="false">CgkIqb6jg8QaEAIQAg</string>
+    <string name="leaderboard_experto_tiempo" translatable="false">CgkIqb6jg8QaEAIQAw</string>
 
-    <string name="leaderboard_principiante_victorias" translatable="false">CgkI_placeholder_principiante_victorias</string>
-    <string name="leaderboard_intermedio_victorias" translatable="false">CgkI_placeholder_intermedio_victorias</string>
-    <string name="leaderboard_experto_victorias" translatable="false">CgkI_placeholder_experto_victorias</string>
+    <string name="leaderboard_principiante_victorias" translatable="false">CgkIqb6jg8QaEAIQBA</string>
+    <string name="leaderboard_intermedio_victorias" translatable="false">CgkIqb6jg8QaEAIQBQ</string>
+    <string name="leaderboard_experto_victorias" translatable="false">CgkIqb6jg8QaEAIQBg</string>
 
     <!-- Achievement IDs (Logros en Google Play Games) -->
-    <string name="achievement_primer_espuelazo" translatable="false">CgkI_placeholder_primer_espuelazo</string>
-    <string name="achievement_patron_experto" translatable="false">CgkI_placeholder_patron_experto</string>
-    <string name="achievement_rapido_viento" translatable="false">CgkI_placeholder_rapido_viento</string>
-    <string name="achievement_cazador_iguanas" translatable="false">CgkI_placeholder_cazador_iguanas</string>
+    <string name="achievement_primer_espuelazo" translatable="false">CgkIqb6jg8QaEAIQBw</string>
+    <string name="achievement_cazador_iguanas" translatable="false">CgkIqb6jg8QaEAIQCA</string>
+    <string name="achievement_rapido_viento" translatable="false">CgkIqb6jg8QaEAIQCQ</string>
+    <string name="achievement_patron_experto" translatable="false">CgkIqb6jg8QaEAIQCg</string>
 </resources>
