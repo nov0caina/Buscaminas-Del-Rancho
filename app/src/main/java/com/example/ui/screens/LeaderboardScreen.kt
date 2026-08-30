@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Leaderboard
 import androidx.compose.material.icons.filled.SportsEsports
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -80,10 +81,12 @@ fun LeaderboardScreen(
     localScores: List<GameScoreEntity>,
     recentMatches: List<GameScoreEntity> = emptyList(),
     globalEntries: List<GlobalLeaderboardEntry> = emptyList(),
+    isLoadingGlobal: Boolean = false,
     isAuthenticatedPlayGames: Boolean = false,
     playerNamePlayGames: String? = null,
+    onRefreshGlobal: (GameDifficulty, Boolean) -> Unit = { _, _ -> },
     onSignInPlayGames: () -> Unit = {},
-    onOpenPlayGamesLeaderboards: () -> Unit = {},
+    onOpenPlayGamesLeaderboards: (GameDifficulty, Boolean) -> Unit = { _, _ -> },
     onFilterChange: (GameDifficulty, Boolean) -> List<GlobalLeaderboardEntry> = { _, _ -> globalEntries },
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
@@ -94,6 +97,12 @@ fun LeaderboardScreen(
     var selectedDifficulty by remember { mutableStateOf(GameDifficulty.PRINCIPIANTE) }
     // Metric: true -> Menor Tiempo, false -> Más Victorias
     var isTimeMetric by remember { mutableStateOf(true) }
+
+    LaunchedEffect(selectedDifficulty, isTimeMetric, selectedTab) {
+        if (selectedTab == 0) {
+            onRefreshGlobal(selectedDifficulty, isTimeMetric)
+        }
+    }
 
     LaunchedEffect(selectedTab) {
         if (selectedTab == 0 && selectedDifficulty == GameDifficulty.PERSONALIZADA) {
@@ -212,7 +221,10 @@ fun LeaderboardScreen(
                 Box(
                     modifier = Modifier
                         .height(44.dp)
-                        .bounceClick(onClick = onOpenPlayGamesLeaderboards)
+                        .bounceClick(onClick = {
+                            onOpenPlayGamesLeaderboards(selectedDifficulty, isTimeMetric)
+                            onRefreshGlobal(selectedDifficulty, isTimeMetric)
+                        })
                         .background(Color.Black.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
                         .padding(bottom = 4.dp)
                         .background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(12.dp))
@@ -377,21 +389,44 @@ fun LeaderboardScreen(
             when (selectedTab) {
                 0 -> {
                     // TAB GLOBAL
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 24.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        itemsIndexed(currentGlobalEntries) { _, entry ->
-                            GlobalScoreCard(
-                                entry = entry,
-                                isTimeMetric = isTimeMetric,
-                                isDarkTheme = isDarkTheme
+                    if (isLoadingGlobal) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                color = MaterialTheme.colorScheme.primary,
+                                strokeWidth = 3.dp
                             )
                         }
-                        item { Spacer(modifier = Modifier.height(40.dp)) }
+                    } else if (globalEntries.isEmpty()) {
+                        EmptyLeaderboardState(
+                            message = if (isAuthenticatedPlayGames) {
+                                "Aún no hay tiempos registrados en Google Play Games para ${selectedDifficulty.displayName}. ¡Gana una partida para ser el #1 mundial!"
+                            } else {
+                                "Inicia sesión en Google Play Games tocando el botón verde superior para ver y sincronizar marcadores mundiales."
+                            },
+                            isDarkTheme = isDarkTheme
+                        )
+                    } else {
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 24.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            itemsIndexed(globalEntries) { _, entry ->
+                                GlobalScoreCard(
+                                    entry = entry,
+                                    isTimeMetric = isTimeMetric,
+                                    isDarkTheme = isDarkTheme
+                                )
+                            }
+                            item { Spacer(modifier = Modifier.height(40.dp)) }
+                        }
                     }
                 }
 

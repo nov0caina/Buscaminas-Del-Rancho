@@ -6,8 +6,10 @@ import android.util.Log
 import android.widget.Toast
 import com.example.R
 import com.example.data.model.GameDifficulty
+import com.example.data.repository.GlobalLeaderboardEntry
 import com.google.android.gms.games.PlayGames
 import com.google.android.gms.games.PlayGamesSdk
+import com.google.android.gms.games.leaderboard.LeaderboardVariant
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,7 +20,7 @@ import java.lang.ref.WeakReference
 
 /**
  * Gestor centralizado de Google Play Games Services v2.
- * Maneja autenticación automática, sincronización de logros y envío de puntajes/victorias a marcadores mundiales.
+ * Maneja autenticación automática, sincronización de logros y consulta/envío de puntuaciones en tiempo real.
  */
 class PlayGamesManager private constructor(private val appContext: Context) {
 
@@ -223,21 +225,125 @@ class PlayGamesManager private constructor(private val appContext: Context) {
     }
 
     /**
+     * Carga las puntuaciones globales reales desde Google Play Games.
+     */
+    fun fetchLiveLeaderboard(
+        difficulty: GameDifficulty,
+        isTimeMetric: Boolean,
+        activity: Activity? = null,
+        onLoaded: (List<GlobalLeaderboardEntry>) -> Unit
+    ) {
+        val targetActivity = resolveActivity(activity) ?: run {
+            onLoaded(emptyList())
+            return
+        }
+        val leaderboardId = if (isTimeMetric) {
+            getBestTimeLeaderboardId(targetActivity, difficulty)
+        } else {
+            getWinsLeaderboardId(targetActivity, difficulty)
+        } ?: run {
+            onLoaded(emptyList())
+            return
+        }
+
+        try {
+            PlayGames.getLeaderboardsClient(targetActivity)
+                .loadTopScores(leaderboardId, LeaderboardVariant.TIME_SPAN_ALL_TIME, LeaderboardVariant.COLLECTION_PUBLIC, 25)
+                .addOnSuccessListener { annotatedData ->
+                    val buffer = annotatedData.get()?.scores
+                    val results = mutableListOf<GlobalLeaderboardEntry>()
+                    if (buffer != null) {
+                        for (i in 0 until buffer.count) {
+                            val score = buffer.get(i)
+                            val rank = score.rank.toInt()
+                            val name = score.scoreHolderDisplayName
+                            val rawScore = score.rawScore
+                            results.add(
+                                GlobalLeaderboardEntry(
+                                    rank = rank,
+                                    playerName = name,
+                                    location = "México 🇲🇽",
+                                    timeSeconds = if (isTimeMetric) (rawScore / 1000).toInt() else 0,
+                                    winCount = if (!isTimeMetric) rawScore.toInt() else 0,
+                                    difficulty = difficulty.displayName,
+                                    avatarEmoji = if (rank == 1) "👑" else if (rank <= 3) "🥇" else "🤠"
+                                )
+                            )
+                        }
+                        buffer.release()
+                    }
+                    Log.d(TAG, "Marcadores reales cargados desde Play Games: ${results.size} registros ($difficulty, isTime: $isTimeMetric)")
+                    onLoaded(results)
+                }
+                .addOnFailureListener { e ->
+                    Log.w(TAG, "No se pudieron cargar marcadores reales de Google Play Games: ${e.message}")
+                    onLoaded(emptyList())
+                }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error cargando marcadores reales: ${e.message}")
+            onLoaded(emptyList())
+        }
+    }
+
+    /**
      * Abre la pantalla/overlay nativa oficial de Marcadores de Google Play Games.
      */
-    fun showAllLeaderboardsOverlay(activity: Activity? = null) {
+    fun showLeaderboardOverlay(
+        difficulty: GameDifficulty,
+        isTimeMetric: Boolean,
+        activity: Activity? = null
+    ) {
         val targetActivity = resolveActivity(activity) ?: return
+        val leaderboardId = if (isTimeMetric) {
+            getBestTimeLeaderboardId(targetActivity, difficulty)
+        } else {
+            getWinsLeaderboardId(targetActivity, difficulty)
+        }
+
         if (!_isAuthenticated.value) {
-            Log.d(TAG, "showAllLeaderboardsOverlay: usuario no autenticado, iniciando signIn...")
+            Log.d(TAG, "showLeaderboardOverlay: usuario no autenticado, iniciando signIn...")
             signIn(targetActivity) { success ->
                 if (success) {
-                    showAllLeaderboardsOverlay(targetActivity)
+                    showLeaderboardOverlay(difficulty, isTimeMetric, targetActivity)
                 } else {
                     Toast.makeText(
                         targetActivity,
                         "Inicia sesión en Google Play Games para ver las posiciones globales.",
                         Toast.LENGTH_SHORT
                     ).show()
+                }
+            }
+            return
+        }
+
+        try {
+            if (leaderboardId != null) {
+                PlayGames.getLeaderboardsClient(targetActivity).getLeaderboardIntent(leaderboardId)
+                    .addOnSuccessListener { intent ->
+                        Log.d(TAG, "Lanzando overlay de marcador específico ($leaderboardId)")
+                        targetActivity.startActivity(intent)
+                    }
+                    .addOnFailureListener {
+                        showAllLeaderboardsOverlay(targetActivity)
+                    }
+            } else {
+                showAllLeaderboardsOverlay(targetActivity)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error abriendo overlay de marcador: ${e.message}", e)
+            showAllLeaderboardsOverlay(targetActivity)
+        }
+    }
+
+    /**
+     * Abre el panel de todos los marcadores en Google Play Games.
+     */
+    fun showAllLeaderboardsOverlay(activity: Activity? = null) {
+        val targetActivity = resolveActivity(activity) ?: return
+        if (!_isAuthenticated.value) {
+            signIn(targetActivity) { success ->
+                if (success) {
+                    showAllLeaderboardsOverlay(targetActivity)
                 }
             }
             return

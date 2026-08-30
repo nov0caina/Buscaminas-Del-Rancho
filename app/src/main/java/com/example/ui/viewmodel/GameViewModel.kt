@@ -787,10 +787,26 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    private val _realGlobalLeaderboard = MutableStateFlow<List<com.example.data.repository.GlobalLeaderboardEntry>>(emptyList())
+    val realGlobalLeaderboard: StateFlow<List<com.example.data.repository.GlobalLeaderboardEntry>> = _realGlobalLeaderboard.asStateFlow()
+
+    private val _isLoadingGlobalLeaderboard = MutableStateFlow(false)
+    val isLoadingGlobalLeaderboard: StateFlow<Boolean> = _isLoadingGlobalLeaderboard.asStateFlow()
+
+    fun loadGlobalLeaderboard(difficulty: GameDifficulty, isTimeMetric: Boolean, activity: android.app.Activity? = null) {
+        _isLoadingGlobalLeaderboard.value = true
+        playGamesManager.fetchLiveLeaderboard(difficulty, isTimeMetric, activity) { entries ->
+            viewModelScope.launch {
+                _realGlobalLeaderboard.value = entries
+                _isLoadingGlobalLeaderboard.value = false
+            }
+        }
+    }
+
     fun getGlobalLeaderboard(
         difficulty: GameDifficulty = _uiState.value.difficulty,
         isTimeMetric: Boolean = true
     ): List<com.example.data.repository.GlobalLeaderboardEntry> {
-        return repository.getGlobalSinaloaLeaderboard(difficulty, isTimeMetric)
+        return _realGlobalLeaderboard.value
     }
 }

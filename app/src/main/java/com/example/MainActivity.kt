@@ -162,15 +162,24 @@ fun RanchoMinesweeperApp(
                 composable("leaderboard") {
                     val context = LocalContext.current
                     val activity = context as? Activity
+                    val realGlobalEntries by viewModel.realGlobalLeaderboard.collectAsState()
+                    val isLoadingGlobal by viewModel.isLoadingGlobalLeaderboard.collectAsState()
+
                     LeaderboardScreen(
                         isDarkTheme = isDark,
                         localScores = topScores,
                         recentMatches = topScores,
-                        globalEntries = viewModel.getGlobalLeaderboard(),
+                        globalEntries = realGlobalEntries,
+                        isLoadingGlobal = isLoadingGlobal,
                         isAuthenticatedPlayGames = isPlayGamesAuth,
                         playerNamePlayGames = playGamesPlayerName,
+                        onRefreshGlobal = { diff, isTime ->
+                            viewModel.loadGlobalLeaderboard(diff, isTime, activity)
+                        },
                         onSignInPlayGames = { viewModel.playGamesManager.signIn(activity) },
-                        onOpenPlayGamesLeaderboards = { viewModel.playGamesManager.showAllLeaderboardsOverlay(activity) },
+                        onOpenPlayGamesLeaderboards = { diff, isTime ->
+                            viewModel.playGamesManager.showLeaderboardOverlay(diff, isTime, activity)
+                        },
                         onBack = { navController.popBackStack() }
                     )
                 }
