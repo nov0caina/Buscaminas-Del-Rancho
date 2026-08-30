@@ -156,6 +156,15 @@ class PlayGamesManager private constructor(private val appContext: Context) {
      */
     fun showAchievementsOverlay(activity: Activity? = null) {
         val targetActivity = resolveActivity(activity) ?: return
+        if (!_isAuthenticated.value) {
+            Log.d(TAG, "showAchievementsOverlay: usuario no autenticado, iniciando signIn...")
+            signIn(targetActivity) { success ->
+                if (success) {
+                    showAchievementsOverlay(targetActivity)
+                }
+            }
+            return
+        }
         try {
             PlayGames.getAchievementsClient(targetActivity).achievementsIntent.addOnSuccessListener { intent ->
                 targetActivity.startActivity(intent)
@@ -203,6 +212,15 @@ class PlayGamesManager private constructor(private val appContext: Context) {
      */
     fun showAllLeaderboardsOverlay(activity: Activity? = null) {
         val targetActivity = resolveActivity(activity) ?: return
+        if (!_isAuthenticated.value) {
+            Log.d(TAG, "showAllLeaderboardsOverlay: usuario no autenticado, iniciando signIn...")
+            signIn(targetActivity) { success ->
+                if (success) {
+                    showAllLeaderboardsOverlay(targetActivity)
+                }
+            }
+            return
+        }
         try {
             PlayGames.getLeaderboardsClient(targetActivity).allLeaderboardsIntent.addOnSuccessListener { intent ->
                 targetActivity.startActivity(intent)

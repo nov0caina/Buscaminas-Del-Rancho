@@ -1,5 +1,6 @@
 package com.example
 
+import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -18,6 +20,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.games.PlayGamesManager
 import com.example.ui.components.AchievementUnlockOverlay
 import com.example.ui.screens.AchievementsScreen
 import com.example.ui.screens.AnimatedSplashScreen
@@ -40,9 +43,15 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        PlayGamesManager.getInstance(applicationContext).attachActivity(this)
         setContent {
             RanchoMinesweeperApp()
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        PlayGamesManager.getInstance(applicationContext).detachActivity(this)
     }
 }
 
@@ -73,6 +82,8 @@ fun RanchoMinesweeperApp(
     val uiState by viewModel.uiState.collectAsState()
     val topScores by viewModel.topScores.collectAsState()
     val achievements by viewModel.allAchievements.collectAsState()
+    val isPlayGamesAuth by viewModel.playGamesManager.isAuthenticated.collectAsState()
+    val playGamesPlayerName by viewModel.playGamesManager.playerName.collectAsState()
 
     val systemDark = isSystemInDarkTheme()
     val isDark = when (uiState.themeMode) {
@@ -149,18 +160,28 @@ fun RanchoMinesweeperApp(
                 }
 
                 composable("leaderboard") {
+                    val context = LocalContext.current
+                    val activity = context as? Activity
                     LeaderboardScreen(
                         isDarkTheme = isDark,
                         localScores = topScores,
+                        recentMatches = topScores,
                         globalEntries = viewModel.getGlobalLeaderboard(),
+                        isAuthenticatedPlayGames = isPlayGamesAuth,
+                        playerNamePlayGames = playGamesPlayerName,
+                        onSignInPlayGames = { viewModel.playGamesManager.signIn(activity) },
+                        onOpenPlayGamesLeaderboards = { viewModel.playGamesManager.showAllLeaderboardsOverlay(activity) },
                         onBack = { navController.popBackStack() }
                     )
                 }
 
                 composable("achievements") {
+                    val context = LocalContext.current
+                    val activity = context as? Activity
                     AchievementsScreen(
                         isDarkTheme = isDark,
                         achievements = achievements,
+                        onOpenPlayGamesAchievements = { viewModel.playGamesManager.showAchievementsOverlay(activity) },
                         onBack = { navController.popBackStack() }
                     )
                 }
