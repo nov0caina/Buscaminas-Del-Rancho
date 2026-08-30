@@ -1,26 +1,76 @@
-*.iml
-.gradle
-.kotlin
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
-.env
-debug.keystore
-*.md    
-*.sh
+# ==============================================================================
+# BUSCAMINAS DEL RANCHO — .gitignore (Seguridad de Secretos y Archivos Privados)
+# ==============================================================================
+
+# --- Claves, Keystores y Certificados Privados ---
 *.jks
+*.keystore
+*.p12
+*.pem
+*.key
+*.pk8
+rancho-release.jks
+my-upload-key.jks
+debug.keystore
+
+# --- Archivos de Configuración y Secretos Locales ---
+keystore.properties
+local.properties
+secrets.properties
+.env
+.env.local
+.env.*.local
+!.env.example
+!keystore.properties.example
+
+# --- Credenciales de Google Services y APIs ---
+google-services.json
+GoogleService-Info.plist
+*credentials*.json
+*service-account*.json
+
+# --- Compilados y Paquetes Binarios Pesados ---
+*.apk
+*.ap_
+*.aab
+*.dex
 /releases/
 /play_store_assets/
-/openspec/
+/google_play_assets/*.aab
+/google_play_assets/*.apk
+/captured_screens/
+
+# --- Directorios de Construcción y Caché de Android / Gradle ---
+.gradle/
+.kotlin/
+build/
+*/build/
+captures/
+.externalNativeBuild/
+.cxx/
+*backups*/
+
+# --- Entornos de Desarrollo e IDEs ---
+*.iml
+.idea/
+.vscode/
+*.ipr
+*.iws
+
+# --- Sistema Operativo ---
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# --- Herramientas de Capturas Web / Screenshots Editor ---
+screenshots_editor/node_modules/
+screenshots_editor/.next/
+screenshots_editor/out/
+screenshots_editor/*.log
+
+# --- Agentes y Metadatos Locales ---
 /.agent/
 /.agents/
+/openspec/
