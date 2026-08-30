@@ -344,7 +344,7 @@ fun CreditsScreen(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "nov0caina Studio • Hecho con Jetpack Compose\n100% Offline • Cero Anuncios",
+                                text = "nov0caina Studio • Hecho en Sinaloa\n100% Offline • Cero Anuncios",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 lineHeight = 18.sp,
