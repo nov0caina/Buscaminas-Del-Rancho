@@ -43,6 +43,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -93,6 +94,24 @@ fun LeaderboardScreen(
     var selectedDifficulty by remember { mutableStateOf(GameDifficulty.PRINCIPIANTE) }
     // Metric: true -> Menor Tiempo, false -> Más Victorias
     var isTimeMetric by remember { mutableStateOf(true) }
+
+    LaunchedEffect(selectedTab) {
+        if (selectedTab == 0 && selectedDifficulty == GameDifficulty.PERSONALIZADA) {
+            selectedDifficulty = GameDifficulty.PRINCIPIANTE
+        }
+    }
+
+    val availableDifficulties = remember(selectedTab) {
+        if (selectedTab == 0) {
+            listOf(
+                GameDifficulty.PRINCIPIANTE,
+                GameDifficulty.INTERMEDIO,
+                GameDifficulty.EXPERTO
+            )
+        } else {
+            GameDifficulty.entries
+        }
+    }
 
     val listState = rememberLazyListState()
     val dustParticleSystem = remember { DustParticleSystem(150) }
@@ -317,7 +336,7 @@ fun LeaderboardScreen(
                     contentPadding = PaddingValues(horizontal = 24.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(GameDifficulty.entries) { diff ->
+                    items(availableDifficulties) { diff ->
                         val isSelected = selectedDifficulty == diff
                         val lipSize by animateDpAsState(targetValue = if (isSelected) 0.dp else 4.dp, label = "diffLip")
 
