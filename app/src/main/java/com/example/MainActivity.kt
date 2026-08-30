@@ -21,6 +21,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.ui.components.AchievementUnlockOverlay
 import com.example.ui.screens.AchievementsScreen
 import com.example.ui.screens.AnimatedSplashScreen
+import com.example.ui.screens.CreditsScreen
 import com.example.ui.screens.DifficultySelectionDialog
 import com.example.ui.screens.GameScreen
 import com.example.ui.screens.HomeScreen
@@ -28,7 +29,6 @@ import com.example.ui.screens.LeaderboardScreen
 import com.example.ui.screens.SettingsScreen
 import com.example.ui.theme.RanchoTheme
 import com.example.ui.viewmodel.GameViewModel
-import com.example.ui.viewmodel.ThemeMode
 
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -52,50 +52,22 @@ fun RanchoMinesweeperApp(
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_START, Lifecycle.Event.ON_RESUME -> {
-                    viewModel.soundManager.resumeMusic()
-                }
-                Lifecycle.Event.ON_PAUSE -> {
-                    viewModel.soundManager.pauseMusic()
-                }
-                Lifecycle.Event.ON_STOP -> {
-                    viewModel.autoSaveActiveGame()
-                    viewModel.soundManager.pauseMusic()
-                }
-                else -> {}
+            if (event == Lifecycle.Event.ON_STOP) {
+                viewModel.autoSaveActiveGame()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
-        viewModel.soundManager.startSoundtrack()
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
 
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val activity = context as? android.app.Activity
-
-    DisposableEffect(activity) {
-        activity?.let { viewModel.playGamesManager.attachActivity(it) }
-        onDispose {
-            activity?.let { viewModel.playGamesManager.detachActivity(it) }
-        }
-    }
-
     val uiState by viewModel.uiState.collectAsState()
     val topScores by viewModel.topScores.collectAsState()
-    val recentMatches by viewModel.recentMatches.collectAsState()
     val achievements by viewModel.allAchievements.collectAsState()
-    val isAuthenticatedPlayGames by viewModel.playGamesManager.isAuthenticated.collectAsState()
-    val playerNamePlayGames by viewModel.playGamesManager.playerName.collectAsState()
 
     val systemDark = isSystemInDarkTheme()
-    val isDark = when (uiState.themeMode) {
-        ThemeMode.SYSTEM -> systemDark
-        ThemeMode.LIGHT -> false
-        ThemeMode.DARK -> true
-    }
+    val isDark = uiState.isDarkTheme || systemDark
 
     RanchoTheme(darkTheme = isDark) {
         val navController = rememberNavController()
@@ -149,7 +121,7 @@ fun RanchoMinesweeperApp(
                 composable("game") {
                     GameScreen(
                         uiState = uiState,
-                        onCellClick = { r, c, pressure -> viewModel.onCellClick(r, c, pressure) },
+                        onCellClick = { r, c -> viewModel.onCellClick(r, c) },
                         onCellLongClick = { r, c -> viewModel.onCellLongClick(r, c) },
                         onCellChord = { r, c -> viewModel.onCellChord(r, c) },
                         onResetGame = { viewModel.startNewGame(uiState.difficulty, uiState.rows, uiState.cols, uiState.mines) },
@@ -165,19 +137,7 @@ fun RanchoMinesweeperApp(
                     LeaderboardScreen(
                         isDarkTheme = isDark,
                         localScores = topScores,
-                        recentMatches = recentMatches,
                         globalEntries = viewModel.getGlobalLeaderboard(),
-                        isAuthenticatedPlayGames = isAuthenticatedPlayGames,
-                        playerNamePlayGames = playerNamePlayGames,
-                        onSignInPlayGames = {
-                            activity?.let { viewModel.playGamesManager.signIn(it) }
-                        },
-                        onOpenPlayGamesLeaderboards = {
-                            activity?.let { viewModel.playGamesManager.showAllLeaderboardsOverlay(it) }
-                        },
-                        onFilterChange = { diff, isTime ->
-                            viewModel.getGlobalLeaderboard(diff, isTime)
-                        },
                         onBack = { navController.popBackStack() }
                     )
                 }
@@ -186,9 +146,6 @@ fun RanchoMinesweeperApp(
                     AchievementsScreen(
                         isDarkTheme = isDark,
                         achievements = achievements,
-                        onOpenPlayGamesAchievements = {
-                            activity?.let { viewModel.playGamesManager.showAchievementsOverlay(it) }
-                        },
                         onBack = { navController.popBackStack() }
                     )
                 }
@@ -206,6 +163,14 @@ fun RanchoMinesweeperApp(
                         onToggleSfx = { viewModel.setSfxEnabled(it) },
                         onSfxVolumeChange = { viewModel.setSfxVolume(it) },
                         onSelectRanchFlagIcon = { viewModel.setRanchFlagIcon(it) },
+                        onNavigateToCredits = { navController.navigate("credits") },
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+
+                composable("credits") {
+                    CreditsScreen(
+                        isDarkTheme = isDark,
                         onBack = { navController.popBackStack() }
                     )
                 }

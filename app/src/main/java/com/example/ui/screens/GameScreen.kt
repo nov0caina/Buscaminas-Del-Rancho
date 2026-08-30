@@ -21,8 +21,6 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.detectTransformGestures
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -80,7 +78,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -116,7 +113,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun GameScreen(
     uiState: GameUiState,
-    onCellClick: (row: Int, col: Int, pressure: Float) -> Unit,
+    onCellClick: (row: Int, col: Int) -> Unit,
     onCellLongClick: (row: Int, col: Int) -> Unit,
     onCellChord: (row: Int, col: Int) -> Unit,
     onResetGame: () -> Unit,
@@ -431,91 +428,44 @@ fun GameScreen(
                         onViewBoard = { showEndDialog = false }
                     )
                 } else {
-                    val isDarkTheme = isSystemInDarkTheme()
-                    Box(
+                    Surface(
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
-                            .padding(16.dp)
-                            .background(Color.Black.copy(alpha = 0.30f), RoundedCornerShape(20.dp))
-                            .padding(bottom = 4.dp)
-                            .background(
-                                if (isDarkTheme) Color(0xFF2C221E) else MaterialTheme.colorScheme.surface,
-                                RoundedCornerShape(20.dp)
-                            )
-                            .border(
-                                1.5.dp,
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
-                                RoundedCornerShape(20.dp)
-                            )
-                            .padding(horizontal = 14.dp, vertical = 10.dp)
+                            .padding(16.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surface,
+                        tonalElevation = 8.dp,
+                        shadowElevation = 8.dp
                     ) {
                         Row(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            // Ver Resultado button
-                            Box(
-                                modifier = Modifier
-                                    .bounceClick(onClick = { showEndDialog = true })
-                                    .background(Color.Black.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
-                                    .padding(bottom = 3.dp)
-                                    .background(
-                                        MaterialTheme.colorScheme.primary,
-                                        RoundedCornerShape(12.dp)
-                                    )
-                                    .padding(horizontal = 14.dp, vertical = 10.dp),
-                                contentAlignment = Alignment.Center
+                            Button(
+                                onClick = { showEndDialog = true },
+                                shape = RoundedCornerShape(12.dp)
                             ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        imageVector = Icons.Default.Visibility,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onPrimary,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = "Ver Resultado",
-                                        style = MaterialTheme.typography.labelLarge,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = MaterialTheme.colorScheme.onPrimary
-                                    )
-                                }
+                                Icon(
+                                    imageVector = Icons.Default.Visibility,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Ver Resultado", fontWeight = FontWeight.Bold)
                             }
 
-                            // Reintentar button
-                            Box(
-                                modifier = Modifier
-                                    .bounceClick(onClick = onResetGame)
-                                    .background(Color.Black.copy(alpha = 0.20f), RoundedCornerShape(12.dp))
-                                    .padding(bottom = 3.dp)
-                                    .background(
-                                        if (isDarkTheme) Color(0xFF3E2D26) else MaterialTheme.colorScheme.surfaceVariant,
-                                        RoundedCornerShape(12.dp)
-                                    )
-                                    .border(
-                                        1.dp,
-                                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                                        RoundedCornerShape(12.dp)
-                                    )
-                                    .padding(horizontal = 14.dp, vertical = 10.dp),
-                                contentAlignment = Alignment.Center
+                            OutlinedButton(
+                                onClick = onResetGame,
+                                shape = RoundedCornerShape(12.dp)
                             ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        imageVector = Icons.Default.Refresh,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurface,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = "Reintentar",
-                                        style = MaterialTheme.typography.labelLarge,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                }
+                                Icon(
+                                    imageVector = Icons.Default.Refresh,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Reintentar", fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -626,7 +576,7 @@ private fun MinefieldGrid(
     grid: List<CellState>,
     activeRevealCluster: RevealCluster?,
     ranchFlagIcon: RanchFlagIcon,
-    onCellClick: (row: Int, col: Int, pressure: Float) -> Unit,
+    onCellClick: (row: Int, col: Int) -> Unit,
     onCellLongClick: (row: Int, col: Int) -> Unit,
     onCellChord: (row: Int, col: Int) -> Unit
 ) {
@@ -657,7 +607,7 @@ private fun MinefieldGrid(
                                 cell = grid[index],
                                 cellDp = cellDp,
                                 ranchFlagIcon = ranchFlagIcon,
-                                onClick = { pressure -> onCellClick(r, c, pressure) },
+                                onClick = { onCellClick(r, c) },
                                 onLongClick = { onCellLongClick(r, c) },
                                 onChord = { onCellChord(r, c) }
                             )
@@ -687,7 +637,7 @@ private fun CellItem(
     cell: CellState,
     cellDp: Dp,
     ranchFlagIcon: RanchFlagIcon,
-    onClick: (pressure: Float) -> Unit,
+    onClick: () -> Unit,
     onLongClick: () -> Unit,
     onChord: () -> Unit
 ) {
@@ -710,8 +660,6 @@ private fun CellItem(
         MaterialTheme.colorScheme.primaryContainer
     }
 
-    var touchPressure by remember { mutableStateOf(0.5f) }
-
     Box(
         modifier = Modifier
             .size(cellDp)
@@ -723,18 +671,12 @@ private fun CellItem(
                 color = cellBorderColor,
                 shape = RoundedCornerShape(4.dp)
             )
-            .pointerInput(Unit) {
-                awaitEachGesture {
-                    val down = awaitFirstDown(requireUnconsumed = false)
-                    touchPressure = down.pressure.coerceIn(0.1f, 1.0f)
-                }
-            }
             .combinedClickable(
                 onClick = {
                     if (cell.isRevealed) {
                         onChord()
                     } else {
-                        onClick(touchPressure)
+                        onClick()
                     }
                 },
                 onLongClick = onLongClick
@@ -1082,84 +1024,32 @@ private fun GameEndOverlayDialog(
     onViewBoard: () -> Unit
 ) {
     val isWin = gameStatus == GameStatus.WON
-    val isDarkTheme = isSystemInDarkTheme()
-
-    val borderColor = if (isWin) {
-        if (isDarkTheme) Color(0xFF81C784).copy(alpha = 0.55f) else Color(0xFF388E3C).copy(alpha = 0.6f)
-    } else {
-        if (isDarkTheme) Color(0xFFFF8A80).copy(alpha = 0.55f) else Color(0xFFE53935).copy(alpha = 0.6f)
-    }
 
     Dialog(onDismissRequest = onViewBoard) {
-        Box(
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 10.dp,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp)
-                .background(Color.Black.copy(alpha = 0.40f), RoundedCornerShape(26.dp))
-                .padding(bottom = 6.dp)
-                .background(
-                    if (isDarkTheme) Color(0xFF2C221E) else MaterialTheme.colorScheme.surface,
-                    RoundedCornerShape(26.dp)
-                )
-                .border(
-                    width = 2.dp,
-                    color = borderColor,
-                    shape = RoundedCornerShape(26.dp)
-                )
+                .padding(16.dp)
         ) {
             Column(
                 modifier = Modifier
-                    .padding(22.dp)
+                    .padding(24.dp)
                     .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Emoticon Emblem Badge
-                Box(
-                    modifier = Modifier
-                        .size(68.dp)
-                        .background(Color.Black.copy(alpha = 0.22f), CircleShape)
-                        .padding(bottom = 4.dp)
-                        .background(
-                            if (isWin) {
-                                if (isDarkTheme) Color(0xFF2E7D32) else Color(0xFF4CAF50)
-                            } else {
-                                if (isDarkTheme) Color(0xFFC62828) else Color(0xFFE53935)
-                            },
-                            CircleShape
-                        )
-                        .border(2.dp, Color.White.copy(alpha = 0.35f), CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = if (isWin) "🏆" else "💥",
-                        fontSize = 32.sp
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Title
                 Text(
-                    text = if (isWin) "¡VICTORIA EN EL RANCHO!" else "¡BUM! VALIÓ GAVER",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        shadow = Shadow(
-                            color = Color.Black.copy(alpha = 0.35f),
-                            offset = Offset(2f, 3f),
-                            blurRadius = 4f
-                        )
-                    ),
+                    text = if (isWin) "🎉 ¡VICTORIA EN EL RANCHO! 🎉" else "💥 ¡BUM! VALIÓ GAVER 💥",
+                    style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.ExtraBold,
-                    color = if (isWin) {
-                        if (isDarkTheme) Color(0xFFFFD166) else Color(0xFF2E7D32)
-                    } else {
-                        if (isDarkTheme) Color(0xFFFF8A80) else Color(0xFFC62828)
-                    },
+                    color = if (isWin) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error,
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                // Description
                 Text(
                     text = if (isWin)
                         "¡Rifado padresanto! Has limpiado todas las minas de $difficultyName sin un solo rasguño."
@@ -1167,178 +1057,99 @@ private fun GameEndOverlayDialog(
                         "Pisaste una dinamita en $difficultyName. ¡No te agüites y vuelve a intentarlo!",
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.9f),
-                    lineHeight = 20.sp
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Time Record Plaque for Victory
                 if (isWin) {
                     val mins = timeElapsed / 60
                     val secs = timeElapsed % 60
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Color.Black.copy(alpha = 0.15f), RoundedCornerShape(16.dp))
-                            .padding(bottom = 3.dp)
-                            .background(
-                                if (isDarkTheme) Color(0xFF3E2D26) else MaterialTheme.colorScheme.primaryContainer,
-                                RoundedCornerShape(16.dp)
-                            )
-                            .border(
-                                1.dp,
-                                if (isDarkTheme) Color(0xFFFFD166).copy(alpha = 0.4f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                                RoundedCornerShape(16.dp)
-                            )
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        ),
+                        shape = RoundedCornerShape(12.dp)
                     ) {
                         Row(
                             modifier = Modifier
-                                .padding(horizontal = 16.dp, vertical = 12.dp)
+                                .padding(16.dp)
                                 .fillMaxWidth(),
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(text = "⏱️", fontSize = 20.sp)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Tiempo Récord: ",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = if (isDarkTheme) Color(0xFFFFD166) else MaterialTheme.colorScheme.onPrimaryContainer
-                            )
+                            Text(text = "⏱️ Tiempo Record: ", fontWeight = FontWeight.Bold)
                             Text(
                                 text = String.format("%02d:%02d", mins, secs),
-                                style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.ExtraBold,
-                                color = if (isDarkTheme) Color.White else MaterialTheme.colorScheme.primary
+                                color = MaterialTheme.colorScheme.primary,
+                                fontSize = 20.sp
                             )
                         }
                     }
                     Spacer(modifier = Modifier.height(16.dp))
                 }
 
-                // 3D Tactile "Ver tablero" button
-                Box(
+                // Button to view the board state
+                OutlinedButton(
+                    onClick = onViewBoard,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp)
-                        .testTag("btn_view_board")
-                        .bounceClick(onClick = onViewBoard)
-                        .background(Color.Black.copy(alpha = 0.20f), RoundedCornerShape(14.dp))
-                        .padding(bottom = 4.dp)
-                        .background(
-                            if (isDarkTheme) Color(0xFF3E2D26) else MaterialTheme.colorScheme.surfaceVariant,
-                            RoundedCornerShape(14.dp)
-                        )
-                        .border(
-                            1.dp,
-                            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                            RoundedCornerShape(14.dp)
-                        ),
-                    contentAlignment = Alignment.Center
+                        .testTag("btn_view_board"),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Default.Visibility,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Ver tablero",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                        Text("Ver tablero", fontWeight = FontWeight.Bold)
                     }
                 }
 
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                // Bottom Action Buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // Menú Button (3D tactile)
-                    Box(
+                    Button(
+                        onClick = onBackToMenu,
                         modifier = Modifier
                             .weight(1f)
-                            .height(52.dp)
-                            .testTag("btn_end_home")
-                            .bounceClick(onClick = onBackToMenu)
-                            .background(Color.Black.copy(alpha = 0.20f), RoundedCornerShape(14.dp))
-                            .padding(bottom = 4.dp)
-                            .background(
-                                if (isDarkTheme) Color(0xFF3E2D26) else MaterialTheme.colorScheme.surfaceVariant,
-                                RoundedCornerShape(14.dp)
-                            )
-                            .border(
-                                1.dp,
-                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-                                RoundedCornerShape(14.dp)
-                            ),
-                        contentAlignment = Alignment.Center
+                            .height(50.dp)
+                            .testTag("btn_end_home"),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                        shape = RoundedCornerShape(12.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.Home,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(20.dp)
-                            )
+                            Icon(imageVector = Icons.Default.Home, contentDescription = null)
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "Menú",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Text("Menú")
                         }
                     }
 
-                    // Primary Action Button (3D tactile)
-                    val actionBtnBg = if (isWin) {
-                        if (isDarkTheme) Color(0xFF2E7D32) else Color(0xFF388E3C)
-                    } else {
-                        if (isDarkTheme) Color(0xFFE65100) else Color(0xFFF57C00)
-                    }
-
-                    Box(
+                    Button(
+                        onClick = onPlayAgain,
                         modifier = Modifier
-                            .weight(1.3f)
-                            .height(52.dp)
-                            .testTag("btn_end_retry")
-                            .bounceClick(onClick = onPlayAgain)
-                            .background(Color.Black.copy(alpha = 0.28f), RoundedCornerShape(14.dp))
-                            .padding(bottom = 4.dp)
-                            .background(
-                                actionBtnBg,
-                                RoundedCornerShape(14.dp)
-                            )
-                            .border(
-                                1.dp,
-                                Color.White.copy(alpha = 0.3f),
-                                RoundedCornerShape(14.dp)
-                            ),
-                        contentAlignment = Alignment.Center
+                            .weight(1f)
+                            .height(50.dp)
+                            .testTag("btn_end_retry"),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isWin) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
+                        ),
+                        shape = RoundedCornerShape(12.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(20.dp)
-                            )
+                            Icon(imageVector = Icons.Default.Refresh, contentDescription = null)
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = if (isWin) "Otra Partida" else "Reintentar",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = Color.White
-                            )
+                            Text(if (isWin) "Otra Partida" else "Reintentar", fontWeight = FontWeight.Bold)
                         }
                     }
                 }

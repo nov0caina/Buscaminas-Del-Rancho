@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Info
@@ -73,6 +74,7 @@ fun SettingsScreen(
     onToggleSfx: (Boolean) -> Unit,
     onSfxVolumeChange: (Float) -> Unit,
     onSelectRanchFlagIcon: (RanchFlagIcon) -> Unit,
+    onNavigateToCredits: () -> Unit = {},
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -457,28 +459,56 @@ fun SettingsScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
+                // Interactive 3D Acerca De / Créditos Card
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .testTag("card_about_credits")
+                        .bounceClick(onClick = onNavigateToCredits)
                         .background(Color.Black.copy(alpha = 0.4f), RoundedCornerShape(16.dp))
                         .padding(bottom = 6.dp)
                         .background(Color(0xFF4E342E), RoundedCornerShape(16.dp)) // Dark wood/leather
+                        .border(
+                            width = 1.dp,
+                            color = Color(0xFFFFB300).copy(alpha = 0.4f),
+                            shape = RoundedCornerShape(16.dp)
+                        )
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp)
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.Info,
+                                    contentDescription = null,
+                                    tint = Color(0xFFFFB300) // Gold
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column {
+                                    Text(
+                                        text = "Buscaminas del Rancho v1.0",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                    Text(
+                                        text = "Ver créditos, equipo y colaboradores 🤠",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color(0xFFFFD166)
+                                    )
+                                }
+                            }
+
                             Icon(
-                                imageVector = Icons.Default.Info,
-                                contentDescription = null,
-                                tint = Color(0xFFFFB300) // Gold
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Buscaminas del Rancho v1.0",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                                contentDescription = "Ver créditos",
+                                tint = Color(0xFFFFB300),
+                                modifier = Modifier.size(18.dp)
                             )
                         }
 
