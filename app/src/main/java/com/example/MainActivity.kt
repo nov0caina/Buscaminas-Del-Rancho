@@ -82,8 +82,8 @@ fun RanchoMinesweeperApp(
     val uiState by viewModel.uiState.collectAsState()
     val topScores by viewModel.topScores.collectAsState()
     val achievements by viewModel.allAchievements.collectAsState()
-    val isPlayGamesAuth by viewModel.playGamesManager.isAuthenticated.collectAsState()
-    val playGamesPlayerName by viewModel.playGamesManager.playerName.collectAsState()
+    val isPlayGamesAuth: Boolean by viewModel.playGamesManager.isAuthenticated.collectAsState()
+    val playGamesPlayerName: String? by viewModel.playGamesManager.playerName.collectAsState()
 
     val systemDark = isSystemInDarkTheme()
     val isDark = when (uiState.themeMode) {

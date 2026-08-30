@@ -3,6 +3,7 @@ package com.example.games
 import android.app.Activity
 import android.content.Context
 import android.util.Log
+import android.widget.Toast
 import com.example.R
 import com.example.data.model.GameDifficulty
 import com.google.android.gms.games.PlayGames
@@ -161,18 +162,32 @@ class PlayGamesManager private constructor(private val appContext: Context) {
             signIn(targetActivity) { success ->
                 if (success) {
                     showAchievementsOverlay(targetActivity)
+                } else {
+                    Toast.makeText(
+                        targetActivity,
+                        "Inicia sesión en Google Play Games para ver tus logros.",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
             return
         }
         try {
-            PlayGames.getAchievementsClient(targetActivity).achievementsIntent.addOnSuccessListener { intent ->
-                targetActivity.startActivity(intent)
-            }.addOnFailureListener { e ->
-                Log.w(TAG, "No se pudo abrir overlay de logros: ${e.message}")
-            }
+            PlayGames.getAchievementsClient(targetActivity).achievementsIntent
+                .addOnSuccessListener { intent ->
+                    Log.d(TAG, "showAchievementsOverlay: lanzando pantalla oficial de logros")
+                    targetActivity.startActivity(intent)
+                }
+                .addOnFailureListener { e ->
+                    Log.w(TAG, "No se pudo abrir overlay de logros: ${e.message}", e)
+                    Toast.makeText(
+                        targetActivity,
+                        "Los logros se están sincronizando con Google Play...",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
         } catch (e: Exception) {
-            Log.e(TAG, "Error abriendo overlay de logros: ${e.message}")
+            Log.e(TAG, "Error abriendo overlay de logros: ${e.message}", e)
         }
     }
 
@@ -217,18 +232,32 @@ class PlayGamesManager private constructor(private val appContext: Context) {
             signIn(targetActivity) { success ->
                 if (success) {
                     showAllLeaderboardsOverlay(targetActivity)
+                } else {
+                    Toast.makeText(
+                        targetActivity,
+                        "Inicia sesión en Google Play Games para ver las posiciones globales.",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
             return
         }
         try {
-            PlayGames.getLeaderboardsClient(targetActivity).allLeaderboardsIntent.addOnSuccessListener { intent ->
-                targetActivity.startActivity(intent)
-            }.addOnFailureListener { e ->
-                Log.w(TAG, "No se pudo abrir overlay de marcadores: ${e.message}")
-            }
+            PlayGames.getLeaderboardsClient(targetActivity).allLeaderboardsIntent
+                .addOnSuccessListener { intent ->
+                    Log.d(TAG, "showAllLeaderboardsOverlay: lanzando pantalla oficial de marcadores")
+                    targetActivity.startActivity(intent)
+                }
+                .addOnFailureListener { e ->
+                    Log.w(TAG, "No se pudo abrir overlay de marcadores: ${e.message}", e)
+                    Toast.makeText(
+                        targetActivity,
+                        "Los marcadores se están sincronizando con Google Play...",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
         } catch (e: Exception) {
-            Log.e(TAG, "Error abriendo overlay de marcadores: ${e.message}")
+            Log.e(TAG, "Error abriendo overlay de marcadores: ${e.message}", e)
         }
     }
 
