@@ -121,7 +121,7 @@ fun RanchoMinesweeperApp(
                 composable("game") {
                     GameScreen(
                         uiState = uiState,
-                        onCellClick = { r, c -> viewModel.onCellClick(r, c) },
+                        onCellClick = { r, c, pressure -> viewModel.onCellClick(r, c, pressure) },
                         onCellLongClick = { r, c -> viewModel.onCellLongClick(r, c) },
                         onCellChord = { r, c -> viewModel.onCellChord(r, c) },
                         onResetGame = { viewModel.startNewGame(uiState.difficulty, uiState.rows, uiState.cols, uiState.mines) },
