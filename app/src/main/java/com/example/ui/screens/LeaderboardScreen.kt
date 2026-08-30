@@ -7,6 +7,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,6 +24,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -38,6 +40,7 @@ import androidx.compose.material.icons.filled.Leaderboard
 import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -56,6 +59,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
@@ -499,41 +503,77 @@ private fun LocalScoreCard(
             .fillMaxWidth()
             .background(Color.Black.copy(alpha = 0.25f), RoundedCornerShape(16.dp))
             .padding(bottom = 5.dp)
-            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f), RoundedCornerShape(16.dp))
+            .background(
+                if (isDarkTheme) Color(0xFF2C221E) else MaterialTheme.colorScheme.surface,
+                RoundedCornerShape(16.dp)
+            )
+            .border(
+                1.dp,
+                if (isDarkTheme) Color(0xFF5D4037).copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
+                RoundedCornerShape(16.dp)
+            )
     ) {
         Row(
             modifier = Modifier
-                .padding(14.dp)
+                .padding(horizontal = 14.dp, vertical = 12.dp)
                 .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RankBadge(rank = rank)
-                Spacer(modifier = Modifier.width(14.dp))
-                Column {
+            RankBadge(rank = rank)
+            
+            Spacer(modifier = Modifier.width(12.dp))
+            
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 8.dp)
+            ) {
+                Text(
+                    text = "Vaquero Local",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isDarkTheme) Color.White else MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "${score.difficultyName} • $dateStr",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (isDarkTheme) Color.White.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = if (isDarkTheme) Color(0xFF1B1411) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .widthIn(min = 76.dp)
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
                     Text(
-                        text = "Vaquero Local",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = if (isDarkTheme) Color.White else MaterialTheme.colorScheme.onSurface
+                        text = "⏱",
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(end = 4.dp)
                     )
                     Text(
-                        text = "${score.difficultyName} • $dateStr",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (isDarkTheme) Color.White.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurfaceVariant
+                        text = String.format("%02d:%02d", mins, secs),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontFamily = FontFamily.Monospace,
+                        maxLines = 1,
+                        softWrap = false
                     )
                 }
             }
-
-            Text(
-                text = String.format("%02d:%02d", mins, secs),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.ExtraBold,
-                color = MaterialTheme.colorScheme.primary,
-                fontFamily = FontFamily.Monospace
-            )
         }
     }
 }
@@ -552,57 +592,107 @@ private fun GlobalScoreCard(
             .fillMaxWidth()
             .background(Color.Black.copy(alpha = 0.25f), RoundedCornerShape(16.dp))
             .padding(bottom = 5.dp)
-            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f), RoundedCornerShape(16.dp))
+            .background(
+                if (isDarkTheme) Color(0xFF2C221E) else MaterialTheme.colorScheme.surface,
+                RoundedCornerShape(16.dp)
+            )
+            .border(
+                1.dp,
+                if (isDarkTheme) Color(0xFF5D4037).copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
+                RoundedCornerShape(16.dp)
+            )
     ) {
         Row(
             modifier = Modifier
-                .padding(14.dp)
+                .padding(horizontal = 14.dp, vertical = 12.dp)
                 .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RankBadge(rank = entry.rank)
-                Spacer(modifier = Modifier.width(14.dp))
-                Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = entry.avatarEmoji, fontSize = 18.sp)
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = entry.playerName,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = if (isDarkTheme) Color.White else MaterialTheme.colorScheme.onSurface
-                        )
-                    }
+            RankBadge(rank = entry.rank)
+            
+            Spacer(modifier = Modifier.width(12.dp))
+            
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 8.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = entry.avatarEmoji, fontSize = 18.sp)
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = entry.location,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (isDarkTheme) Color.White.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurfaceVariant
+                        text = entry.playerName,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isDarkTheme) Color.White else MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = entry.location,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (isDarkTheme) Color.White.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
 
             if (isTimeMetric) {
-                Text(
-                    text = String.format("%02d:%02d", mins, secs),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.secondary,
-                    fontFamily = FontFamily.Monospace
-                )
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = if (isDarkTheme) Color(0xFF1B1411) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.4f))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .widthIn(min = 76.dp)
+                            .padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "⏱",
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(end = 4.dp)
+                        )
+                        Text(
+                            text = String.format("%02d:%02d", mins, secs),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.secondary,
+                            fontFamily = FontFamily.Monospace,
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                    }
+                }
             } else {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "${entry.winCount}",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Color(0xFFFFA000),
-                        fontFamily = FontFamily.Monospace
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = "🏆", fontSize = 16.sp)
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = if (isDarkTheme) Color(0xFF1B1411) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                    border = BorderStroke(1.dp, Color(0xFFFFA000).copy(alpha = 0.4f))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .widthIn(min = 76.dp)
+                            .padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "${entry.winCount}",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFFFFA000),
+                            fontFamily = FontFamily.Monospace,
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(text = "🏆", fontSize = 13.sp)
+                    }
                 }
             }
         }
@@ -629,29 +719,41 @@ private fun RecentMatchCard(
             .fillMaxWidth()
             .background(Color.Black.copy(alpha = 0.25f), RoundedCornerShape(16.dp))
             .padding(bottom = 5.dp)
-            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f), RoundedCornerShape(16.dp))
+            .background(
+                if (isDarkTheme) Color(0xFF2C221E) else MaterialTheme.colorScheme.surface,
+                RoundedCornerShape(16.dp)
+            )
+            .border(
+                1.dp,
+                if (isDarkTheme) Color(0xFF5D4037).copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
+                RoundedCornerShape(16.dp)
+            )
     ) {
         Row(
             modifier = Modifier
-                .padding(14.dp)
+                .padding(horizontal = 14.dp, vertical = 12.dp)
                 .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 8.dp)
+            ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .background(badgeBg.copy(alpha = 0.18f), RoundedCornerShape(6.dp))
-                            .border(1.dp, badgeBg.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
-                            .padding(horizontal = 8.dp, vertical = 2.dp)
+                            .background(badgeBg.copy(alpha = 0.25f), RoundedCornerShape(6.dp))
+                            .border(1.dp, badgeBg.copy(alpha = 0.6f), RoundedCornerShape(6.dp))
+                            .padding(horizontal = 8.dp, vertical = 2.5.dp)
                     ) {
                         Text(
                             text = badgeText,
                             fontWeight = FontWeight.Bold,
                             fontSize = 11.sp,
-                            color = if (isWin) Color(0xFF81C784) else Color(0xFFE57373)
+                            color = if (isWin) Color(0xFF81C784) else Color(0xFFFF8A80),
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                     Spacer(modifier = Modifier.width(8.dp))
@@ -659,7 +761,9 @@ private fun RecentMatchCard(
                         text = match.difficultyName,
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleMedium,
-                        color = if (isDarkTheme) Color.White else MaterialTheme.colorScheme.onSurface
+                        color = if (isDarkTheme) Color.White else MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
 
@@ -667,17 +771,43 @@ private fun RecentMatchCard(
                 Text(
                     text = "${match.rows}x${match.cols} (${match.mines} minas) • $dateStr",
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (isDarkTheme) Color.White.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (isDarkTheme) Color.White.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
 
-            Text(
-                text = String.format("%02d:%02d", mins, secs),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.ExtraBold,
-                color = if (isWin) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-                fontFamily = FontFamily.Monospace
-            )
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = if (isDarkTheme) Color(0xFF1B1411) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                border = BorderStroke(
+                    1.dp,
+                    if (isWin) Color(0xFF81C784).copy(alpha = 0.45f) else Color(0xFFE57373).copy(alpha = 0.45f)
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .widthIn(min = 76.dp)
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = if (isWin) "⏱" else "💥",
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(end = 4.dp)
+                    )
+                    Text(
+                        text = String.format("%02d:%02d", mins, secs),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = if (isWin) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                        fontFamily = FontFamily.Monospace,
+                        maxLines = 1,
+                        softWrap = false
+                    )
+                }
+            }
         }
     }
 }
