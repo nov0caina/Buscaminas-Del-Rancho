@@ -65,6 +65,8 @@ import kotlin.math.sin
 fun SettingsScreen(
     uiState: GameUiState,
     isDarkTheme: Boolean = isSystemInDarkTheme(),
+    isPatronUnlocked: Boolean = false,
+    patronPrice: String = "$25.00 MXN",
     onSelectThemeMode: (ThemeMode) -> Unit = {},
     onToggleDarkTheme: (Boolean) -> Unit = {},
     onToggleHaptics: (Boolean) -> Unit,
@@ -74,6 +76,7 @@ fun SettingsScreen(
     onToggleSfx: (Boolean) -> Unit,
     onSfxVolumeChange: (Float) -> Unit,
     onSelectRanchFlagIcon: (RanchFlagIcon) -> Unit,
+    onOpenPatronPassDialog: () -> Unit = {},
     onNavigateToCredits: () -> Unit = {},
     onBack: () -> Unit,
     modifier: Modifier = Modifier
@@ -218,6 +221,7 @@ fun SettingsScreen(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     for (iconOption in rowIcons) {
+                                        val isLocked = iconOption.isVip && !isPatronUnlocked
                                         val isSelected = uiState.ranchFlagIcon == iconOption
                                         val lipSize by animateDpAsState(targetValue = if (isSelected) 0.dp else 4.dp, label = "lipSize")
                                         
@@ -226,19 +230,25 @@ fun SettingsScreen(
                                                 .weight(1f)
                                                 .height(68.dp)
                                                 .testTag("ranch_icon_${iconOption.name.lowercase()}")
-                                                .bounceClick(onClick = { onSelectRanchFlagIcon(iconOption) })
+                                                .bounceClick(onClick = {
+                                                    if (isLocked) {
+                                                        onOpenPatronPassDialog()
+                                                    } else {
+                                                        onSelectRanchFlagIcon(iconOption)
+                                                    }
+                                                })
                                                 .background(
                                                     if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Black.copy(alpha = 0.25f),
                                                     RoundedCornerShape(12.dp)
                                                 )
                                                 .padding(bottom = lipSize)
                                                 .background(
-                                                    if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+                                                    if (isSelected) MaterialTheme.colorScheme.primary else if (isLocked) Color(0xFF2C1D14) else MaterialTheme.colorScheme.surface,
                                                     RoundedCornerShape(12.dp)
                                                 )
                                                 .border(
-                                                    width = if (isSelected) 2.dp else 1.dp,
-                                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                                                    width = if (isSelected) 2.dp else if (isLocked) 1.dp else 1.dp,
+                                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else if (isLocked) Color(0xFFFFD700).copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
                                                     shape = RoundedCornerShape(12.dp)
                                                 ),
                                             contentAlignment = Alignment.Center
@@ -247,18 +257,27 @@ fun SettingsScreen(
                                                 horizontalAlignment = Alignment.CenterHorizontally,
                                                 verticalArrangement = Arrangement.Center
                                             ) {
-                                                Text(
-                                                    text = iconOption.emoji,
-                                                    fontSize = 20.sp
-                                                )
+                                                Box(contentAlignment = Alignment.TopEnd) {
+                                                    Text(
+                                                        text = iconOption.emoji,
+                                                        fontSize = 20.sp
+                                                    )
+                                                    if (isLocked) {
+                                                        Text(
+                                                            text = "🔒",
+                                                            fontSize = 10.sp,
+                                                            modifier = Modifier.padding(start = 14.dp, bottom = 12.dp)
+                                                        )
+                                                    }
+                                                }
                                                 Spacer(modifier = Modifier.height(2.dp))
                                                 Text(
                                                     text = iconOption.title,
                                                     style = MaterialTheme.typography.labelSmall,
                                                     fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Normal,
-                                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else if (isLocked) Color(0xFFFFD700) else MaterialTheme.colorScheme.onSurface,
                                                     maxLines = 1,
-                                                    fontSize = 9.sp
+                                                    fontSize = 10.sp
                                                 )
                                             }
                                         }

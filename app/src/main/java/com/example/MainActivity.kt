@@ -20,6 +20,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.billing.BillingManager
 import com.example.games.PlayGamesManager
 import com.example.ui.components.AchievementUnlockOverlay
 import com.example.ui.screens.AchievementsScreen
@@ -29,6 +30,7 @@ import com.example.ui.screens.DifficultySelectionDialog
 import com.example.ui.screens.GameScreen
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.LeaderboardScreen
+import com.example.ui.screens.PatronPassDialog
 import com.example.ui.screens.SettingsScreen
 import com.example.ui.theme.RanchoTheme
 import com.example.ui.viewmodel.GameViewModel
@@ -85,6 +87,12 @@ fun RanchoMinesweeperApp(
     val isPlayGamesAuth: Boolean by viewModel.playGamesManager.isAuthenticated.collectAsState()
     val playGamesPlayerName: String? by viewModel.playGamesManager.playerName.collectAsState()
 
+    val context = LocalContext.current
+    val billingManager = remember { BillingManager.getInstance(context) }
+    val isPatronUnlocked by billingManager.isPatronUnlocked.collectAsState()
+    val patronPrice by billingManager.patronPrice.collectAsState()
+    var showPatronPassDialog by remember { mutableStateOf(false) }
+
     val systemDark = isSystemInDarkTheme()
     val isDark = when (uiState.themeMode) {
         ThemeMode.SYSTEM -> systemDark
@@ -118,6 +126,9 @@ fun RanchoMinesweeperApp(
                     HomeScreen(
                         uiState = uiState,
                         isDarkTheme = isDark,
+                        isPatronUnlocked = isPatronUnlocked,
+                        patronPrice = patronPrice,
+                        onOpenPatronPassDialog = { showPatronPassDialog = true },
                         onResumeGame = {
                             viewModel.resumeSavedGame()
                             navController.navigate("game")
@@ -199,6 +210,9 @@ fun RanchoMinesweeperApp(
                     SettingsScreen(
                         uiState = uiState,
                         isDarkTheme = isDark,
+                        isPatronUnlocked = isPatronUnlocked,
+                        patronPrice = patronPrice,
+                        onOpenPatronPassDialog = { showPatronPassDialog = true },
                         onSelectThemeMode = { viewModel.setThemeMode(it) },
                         onToggleDarkTheme = { viewModel.setDarkTheme(it) },
                         onToggleHaptics = { viewModel.setHaptics(it) },
@@ -228,6 +242,15 @@ fun RanchoMinesweeperApp(
                     navController.navigate("achievements")
                 }
             )
+
+            // VIP Patron Pass Dialog Overlay
+            if (showPatronPassDialog) {
+                PatronPassDialog(
+                    billingManager = billingManager,
+                    onDismiss = { showPatronPassDialog = false },
+                    isDarkTheme = isDark
+                )
+            }
         }
     }
 }

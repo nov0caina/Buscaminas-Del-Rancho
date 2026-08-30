@@ -46,7 +46,9 @@ import com.example.data.model.GameDifficulty
 fun DifficultySelectionDialog(
     onDismiss: () -> Unit,
     onSelectDifficulty: (difficulty: GameDifficulty, customRows: Int, customCols: Int, customMines: Int) -> Unit,
-    isDarkTheme: Boolean = isSystemInDarkTheme()
+    isDarkTheme: Boolean = isSystemInDarkTheme(),
+    isPatronUnlocked: Boolean = false,
+    onRequestUnlockPatron: () -> Unit = {}
 ) {
     var selectedDifficulty by remember { mutableStateOf(GameDifficulty.PRINCIPIANTE) }
 
@@ -87,12 +89,19 @@ fun DifficultySelectionDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 GameDifficulty.entries.forEach { diff ->
+                    val isLocked = !isPatronUnlocked && (diff == GameDifficulty.EXPERTO || diff == GameDifficulty.PERSONALIZADA)
                     val isSelected = selectedDifficulty == diff
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp)
-                            .clickable { selectedDifficulty = diff }
+                            .clickable {
+                                if (isLocked) {
+                                    onRequestUnlockPatron()
+                                } else {
+                                    selectedDifficulty = diff
+                                }
+                            }
                             .testTag("diff_card_${diff.name.lowercase()}"),
                         shape = RoundedCornerShape(14.dp),
                         colors = CardDefaults.cardColors(
@@ -109,27 +118,54 @@ fun DifficultySelectionDialog(
                                 .fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            RadioButton(
-                                selected = isSelected,
-                                onClick = { selectedDifficulty = diff }
-                            )
+                            if (isLocked) {
+                                Text(
+                                    text = "🔒",
+                                    fontSize = 20.sp,
+                                    modifier = Modifier.padding(start = 6.dp, end = 2.dp)
+                                )
+                            } else {
+                                RadioButton(
+                                    selected = isSelected,
+                                    onClick = { selectedDifficulty = diff }
+                                )
+                            }
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = diff.iconEmoji,
                                 fontSize = 24.sp
                             )
                             Spacer(modifier = Modifier.width(12.dp))
-                            Column {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = diff.displayName,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isSelected && isDarkTheme) Color.White else MaterialTheme.colorScheme.onSurface
+                                    )
+                                    if (isLocked) {
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Box(
+                                            modifier = Modifier
+                                                .background(Color(0xFFFFD700).copy(alpha = 0.2f), RoundedCornerShape(8.dp))
+                                                .border(1.dp, Color(0xFFFFD700).copy(alpha = 0.6f), RoundedCornerShape(8.dp))
+                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                        ) {
+                                            Text(
+                                                text = "👑 VIP",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.ExtraBold,
+                                                color = Color(0xFFFFD700),
+                                                fontSize = 10.sp
+                                            )
+                                        }
+                                    }
+                                }
                                 Text(
-                                    text = diff.displayName,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (isSelected && isDarkTheme) Color.White else MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = diff.subtitle,
+                                    text = if (isLocked) "Pase del Patrón • 99 Minas / Libre" else diff.subtitle,
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = if (isDarkTheme) Color.White.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = if (isLocked) Color(0xFFFFD700).copy(alpha = 0.9f) else if (isDarkTheme) Color.White.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }

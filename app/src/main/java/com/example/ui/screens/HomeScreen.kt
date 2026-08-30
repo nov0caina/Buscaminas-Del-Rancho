@@ -77,11 +77,14 @@ import com.example.ui.particles.RanchoSmokeParticleSystem
 fun HomeScreen(
     uiState: GameUiState,
     isDarkTheme: Boolean = isSystemInDarkTheme(),
+    isPatronUnlocked: Boolean = false,
+    patronPrice: String = "$25.00 MXN",
     onResumeGame: () -> Unit,
     onSelectDifficulty: (difficulty: GameDifficulty, customRows: Int, customCols: Int, customMines: Int) -> Unit,
     onLeaderboardClick: () -> Unit,
     onAchievementsClick: () -> Unit,
     onSettingsClick: () -> Unit,
+    onOpenPatronPassDialog: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var showCustomDialog by remember { mutableStateOf(false) }
@@ -336,10 +339,14 @@ fun HomeScreen(
 
                         // Direct Level Buttons
                         GameDifficulty.entries.forEach { diff ->
+                            val isLocked = !isPatronUnlocked && (diff == GameDifficulty.EXPERTO || diff == GameDifficulty.PERSONALIZADA)
                             LevelDirectCard(
                                 difficulty = diff,
+                                isLocked = isLocked,
                                 onClick = {
-                                    if (diff == GameDifficulty.PERSONALIZADA) {
+                                    if (isLocked) {
+                                        onOpenPatronPassDialog()
+                                    } else if (diff == GameDifficulty.PERSONALIZADA) {
                                         showCustomDialog = true
                                     } else {
                                         onSelectDifficulty(diff, diff.rows, diff.cols, diff.mines)
@@ -349,6 +356,74 @@ fun HomeScreen(
                         }
 
                         Spacer(modifier = Modifier.height(8.dp))
+
+                        // Patron Pass Banner / VIP Card
+                        if (!isPatronUnlocked) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .bounceClick(onClick = onOpenPatronPassDialog)
+                                    .background(Color.Black.copy(alpha = 0.35f), RoundedCornerShape(18.dp))
+                                    .padding(bottom = 5.dp)
+                                    .background(
+                                        Brush.horizontalGradient(listOf(Color(0xFF4A3515), Color(0xFF2C1E0F))),
+                                        RoundedCornerShape(18.dp)
+                                    )
+                                    .border(
+                                        1.5.dp,
+                                        Brush.horizontalGradient(listOf(Color(0xFFFFD700), Color(0xFFC59B27))),
+                                        RoundedCornerShape(18.dp)
+                                    )
+                                    .padding(14.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(42.dp)
+                                                .background(Color(0xFFFFD700).copy(alpha = 0.2f), CircleShape)
+                                                .border(1.dp, Color(0xFFFFD700), CircleShape),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(text = "👑", fontSize = 22.sp)
+                                        }
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        Column {
+                                            Text(
+                                                text = "Pase del Patrón VIP",
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.Black,
+                                                color = Color(0xFFFFD700)
+                                            )
+                                            Text(
+                                                text = "99 Minas, Modo Libre & Distintivos",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = Color.White.copy(alpha = 0.85f)
+                                            )
+                                        }
+                                    }
+
+                                    Box(
+                                        modifier = Modifier
+                                            .background(Color(0xFFFFD700), RoundedCornerShape(12.dp))
+                                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                                    ) {
+                                        Text(
+                                            text = patronPrice,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Black,
+                                            color = Color(0xFF2A1708)
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
 
                         Text(
                             text = "🏆 MÁS OPCIONES:",
@@ -434,6 +509,7 @@ fun HomeScreen(
 @Composable
 private fun LevelDirectCard(
     difficulty: GameDifficulty,
+    isLocked: Boolean = false,
     onClick: () -> Unit
 ) {
     val (containerColor, contentColor) = when (difficulty) {
@@ -446,12 +522,12 @@ private fun LevelDirectCard(
             MaterialTheme.colorScheme.onSecondaryContainer
         )
         GameDifficulty.EXPERTO -> Pair(
-            MaterialTheme.colorScheme.tertiaryContainer,
-            MaterialTheme.colorScheme.onTertiaryContainer
+            if (isLocked) Color(0xFF382515) else MaterialTheme.colorScheme.tertiaryContainer,
+            if (isLocked) Color(0xFFFFD700) else MaterialTheme.colorScheme.onTertiaryContainer
         )
         GameDifficulty.PERSONALIZADA -> Pair(
-            MaterialTheme.colorScheme.surfaceVariant,
-            MaterialTheme.colorScheme.onSurfaceVariant
+            if (isLocked) Color(0xFF2E2018) else MaterialTheme.colorScheme.surfaceVariant,
+            if (isLocked) Color(0xFFFFE082) else MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 
@@ -464,6 +540,10 @@ private fun LevelDirectCard(
             .background(color = Color.Black.copy(alpha = 0.25f), shape = RoundedCornerShape(16.dp))
             .padding(bottom = 5.dp)
             .background(color = containerColor, shape = RoundedCornerShape(16.dp))
+            .then(
+                if (isLocked) Modifier.border(1.5.dp, Color(0xFFFFD700).copy(alpha = 0.6f), RoundedCornerShape(16.dp))
+                else Modifier
+            )
     ) {
         Row(
             modifier = Modifier
@@ -479,14 +559,33 @@ private fun LevelDirectCard(
                 )
                 Spacer(modifier = Modifier.width(14.dp))
                 Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = difficulty.displayName,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = contentColor
+                        )
+                        if (isLocked) {
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Box(
+                                modifier = Modifier
+                                    .background(Color(0xFFFFD700).copy(alpha = 0.25f), RoundedCornerShape(6.dp))
+                                    .border(1.dp, Color(0xFFFFD700), RoundedCornerShape(6.dp))
+                                    .padding(horizontal = 5.dp, vertical = 1.dp)
+                            ) {
+                                Text(
+                                    text = "🔒 VIP",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = Color(0xFFFFD700),
+                                    fontSize = 10.sp
+                                )
+                            }
+                        }
+                    }
                     Text(
-                        text = difficulty.displayName,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = contentColor
-                    )
-                    Text(
-                        text = difficulty.subtitle,
+                        text = if (isLocked) "Desbloquea con Pase del Patrón" else difficulty.subtitle,
                         style = MaterialTheme.typography.bodySmall,
                         color = contentColor.copy(alpha = 0.8f)
                     )
@@ -495,18 +594,22 @@ private fun LevelDirectCard(
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "Jugar",
+                    text = if (isLocked) "Pase" else "Jugar",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.ExtraBold,
                     color = contentColor
                 )
                 Spacer(modifier = Modifier.width(4.dp))
-                Icon(
-                    imageVector = Icons.Default.PlayArrow,
-                    contentDescription = null,
-                    tint = contentColor,
-                    modifier = Modifier.size(20.dp)
-                )
+                if (isLocked) {
+                    Text(text = "👑", fontSize = 16.sp)
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.PlayArrow,
+                        contentDescription = null,
+                        tint = contentColor,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
         }
     }
