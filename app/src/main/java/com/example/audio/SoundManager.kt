@@ -238,8 +238,16 @@ class SoundManager private constructor(private val appContext: Context) {
         }
     }
 
+    private var lastVictoryTimestamp: Long = 0L
+
     fun playVictorySequence() {
         if (!isSfxEnabled) return
+        val now = System.currentTimeMillis()
+        if (now - lastVictoryTimestamp < 4000L) {
+            return // Prevent duplicate concurrent victory triggers
+        }
+        lastVictoryTimestamp = now
+
         duckMusicForDuration(durationMillis = 7500L, duckRatio = 0.05f)
         audioScope.launch {
             playSfx(R.raw.victory_woooow, 1.0f)
@@ -248,6 +256,19 @@ class SoundManager private constructor(private val appContext: Context) {
 
             val celebrationRes = victoryCelebrationDeck.next()
             playSfx(celebrationRes, 1.0f)
+        }
+    }
+
+    /**
+     * Reproduce un sonido festivo y brillante exclusivo para el desbloqueo de logros.
+     */
+    fun playAchievementUnlockedSound() {
+        if (!isSfxEnabled) return
+        audioScope.launch {
+            // Doble pop armónico brillante con pitch ascendente
+            playSfx(R.raw.pop_double_01, volumeMultiplier = 0.65f, pitch = 1.35f)
+            delay(110L)
+            playSfx(R.raw.pop_01, volumeMultiplier = 0.85f, pitch = 1.55f)
         }
     }
 

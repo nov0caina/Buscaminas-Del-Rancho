@@ -17,6 +17,8 @@ object AchievementNotificationHelper {
     const val CHANNEL_ID = "rancho_achievements"
     const val EXTRA_DESTINATION = "destination"
     const val DESTINATION_ACHIEVEMENTS = "achievements"
+    const val EXTRA_ACHIEVEMENT_ID = "achievement_id"
+    const val EXTRA_ACHIEVEMENT_TITLE = "achievement_title"
 
     fun createNotificationChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -48,8 +50,11 @@ object AchievementNotificationHelper {
             createNotificationChannel(context)
 
             val tapIntent = Intent(context, MainActivity::class.java).apply {
+                action = "ACTION_VIEW_ACHIEVEMENT_${achievement.id}"
                 flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
                 putExtra(EXTRA_DESTINATION, DESTINATION_ACHIEVEMENTS)
+                putExtra(EXTRA_ACHIEVEMENT_ID, achievement.id)
+                putExtra(EXTRA_ACHIEVEMENT_TITLE, achievement.title)
             }
 
             val pendingIntent = PendingIntent.getActivity(

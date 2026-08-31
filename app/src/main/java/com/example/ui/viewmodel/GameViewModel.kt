@@ -656,17 +656,15 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 flagsPlaced = state.flagsPlaced
             )
             if (newlyUnlocked.isNotEmpty()) {
-                triggerVibration("achievement")
-                soundManager.playVictorySequence()
+                // Escalonamiento temporal de cortesía: dar 2.0s para asimilar la victoria en el tablero
+                delay(2000L)
                 newlyUnlocked.forEach { achievement ->
                     _achievementUnlockEvents.emit(achievement)
                     playGamesManager.unlockAchievement(achievement.id)
-                    if (_uiState.value.isDailyNotificationEnabled) {
-                        AchievementNotificationHelper.sendAchievementNotification(
-                            context = getApplication<Application>().applicationContext,
-                            achievement = achievement
-                        )
-                    }
+                    AchievementNotificationHelper.sendAchievementNotification(
+                        context = getApplication<Application>().applicationContext,
+                        achievement = achievement
+                    )
                 }
             }
 

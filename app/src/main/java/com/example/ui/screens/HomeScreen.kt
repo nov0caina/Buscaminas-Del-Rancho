@@ -148,13 +148,13 @@ fun HomeScreen(
                         .padding(bottom = 32.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Hero Banner Header with long-range seamless Alpha DstIn mask
+                    // Hero Banner Header with bidirectional seamless Alpha DstIn mask
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(310.dp)
                     ) {
-                        // 1. Banner Image with Alpha Mask (DstIn) that fades out completely before the bottom edge
+                        // 1. Banner Image with Bidirectional Alpha Mask (DstIn) that fades out at top and bottom
                         Image(
                             painter = painterResource(id = R.drawable.img_rancho_banner),
                             contentDescription = "Banner del Rancho Sinaloense",
@@ -167,13 +167,14 @@ fun HomeScreen(
                                     drawContent()
                                     drawRect(
                                         brush = Brush.verticalGradient(
-                                            0.0f to Color.Black,
-                                            0.15f to Color.Black,
-                                            0.32f to Color.Black.copy(alpha = 0.80f),
-                                            0.48f to Color.Black.copy(alpha = 0.45f),
-                                            0.62f to Color.Black.copy(alpha = 0.18f),
-                                            0.74f to Color.Black.copy(alpha = 0.04f),
-                                            0.84f to Color.Transparent,
+                                            0.0f to Color.Transparent,
+                                            0.05f to Color.Black.copy(alpha = 0.25f),
+                                            0.12f to Color.Black.copy(alpha = 0.70f),
+                                            0.20f to Color.Black,
+                                            0.40f to Color.Black,
+                                            0.55f to Color.Black.copy(alpha = 0.80f),
+                                            0.70f to Color.Black.copy(alpha = 0.35f),
+                                            0.85f to Color.Transparent,
                                             1.0f to Color.Transparent
                                         ),
                                         blendMode = BlendMode.DstIn
@@ -182,39 +183,35 @@ fun HomeScreen(
                             contentScale = ContentScale.Crop
                         )
 
-                        // 2. Subtle top vignette for status bar readability
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(90.dp)
-                                .background(
-                                    Brush.verticalGradient(
-                                        0.0f to Color.Black.copy(alpha = 0.35f),
-                                        1.0f to Color.Transparent
-                                    )
-                                )
-                        )
-
                         // 3. Title and Slogans
                         Column(
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
-                                .padding(horizontal = 24.dp, vertical = 12.dp),
+                                .padding(horizontal = 24.dp, vertical = 12.dp)
+                                .staggeredEntrance(index = 0),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text(
-                                text = "BUSCAMINAS DEL RANCHO\n🤠",
-                                style = MaterialTheme.typography.headlineMedium.copy(
-                                    shadow = androidx.compose.ui.graphics.Shadow(
-                                        color = Color.Black.copy(alpha = 0.9f),
-                                        offset = androidx.compose.ui.geometry.Offset(2f, 4f),
-                                        blurRadius = 8f
-                                    )
-                                ),
-                                color = if (isDarkTheme) RanchoBannerTitleNight else RanchoBannerTitleDay,
-                                fontWeight = FontWeight.ExtraBold,
-                                textAlign = TextAlign.Center
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = "BUSCAMINAS DEL RANCHO ",
+                                    style = MaterialTheme.typography.headlineMedium.copy(
+                                        shadow = androidx.compose.ui.graphics.Shadow(
+                                            color = Color.Black.copy(alpha = 0.9f),
+                                            offset = androidx.compose.ui.geometry.Offset(2f, 4f),
+                                            blurRadius = 8f
+                                        )
+                                    ),
+                                    color = if (isDarkTheme) RanchoBannerTitleNight else RanchoBannerTitleDay,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    textAlign = TextAlign.Center
+                                )
+                                Box(modifier = Modifier.idleFloat()) {
+                                    Text(text = "🤠", fontSize = 28.sp)
+                                }
+                            }
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
                                 text = "PURO SINALOA VIEJON",
@@ -257,6 +254,7 @@ fun HomeScreen(
                         AnimatedVisibility(visible = uiState.hasSavedGame) {
                             Box(
                                 modifier = Modifier
+                                    .staggeredEntrance(index = 1)
                                     .fillMaxWidth()
                                     .height(68.dp)
                                     .testTag("btn_resume_game")
@@ -334,15 +332,19 @@ fun HomeScreen(
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp,
-                            modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
+                            modifier = Modifier
+                                .staggeredEntrance(index = if (uiState.hasSavedGame) 2 else 1)
+                                .padding(top = 4.dp, bottom = 2.dp)
                         )
 
                         // Direct Level Buttons
-                        GameDifficulty.entries.forEach { diff ->
+                        val baseLevelIndex = if (uiState.hasSavedGame) 3 else 2
+                        GameDifficulty.entries.forEachIndexed { idx, diff ->
                             val isLocked = !isPatronUnlocked && (diff == GameDifficulty.EXPERTO || diff == GameDifficulty.PERSONALIZADA)
                             LevelDirectCard(
                                 difficulty = diff,
                                 isLocked = isLocked,
+                                modifier = Modifier.staggeredEntrance(index = baseLevelIndex + idx),
                                 onClick = {
                                     if (isLocked) {
                                         onOpenPatronPassDialog()
@@ -357,10 +359,13 @@ fun HomeScreen(
 
                         Spacer(modifier = Modifier.height(8.dp))
 
+                        val baseSecondaryIndex = baseLevelIndex + GameDifficulty.entries.size
+
                         // Patron Pass Banner / VIP Card
                         if (!isPatronUnlocked) {
                             Box(
                                 modifier = Modifier
+                                    .staggeredEntrance(index = baseSecondaryIndex)
                                     .fillMaxWidth()
                                     .bounceClick(onClick = onOpenPatronPassDialog)
                                     .background(Color.Black.copy(alpha = 0.35f), RoundedCornerShape(18.dp))
@@ -374,6 +379,7 @@ fun HomeScreen(
                                         Brush.horizontalGradient(listOf(Color(0xFFFFD700), Color(0xFFC59B27))),
                                         RoundedCornerShape(18.dp)
                                     )
+                                    .shimmerGoldenSweep()
                                     .padding(14.dp)
                             ) {
                                 Row(
@@ -431,7 +437,9 @@ fun HomeScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp,
-                            modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
+                            modifier = Modifier
+                                .staggeredEntrance(index = baseSecondaryIndex + 1)
+                                .padding(top = 4.dp, bottom = 2.dp)
                         )
 
                         // Leaderboards Button
@@ -440,6 +448,7 @@ fun HomeScreen(
                             subtitle = "Ranking Global & Sinaloa",
                             icon = Icons.Default.EmojiEvents,
                             testTag = "btn_leaderboards",
+                            modifier = Modifier.staggeredEntrance(index = baseSecondaryIndex + 2),
                             onClick = onLeaderboardClick
                         )
 
@@ -449,6 +458,7 @@ fun HomeScreen(
                             subtitle = "Medallas de Compadre",
                             icon = Icons.Default.Star,
                             testTag = "btn_achievements",
+                            modifier = Modifier.staggeredEntrance(index = baseSecondaryIndex + 3),
                             onClick = onAchievementsClick
                         )
 
@@ -458,6 +468,7 @@ fun HomeScreen(
                             subtitle = "Modo Noche, Sonido & Recordatorio",
                             icon = Icons.Default.Settings,
                             testTag = "btn_settings",
+                            modifier = Modifier.staggeredEntrance(index = baseSecondaryIndex + 4),
                             onClick = onSettingsClick
                         )
                     }
@@ -510,7 +521,8 @@ fun HomeScreen(
 private fun LevelDirectCard(
     difficulty: GameDifficulty,
     isLocked: Boolean = false,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val (containerColor, contentColor) = when (difficulty) {
         GameDifficulty.PRINCIPIANTE -> Pair(
@@ -532,7 +544,7 @@ private fun LevelDirectCard(
     }
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(68.dp)
             .testTag("btn_level_${difficulty.name.lowercase()}")
@@ -621,10 +633,11 @@ private fun MenuSecondaryButton(
     subtitle: String,
     icon: ImageVector,
     testTag: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(68.dp)
             .testTag(testTag)

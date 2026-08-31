@@ -418,11 +418,12 @@ fun LeaderboardScreen(
                                 .padding(horizontal = 24.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            itemsIndexed(globalEntries) { _, entry ->
+                            itemsIndexed(globalEntries) { idx, entry ->
                                 GlobalScoreCard(
                                     entry = entry,
                                     isTimeMetric = isTimeMetric,
-                                    isDarkTheme = isDarkTheme
+                                    isDarkTheme = isDarkTheme,
+                                    modifier = Modifier.staggeredEntrance(index = idx)
                                 )
                             }
                             item { Spacer(modifier = Modifier.height(40.dp)) }
@@ -451,7 +452,8 @@ fun LeaderboardScreen(
                                     rank = index + 1,
                                     score = score,
                                     isTimeMetric = isTimeMetric,
-                                    isDarkTheme = isDarkTheme
+                                    isDarkTheme = isDarkTheme,
+                                    modifier = Modifier.staggeredEntrance(index = index)
                                 )
                             }
                             item { Spacer(modifier = Modifier.height(40.dp)) }
@@ -474,10 +476,11 @@ fun LeaderboardScreen(
                                 .padding(horizontal = 24.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            items(recentMatches) { match ->
+                            itemsIndexed(recentMatches) { idx, match ->
                                 RecentMatchCard(
                                     match = match,
-                                    isDarkTheme = isDarkTheme
+                                    isDarkTheme = isDarkTheme,
+                                    modifier = Modifier.staggeredEntrance(index = idx)
                                 )
                             }
                             item { Spacer(modifier = Modifier.height(40.dp)) }
@@ -544,7 +547,8 @@ private fun LocalScoreCard(
     rank: Int,
     score: GameScoreEntity,
     isTimeMetric: Boolean,
-    isDarkTheme: Boolean
+    isDarkTheme: Boolean,
+    modifier: Modifier = Modifier
 ) {
     val mins = score.timeInSeconds / 60
     val secs = score.timeInSeconds % 60
@@ -553,7 +557,7 @@ private fun LocalScoreCard(
     }
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .background(Color.Black.copy(alpha = 0.25f), RoundedCornerShape(16.dp))
             .padding(bottom = 5.dp)
@@ -636,13 +640,14 @@ private fun LocalScoreCard(
 private fun GlobalScoreCard(
     entry: GlobalLeaderboardEntry,
     isTimeMetric: Boolean,
-    isDarkTheme: Boolean
+    isDarkTheme: Boolean,
+    modifier: Modifier = Modifier
 ) {
     val mins = entry.timeSeconds / 60
     val secs = entry.timeSeconds % 60
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .background(Color.Black.copy(alpha = 0.25f), RoundedCornerShape(16.dp))
             .padding(bottom = 5.dp)
@@ -756,7 +761,8 @@ private fun GlobalScoreCard(
 @Composable
 private fun RecentMatchCard(
     match: GameScoreEntity,
-    isDarkTheme: Boolean
+    isDarkTheme: Boolean,
+    modifier: Modifier = Modifier
 ) {
     val mins = match.timeInSeconds / 60
     val secs = match.timeInSeconds % 60
@@ -769,7 +775,7 @@ private fun RecentMatchCard(
     val badgeText = if (isWin) "✓ VICTORIA 🤠" else "💥 DETONADA 💣"
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .background(Color.Black.copy(alpha = 0.25f), RoundedCornerShape(16.dp))
             .padding(bottom = 5.dp)

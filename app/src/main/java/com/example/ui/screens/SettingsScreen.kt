@@ -44,6 +44,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import android.os.Build
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
@@ -81,6 +88,13 @@ fun SettingsScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        onToggleDailyNotification(isGranted)
+    }
+
     val scrollState = rememberScrollState()
 
     val dustParticleSystem = remember { DustParticleSystem(150) }
@@ -176,116 +190,109 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(36.dp))
 
             Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-                Text(
-                    text = "Temática & Marcadores",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(start = 8.dp)
-                )
+                Column(modifier = Modifier.staggeredEntrance(index = 0)) {
+                    Text(
+                        text = "Temática & Marcadores",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                // Selector de Ícono de Bandera / Marcador de Rancho
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color.Black.copy(alpha = 0.15f), RoundedCornerShape(20.dp))
-                        .padding(bottom = 6.dp)
-                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(20.dp))
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "Ícono de Marcador (Distintivo)",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.Black.copy(alpha = 0.15f), RoundedCornerShape(20.dp))
+                            .padding(bottom = 6.dp)
+                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(20.dp))
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "Ícono de Marcador (Distintivo)",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Elige el símbolo campirano para marcar casillas:",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                            )
 
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Elige el símbolo campirano para marcar casillas:",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-                        )
+                            Spacer(modifier = Modifier.height(20.dp))
 
-                        Spacer(modifier = Modifier.height(20.dp))
-
-                        val allIcons = RanchFlagIcon.values()
-                        val rows = allIcons.toList().chunked(5)
-                        
-                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            for (rowIcons in rows) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    for (iconOption in rowIcons) {
-                                        val isLocked = iconOption.isVip && !isPatronUnlocked
-                                        val isSelected = uiState.ranchFlagIcon == iconOption
-                                        val lipSize by animateDpAsState(targetValue = if (isSelected) 0.dp else 4.dp, label = "lipSize")
-                                        
-                                        Box(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .height(68.dp)
-                                                .testTag("ranch_icon_${iconOption.name.lowercase()}")
-                                                .bounceClick(onClick = {
-                                                    if (isLocked) {
-                                                        onOpenPatronPassDialog()
-                                                    } else {
-                                                        onSelectRanchFlagIcon(iconOption)
-                                                    }
-                                                })
-                                                .background(
-                                                    if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Black.copy(alpha = 0.25f),
-                                                    RoundedCornerShape(12.dp)
-                                                )
-                                                .padding(bottom = lipSize)
-                                                .background(
-                                                    if (isSelected) MaterialTheme.colorScheme.primary else if (isLocked) Color(0xFF2C1D14) else MaterialTheme.colorScheme.surface,
-                                                    RoundedCornerShape(12.dp)
-                                                )
-                                                .border(
-                                                    width = if (isSelected) 2.dp else if (isLocked) 1.dp else 1.dp,
-                                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else if (isLocked) Color(0xFFFFD700).copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-                                                    shape = RoundedCornerShape(12.dp)
-                                                ),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Column(
-                                                horizontalAlignment = Alignment.CenterHorizontally,
-                                                verticalArrangement = Arrangement.Center
-                                            ) {
-                                                Box(contentAlignment = Alignment.TopEnd) {
-                                                    Text(
-                                                        text = iconOption.emoji,
-                                                        fontSize = 20.sp
+                            val allIcons = RanchFlagIcon.values()
+                            val rows = allIcons.toList().chunked(5)
+                            
+                            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                for (rowIcons in rows) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        for (iconOption in rowIcons) {
+                                            val isLocked = iconOption.isVip && !isPatronUnlocked
+                                            val isSelected = uiState.ranchFlagIcon == iconOption
+                                            val lipSize by animateDpAsState(targetValue = if (isSelected) 0.dp else 4.dp, label = "lipSize")
+                                            
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(68.dp)
+                                                    .testTag("ranch_icon_${iconOption.name.lowercase()}")
+                                                    .bounceClick(onClick = {
+                                                        if (isLocked) {
+                                                            onOpenPatronPassDialog()
+                                                        } else {
+                                                            onSelectRanchFlagIcon(iconOption)
+                                                        }
+                                                    })
+                                                    .background(
+                                                        if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Black.copy(alpha = 0.25f),
+                                                        RoundedCornerShape(14.dp)
                                                     )
-                                                    if (isLocked) {
+                                                    .padding(bottom = lipSize)
+                                                    .background(
+                                                        if (isSelected) {
+                                                            MaterialTheme.colorScheme.primary
+                                                        } else {
+                                                            if (isDarkTheme) Color(0xFF3E2D26) else MaterialTheme.colorScheme.surface
+                                                        },
+                                                        RoundedCornerShape(14.dp)
+                                                    )
+                                                    .border(
+                                                        width = if (isSelected) 2.dp else 1.dp,
+                                                        color = if (isSelected) Color(0xFFFFD700) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                                                        shape = RoundedCornerShape(14.dp)
+                                                    ),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Column(
+                                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                                    verticalArrangement = Arrangement.Center
+                                                ) {
+                                                    Text(
+                                                        text = if (isLocked) "🔒" else iconOption.emoji,
+                                                        fontSize = 24.sp
+                                                    )
+                                                    if (iconOption.isVip) {
                                                         Text(
-                                                            text = "🔒",
-                                                            fontSize = 10.sp,
-                                                            modifier = Modifier.padding(start = 14.dp, bottom = 12.dp)
+                                                            text = "VIP",
+                                                            fontSize = 9.sp,
+                                                            fontWeight = FontWeight.Black,
+                                                            color = Color(0xFFFFD700)
                                                         )
                                                     }
                                                 }
-                                                Spacer(modifier = Modifier.height(2.dp))
-                                                Text(
-                                                    text = iconOption.title,
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Normal,
-                                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else if (isLocked) Color(0xFFFFD700) else MaterialTheme.colorScheme.onSurface,
-                                                    maxLines = 1,
-                                                    fontSize = 10.sp
-                                                )
                                             }
                                         }
-                                    }
-                                    
-                                    val emptySpots = 5 - rowIcons.size
-                                    for (i in 0 until emptySpots) {
-                                        Spacer(modifier = Modifier.weight(1f))
+                                        val emptySpots = 5 - rowIcons.size
+                                        for (i in 0 until emptySpots) {
+                                            Spacer(modifier = Modifier.weight(1f))
+                                        }
                                     }
                                 }
                             }
@@ -295,147 +302,150 @@ fun SettingsScreen(
 
                 Spacer(modifier = Modifier.height(36.dp))
 
-                Text(
-                    text = "Sonido & Música",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(start = 8.dp)
-                )
+                Column(modifier = Modifier.staggeredEntrance(index = 1)) {
+                    Text(
+                        text = "Sonido & Música",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                SettingsAudioCard(
-                    title = "Música de Fondo",
-                    subtitle = "Banda y corridos sinaloenses",
-                    icon = Icons.Default.MusicNote,
-                    enabled = uiState.isMusicEnabled,
-                    onToggleEnabled = onToggleMusic,
-                    volume = uiState.musicVolume,
-                    onVolumeChange = onMusicVolumeChange,
-                    testTag = "card_music_volume"
-                )
+                    SettingsAudioCard(
+                        title = "Música de Fondo",
+                        subtitle = "Banda y corridos sinaloenses",
+                        icon = Icons.Default.MusicNote,
+                        enabled = uiState.isMusicEnabled,
+                        onToggleEnabled = onToggleMusic,
+                        volume = uiState.musicVolume,
+                        onVolumeChange = onMusicVolumeChange,
+                        testTag = "card_music_volume"
+                    )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                SettingsAudioCard(
-                    title = "Efectos de Sonido (SFX)",
-                    subtitle = "Pops, explosiones y fanfarrias",
-                    icon = Icons.AutoMirrored.Filled.VolumeUp,
-                    enabled = uiState.isSfxEnabled,
-                    onToggleEnabled = onToggleSfx,
-                    volume = uiState.sfxVolume,
-                    onVolumeChange = onSfxVolumeChange,
-                    testTag = "card_sfx_volume"
-                )
+                    SettingsAudioCard(
+                        title = "Efectos de Sonido (SFX)",
+                        subtitle = "Pops, explosiones y fanfarrias",
+                        icon = Icons.AutoMirrored.Filled.VolumeUp,
+                        enabled = uiState.isSfxEnabled,
+                        onToggleEnabled = onToggleSfx,
+                        volume = uiState.sfxVolume,
+                        onVolumeChange = onSfxVolumeChange,
+                        testTag = "card_sfx_volume"
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(36.dp))
 
-                Text(
-                    text = "Preferencias",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(start = 8.dp)
-                )
+                Column(modifier = Modifier.staggeredEntrance(index = 2)) {
+                    Text(
+                        text = "Preferencias",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color.Black.copy(alpha = 0.15f), RoundedCornerShape(20.dp))
-                        .padding(bottom = 6.dp)
-                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(20.dp))
-                ) {
-                    Column(
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp)
+                            .background(Color.Black.copy(alpha = 0.15f), RoundedCornerShape(20.dp))
+                            .padding(bottom = 6.dp)
+                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(20.dp))
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.DarkMode,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(28.dp)
-                            )
-                            Spacer(modifier = Modifier.width(14.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "Tema Día / Noche",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.DarkMode,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(28.dp)
                                 )
-                                Spacer(modifier = Modifier.height(2.dp))
-                                val subtitleText = when (uiState.themeMode) {
-                                    ThemeMode.SYSTEM -> if (isDarkTheme) "Sincronizado: Noche del Desierto 🌙" else "Sincronizado: Sol Campirano ☀️"
-                                    ThemeMode.LIGHT -> "Fijo: Sol Campirano ☀️"
-                                    ThemeMode.DARK -> "Fijo: Noche del Desierto 🌙"
+                                Spacer(modifier = Modifier.width(14.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Tema Día / Noche",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    val subtitleText = when (uiState.themeMode) {
+                                        ThemeMode.SYSTEM -> if (isDarkTheme) "Sincronizado: Noche del Desierto 🌙" else "Sincronizado: Sol Campirano ☀️"
+                                        ThemeMode.LIGHT -> "Fijo: Sol Campirano ☀️"
+                                        ThemeMode.DARK -> "Fijo: Noche del Desierto 🌙"
+                                    }
+                                    Text(
+                                        text = subtitleText,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                                    )
                                 }
-                                Text(
-                                    text = subtitleText,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-                                )
                             }
-                        }
 
-                        Spacer(modifier = Modifier.height(14.dp))
+                            Spacer(modifier = Modifier.height(14.dp))
 
-                        // 3D tactile segmented options: Sistema, Día, Noche
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            ThemeMode.entries.forEach { mode ->
-                                val isSelected = uiState.themeMode == mode
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                ThemeMode.entries.forEach { mode ->
+                                    val isSelected = uiState.themeMode == mode
 
-                                Box(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .height(46.dp)
-                                        .testTag("btn_theme_${mode.name.lowercase()}")
-                                        .bounceClick(onClick = { onSelectThemeMode(mode) })
-                                        .background(
-                                            if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.35f) else Color.Black.copy(alpha = 0.20f),
-                                            RoundedCornerShape(12.dp)
-                                        )
-                                        .padding(bottom = if (isSelected) 1.dp else 4.dp)
-                                        .background(
-                                            if (isSelected) {
-                                                MaterialTheme.colorScheme.primary
-                                            } else {
-                                                if (isDarkTheme) Color(0xFF3E2D26) else MaterialTheme.colorScheme.surface
-                                            },
-                                            RoundedCornerShape(12.dp)
-                                        )
-                                        .border(
-                                            width = if (isSelected) 1.5.dp else 1.dp,
-                                            color = if (isSelected) Color.White.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-                                            shape = RoundedCornerShape(12.dp)
-                                        ),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.Center
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(46.dp)
+                                            .testTag("btn_theme_${mode.name.lowercase()}")
+                                            .bounceClick(onClick = { onSelectThemeMode(mode) })
+                                            .background(
+                                                if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.35f) else Color.Black.copy(alpha = 0.20f),
+                                                RoundedCornerShape(12.dp)
+                                            )
+                                            .padding(bottom = if (isSelected) 1.dp else 4.dp)
+                                            .background(
+                                                if (isSelected) {
+                                                    MaterialTheme.colorScheme.primary
+                                                } else {
+                                                    if (isDarkTheme) Color(0xFF3E2D26) else MaterialTheme.colorScheme.surface
+                                                },
+                                                RoundedCornerShape(12.dp)
+                                            )
+                                            .border(
+                                                width = if (isSelected) 1.5.dp else 1.dp,
+                                                color = if (isSelected) Color.White.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                                                shape = RoundedCornerShape(12.dp)
+                                            ),
+                                        contentAlignment = Alignment.Center
                                     ) {
-                                        Text(text = mode.emoji, fontSize = 15.sp)
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text(
-                                            text = mode.title,
-                                            style = MaterialTheme.typography.labelMedium,
-                                            fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
-                                            color = if (isSelected) {
-                                                MaterialTheme.colorScheme.onPrimary
-                                            } else {
-                                                MaterialTheme.colorScheme.onSurface
-                                            }
-                                        )
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.Center
+                                        ) {
+                                            Text(text = mode.emoji, fontSize = 15.sp)
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text(
+                                                text = mode.title,
+                                                style = MaterialTheme.typography.labelMedium,
+                                                fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
+                                                color = if (isSelected) {
+                                                    MaterialTheme.colorScheme.onPrimary
+                                                } else {
+                                                    MaterialTheme.colorScheme.onSurface
+                                                }
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -451,7 +461,8 @@ fun SettingsScreen(
                     icon = Icons.Default.Vibration,
                     checked = uiState.isHapticsEnabled,
                     onCheckedChange = onToggleHaptics,
-                    testTag = "switch_haptics"
+                    testTag = "switch_haptics",
+                    modifier = Modifier.staggeredEntrance(index = 3)
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -461,85 +472,106 @@ fun SettingsScreen(
                     subtitle = "Alerta push para limpiar tu rancho",
                     icon = Icons.Default.Notifications,
                     checked = uiState.isDailyNotificationEnabled,
-                    onCheckedChange = onToggleDailyNotification,
-                    testTag = "switch_notifications"
+                    onCheckedChange = { enabled ->
+                        if (enabled) {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                val hasPermission = ContextCompat.checkSelfPermission(
+                                    context,
+                                    Manifest.permission.POST_NOTIFICATIONS
+                                ) == PackageManager.PERMISSION_GRANTED
+                                if (!hasPermission) {
+                                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                } else {
+                                    onToggleDailyNotification(true)
+                                }
+                            } else {
+                                onToggleDailyNotification(true)
+                            }
+                        } else {
+                            onToggleDailyNotification(false)
+                        }
+                    },
+                    testTag = "switch_notifications",
+                    modifier = Modifier.staggeredEntrance(index = 4)
                 )
 
                 Spacer(modifier = Modifier.height(36.dp))
 
-                Text(
-                    text = "Acerca De",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(start = 8.dp)
-                )
+                Column(modifier = Modifier.staggeredEntrance(index = 5)) {
+                    Text(
+                        text = "Acerca De",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                // Interactive 3D Acerca De / Créditos Card
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("card_about_credits")
-                        .bounceClick(onClick = onNavigateToCredits)
-                        .background(Color.Black.copy(alpha = 0.4f), RoundedCornerShape(16.dp))
-                        .padding(bottom = 6.dp)
-                        .background(Color(0xFF4E342E), RoundedCornerShape(16.dp)) // Dark wood/leather
-                        .border(
-                            width = 1.dp,
-                            color = Color(0xFFFFB300).copy(alpha = 0.4f),
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp)
+                    // Interactive 3D Acerca De / Créditos Card
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("card_about_credits")
+                            .bounceClick(onClick = onNavigateToCredits)
+                            .background(Color.Black.copy(alpha = 0.4f), RoundedCornerShape(16.dp))
+                            .padding(bottom = 6.dp)
+                            .background(Color(0xFF4E342E), RoundedCornerShape(16.dp)) // Dark wood/leather
+                            .border(
+                                width = 1.dp,
+                                color = Color(0xFFFFB300).copy(alpha = 0.4f),
+                                shape = RoundedCornerShape(16.dp)
+                            )
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                        Column(
+                            modifier = Modifier.padding(16.dp)
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Default.Info,
-                                    contentDescription = null,
-                                    tint = Color(0xFFFFB300) // Gold
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Column {
-                                    Text(
-                                        text = "Buscaminas del Rancho v1.0",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.Info,
+                                        contentDescription = null,
+                                        tint = Color(0xFFFFB300) // Gold
                                     )
-                                    Text(
-                                        text = "Ver créditos, equipo y colaboradores 🤠",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = Color(0xFFFFD166)
-                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Column {
+                                        Text(
+                                            text = "Buscaminas del Rancho v1.0",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White
+                                        )
+                                        Text(
+                                            text = "Ver créditos, equipo y colaboradores 🤠",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = Color(0xFFFFD166)
+                                        )
+                                    }
                                 }
+
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                                    contentDescription = "Ver créditos",
+                                    tint = Color(0xFFFFB300),
+                                    modifier = Modifier.size(18.dp)
+                                )
                             }
 
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
-                                contentDescription = "Ver créditos",
-                                tint = Color(0xFFFFB300),
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
+                            Spacer(modifier = Modifier.height(12.dp))
 
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Text(
-                            text = """• Estilo Sinaloa mi pa 🤠
+                            Text(
+                                text = """• Estilo Sinaloa mi pa 🤠
 • Guarda partidas offline
 • Cero anuncios.""",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color.White.copy(alpha = 0.85f),
-                            lineHeight = 22.sp
-                        )
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.White.copy(alpha = 0.85f),
+                                lineHeight = 22.sp
+                            )
+                        }
                     }
                 }
             }
@@ -554,10 +586,11 @@ private fun SettingsToggleCard(
     icon: ImageVector,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
-    testTag: String
+    testTag: String,
+    modifier: Modifier = Modifier
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .testTag(testTag)
             .bounceClick(onClick = { onCheckedChange(!checked) })
@@ -640,10 +673,11 @@ private fun SettingsAudioCard(
     onToggleEnabled: (Boolean) -> Unit,
     volume: Float,
     onVolumeChange: (Float) -> Unit,
-    testTag: String
+    testTag: String,
+    modifier: Modifier = Modifier
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .testTag(testTag)
             .background(Color.Black.copy(alpha = 0.25f), RoundedCornerShape(16.dp))

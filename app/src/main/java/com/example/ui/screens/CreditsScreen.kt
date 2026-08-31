@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -248,6 +249,7 @@ fun CreditsScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .staggeredEntrance(index = 0)
                             .background(Color.Black.copy(alpha = 0.35f), RoundedCornerShape(20.dp))
                             .padding(bottom = 6.dp)
                             .background(
@@ -298,15 +300,18 @@ fun CreditsScreen(
                         fontWeight = FontWeight.ExtraBold,
                         color = MaterialTheme.colorScheme.primary,
                         letterSpacing = 2.sp,
-                        modifier = Modifier.padding(top = 8.dp, start = 4.dp)
+                        modifier = Modifier
+                            .staggeredEntrance(index = 1)
+                            .padding(top = 8.dp, start = 4.dp)
                     )
                 }
 
                 // Contributor Cards
-                items(contributors) { contributor ->
+                itemsIndexed(contributors) { idx, contributor ->
                     ContributorCard(
                         contributor = contributor,
                         isDarkTheme = isDarkTheme,
+                        modifier = Modifier.staggeredEntrance(index = 2 + idx),
                         onOpenUrl = { url ->
                             try {
                                 uriHandler.openUri(url)
@@ -323,6 +328,7 @@ fun CreditsScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .staggeredEntrance(index = 2 + contributors.size)
                             .background(Color.Black.copy(alpha = 0.25f), RoundedCornerShape(16.dp))
                             .padding(bottom = 5.dp)
                             .background(
@@ -363,10 +369,11 @@ fun CreditsScreen(
 private fun ContributorCard(
     contributor: Contributor,
     isDarkTheme: Boolean,
+    modifier: Modifier = Modifier,
     onOpenUrl: (String) -> Unit
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .background(Color.Black.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
             .padding(bottom = 5.dp)

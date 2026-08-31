@@ -25,6 +25,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -121,6 +130,94 @@ fun Modifier.bounceClick(
                 }
             }
         )
+}
+
+/**
+ * Aplica una animación de entrada escalonada suave (fade in + slide up con resorte)
+ * basada en el índice secuencial del elemento.
+ */
+fun Modifier.staggeredEntrance(
+    index: Int,
+    baseDelayMillis: Long = 45L,
+    initialOffsetY: Float = 60f
+): Modifier = composed {
+    val animProgress = remember { Animatable(0f) }
+
+    LaunchedEffect(Unit) {
+        delay(index * baseDelayMillis)
+        animProgress.animateTo(
+            targetValue = 1f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMediumLow
+            )
+        )
+    }
+
+    this.graphicsLayer {
+        alpha = animProgress.value.coerceIn(0f, 1f)
+        translationY = (1f - animProgress.value) * initialOffsetY
+    }
+}
+
+/**
+ * Aplica un barrido de destello dorado brillante continuo, ideal para elementos VIP y destacados.
+ */
+fun Modifier.shimmerGoldenSweep(
+    durationMillis: Int = 2400
+): Modifier = composed {
+    val transition = rememberInfiniteTransition(label = "golden_shimmer")
+    val translateAnim by transition.animateFloat(
+        initialValue = -300f,
+        targetValue = 900f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = durationMillis, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "golden_shimmer_translate"
+    )
+
+    val shimmerColors = listOf(
+        Color(0xFFFFD700).copy(alpha = 0.0f),
+        Color(0xFFFFF7C2).copy(alpha = 0.35f),
+        Color(0xFFFFD700).copy(alpha = 0.0f)
+    )
+
+    this.drawWithContent {
+        drawContent()
+        val brush = Brush.linearGradient(
+            colors = shimmerColors,
+            start = Offset(translateAnim, 0f),
+            end = Offset(translateAnim + 200f, size.height)
+        )
+        drawRect(brush = brush)
+    }
+}
+
+/**
+ * Aplica una micro-animación de flotación y respiración sutil y continua.
+ */
+fun Modifier.idleFloat(
+    durationMillis: Int = 2400,
+    maxOffsetY: Float = 6f,
+    scaleRange: Float = 0.04f
+): Modifier = composed {
+    val transition = rememberInfiniteTransition(label = "idle_float")
+    val floatAnim by transition.animateFloat(
+        initialValue = -1f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = durationMillis, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "idle_float_offset"
+    )
+
+    this.graphicsLayer {
+        translationY = floatAnim * maxOffsetY
+        scaleX = 1f + (floatAnim * scaleRange * 0.5f)
+        scaleY = 1f + (floatAnim * scaleRange * 0.5f)
+    }
 }
 
 

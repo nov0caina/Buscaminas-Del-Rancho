@@ -40,20 +40,34 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.os.Build
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 
 class MainActivity : ComponentActivity() {
+    private val currentIntentState = mutableStateOf<android.content.Intent?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        currentIntentState.value = intent
         enableEdgeToEdge()
         PlayGamesManager.getInstance(applicationContext).attachActivity(this)
         setContent {
-            RanchoMinesweeperApp()
+            RanchoMinesweeperApp(
+                incomingIntent = currentIntentState.value,
+                onConsumeIntent = { currentIntentState.value = null }
+            )
         }
     }
 
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        currentIntentState.value = intent
     }
 
     override fun onDestroy() {
@@ -64,7 +78,9 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun RanchoMinesweeperApp(
-    viewModel: GameViewModel = viewModel()
+    viewModel: GameViewModel = viewModel(),
+    incomingIntent: android.content.Intent? = null,
+    onConsumeIntent: () -> Unit = {}
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -98,6 +114,26 @@ fun RanchoMinesweeperApp(
     val patronPrice by billingManager.patronPrice.collectAsState()
     var showPatronPassDialog by remember { mutableStateOf(false) }
 
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            viewModel.setDailyNotification(true)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val hasPermission = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+            if (!hasPermission && uiState.isDailyNotificationEnabled) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+
     val systemDark = isSystemInDarkTheme()
     val isDark = when (uiState.themeMode) {
         ThemeMode.SYSTEM -> systemDark
@@ -107,15 +143,21 @@ fun RanchoMinesweeperApp(
 
     RanchoTheme(darkTheme = isDark) {
         val navController = rememberNavController()
-        val activity = context as? Activity
+        var highlightedAchievementId by remember { mutableStateOf<String?>(null) }
 
-        androidx.compose.runtime.LaunchedEffect(activity?.intent) {
-            val dest = activity?.intent?.getStringExtra("destination")
-            if (dest == "achievements") {
-                activity.intent?.removeExtra("destination")
-                viewModel.startBackgroundMusic()
-                navController.navigate("achievements") {
-                    popUpTo("splash") { inclusive = true }
+        // Reactive Deep-Link / Notification Intent handler
+        LaunchedEffect(incomingIntent) {
+            if (incomingIntent != null) {
+                val dest = incomingIntent.getStringExtra("destination")
+                val achId = incomingIntent.getStringExtra("achievement_id")
+                if (dest == "achievements") {
+                    highlightedAchievementId = achId
+                    onConsumeIntent()
+                    viewModel.startBackgroundMusic()
+                    navController.navigate("achievements") {
+                        popUpTo("splash") { inclusive = true }
+                        launchSingleTop = true
+                    }
                 }
             }
         }
@@ -129,8 +171,14 @@ fun RanchoMinesweeperApp(
                     AnimatedSplashScreen(
                         onSplashFinished = {
                             viewModel.startBackgroundMusic()
-                            navController.navigate("home") {
-                                popUpTo("splash") { inclusive = true }
+                            if (highlightedAchievementId != null) {
+                                navController.navigate("achievements") {
+                                    popUpTo("splash") { inclusive = true }
+                                }
+                            } else {
+                                navController.navigate("home") {
+                                    popUpTo("splash") { inclusive = true }
+                                }
                             }
                         }
                     )
@@ -218,8 +266,12 @@ fun RanchoMinesweeperApp(
                     AchievementsScreen(
                         isDarkTheme = isDark,
                         achievements = achievements,
+                        highlightedAchievementId = highlightedAchievementId,
                         onOpenPlayGamesAchievements = { viewModel.playGamesManager.showAchievementsOverlay(activity) },
-                        onBack = { navController.popBackStack() }
+                        onBack = {
+                            highlightedAchievementId = null
+                            navController.popBackStack()
+                        }
                     )
                 }
 
@@ -255,8 +307,11 @@ fun RanchoMinesweeperApp(
             // Global Achievement Unlock Notification Overlay
             AchievementUnlockOverlay(
                 unlockEvents = viewModel.achievementUnlockEvents,
-                onAchievementClick = {
-                    navController.navigate("achievements")
+                onAchievementClick = { achievement ->
+                    highlightedAchievementId = achievement.id
+                    navController.navigate("achievements") {
+                        launchSingleTop = true
+                    }
                 }
             )
 

@@ -51,6 +51,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
+import android.content.Context
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
+import com.example.audio.SoundManager
 import com.example.data.local.AchievementEntity
 import com.example.ui.screens.bounceClick
 import kotlinx.coroutines.delay
@@ -153,6 +160,31 @@ private fun AchievementUnlockToastCard(
                 stiffness = Spring.StiffnessLow
             )
         )
+    }
+
+    val context = LocalContext.current
+    val vibrator = remember(context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
+            vibratorManager?.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+        }
+    }
+
+    LaunchedEffect(achievement.id) {
+        try {
+            SoundManager.getInstance(context).playAchievementUnlockedSound()
+            if (vibrator?.hasVibrator() == true) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 80, 50, 140), -1))
+                } else {
+                    @Suppress("DEPRECATION")
+                    vibrator.vibrate(120)
+                }
+            }
+        } catch (e: Exception) {}
     }
 
     LaunchedEffect(achievement.id) {
