@@ -186,7 +186,13 @@ if [ -f "$APK_OUTPUT" ]; then
                 exit 1
             fi
 
-            "$ADB_CMD" install -r "$APK_OUTPUT"
+            if ! "$ADB_CMD" install -r "$APK_OUTPUT"; then
+                log_warn "Conflicto de firma detectado (ej. versión Release o Play Store previa en el dispositivo)."
+                log_info "Desinstalando versión incompatible previa..."
+                "$ADB_CMD" uninstall com.nov0caina.buscaminas.estilo.sinaloa || true
+                log_info "Reinstalando APK Debug fresco..."
+                "$ADB_CMD" install "$APK_OUTPUT"
+            fi
             log_success "APK instalado exitosamente en el dispositivo"
         else
             log_error "ADB no está disponible. No se puede instalar."
