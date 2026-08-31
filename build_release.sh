@@ -2,9 +2,13 @@
 # ============================================================================
 #  build_release.sh — Compila y firma el Android App Bundle (AAB) para Google Play
 # ============================================================================
-#  Uso:   ./build_release.sh
-#         ./build_release.sh --bump        (incrementa automáticamente el versionCode +1)
-#         ./build_release.sh --clean       (limpia caché antes de compilar)
+#  Uso:
+#    ./build_release.sh                       (compila con la versión actual)
+#    ./build_release.sh --patch | --bump      (Versión Menor / Parche: 1.0.0 ➔ 1.0.1, code +1)
+#    ./build_release.sh --minor               (Versión Intermedia:     1.0.1 ➔ 1.1.0, code +1)
+#    ./build_release.sh --major               (Versión Mayor:          1.1.0 ➔ 2.0.0, code +1)
+#    ./build_release.sh --version-name "1.2.0" (Versión personalizada,         code +1)
+#    ./build_release.sh --clean               (Limpia caché antes de compilar)
 # ============================================================================
 
 set -euo pipefail
@@ -28,25 +32,56 @@ log_error()   { echo -e "${RED}[ERROR]${NC}   $1"; }
 log_header()  { echo -e "\n${BOLD}═══════════════════════════════════════════════════${NC}"; echo -e "${BOLD}  $1${NC}"; echo -e "${BOLD}═══════════════════════════════════════════════════${NC}\n"; }
 
 DO_CLEAN=false
-DO_BUMP=false
+BUMP_TYPE=""
+CUSTOM_VERSION_NAME=""
 
-for arg in "$@"; do
-    case "$arg" in
-        --clean) DO_CLEAN=true ;;
-        --bump)  DO_BUMP=true ;;
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --clean)
+            DO_CLEAN=true
+            shift
+            ;;
+        --patch|--bump|--bump-patch)
+            BUMP_TYPE="patch"
+            shift
+            ;;
+        --minor|--bump-minor|--intermedia)
+            BUMP_TYPE="minor"
+            shift
+            ;;
+        --major|--bump-major|--mayor)
+            BUMP_TYPE="major"
+            shift
+            ;;
+        --version-name)
+            if [ -n "${2:-}" ]; then
+                CUSTOM_VERSION_NAME="$2"
+                BUMP_TYPE="custom"
+                shift 2
+            else
+                log_error "Debes especificar una versión después de --version-name (ej. 1.2.0)"
+                exit 1
+            fi
+            ;;
         --help|-h)
             echo ""
-            echo "Uso: ./build_release.sh [opciones]"
+            echo "Uso: ./build_release.sh [opciones de versión] [opciones de build]"
             echo ""
-            echo "Opciones:"
-            echo "  --bump      Incrementa automáticamente el versionCode (+1) antes de compilar"
-            echo "  --clean     Ejecuta clean antes de compilar el bundle"
-            echo "  --help, -h  Muestra esta ayuda"
+            echo "Opciones de Incremento de Versión Semántica (SemVer):"
+            echo "  --patch, --bump   Incrementa versión Menor/Parche   (ej. 1.0.0 ➔ 1.0.1 y versionCode +1)"
+            echo "  --minor           Incrementa versión Intermedia     (ej. 1.0.1 ➔ 1.1.0 y versionCode +1)"
+            echo "  --major           Incrementa versión Mayor          (ej. 1.1.0 ➔ 2.0.0 y versionCode +1)"
+            echo "  --version-name X  Establece versionName personalizado y sube versionCode +1"
+            echo ""
+            echo "Opciones de Build:"
+            echo "  --clean           Limpia el proyecto antes de compilar"
+            echo "  --help, -h        Muestra esta ayuda"
             echo ""
             exit 0
             ;;
         *)
-            log_error "Opción desconocida: $arg"
+            log_error "Opción desconocida: $1"
+            echo "Usa ./build_release.sh --help para ver las opciones."
             exit 1
             ;;
     esac
@@ -95,23 +130,66 @@ else
     log_warn "No se encontró rancho-release.jks en la raíz. Se usarán variables de entorno o keystore.properties si existen."
 fi
 
-# ── 4. Incrementar VersionCode (si se pasó --bump) ───────────────────────────
+# ── 4. Gestionar Versiones (SemVer y Code) ──────────────────────────────────
 GRADLE_FILE="app/build.gradle.kts"
 CURRENT_VERSION_CODE=$(grep -oE "versionCode = [0-9]+" "$GRADLE_FILE" | grep -oE "[0-9]+" || echo "1")
 CURRENT_VERSION_NAME=$(grep -oE 'versionName = "[^"]+"' "$GRADLE_FILE" | cut -d'"' -f2 || echo "1.0.0")
 
-if [ "$DO_BUMP" = true ]; then
-    NEW_VERSION_CODE=$((CURRENT_VERSION_CODE + 1))
-    sed -i "s/versionCode = $CURRENT_VERSION_CODE/versionCode = $NEW_VERSION_CODE/" "$GRADLE_FILE"
-    log_success "VersionCode incrementado: $CURRENT_VERSION_CODE ➔ $NEW_VERSION_CODE"
-    CURRENT_VERSION_CODE=$NEW_VERSION_CODE
-fi
+TARGET_VERSION_CODE=$CURRENT_VERSION_CODE
+TARGET_VERSION_NAME=$CURRENT_VERSION_NAME
 
-log_info "Versión objetivo: ${BOLD}${CURRENT_VERSION_NAME}${NC} (Código: ${BOLD}${CURRENT_VERSION_CODE}${NC})"
+if [ -n "$BUMP_TYPE" ]; then
+    # Desglosar SemVer (Major.Minor.Patch)
+    IFS='.' read -r V_MAJOR V_MINOR V_PATCH <<< "$CURRENT_VERSION_NAME"
+    V_MAJOR="${V_MAJOR:-1}"
+    V_MINOR="${V_MINOR:-0}"
+    V_PATCH="${V_PATCH:-0}"
+
+    case "$BUMP_TYPE" in
+        patch)
+            V_PATCH=$((V_PATCH + 1))
+            TARGET_VERSION_NAME="${V_MAJOR}.${V_MINOR}.${V_PATCH}"
+            TARGET_VERSION_CODE=$((CURRENT_VERSION_CODE + 1))
+            log_info "Tipo de versión: ${BOLD}Menor / Parche${NC} (correcciones y ajustes)"
+            ;;
+        minor)
+            V_MINOR=$((V_MINOR + 1))
+            V_PATCH=0
+            TARGET_VERSION_NAME="${V_MAJOR}.${V_MINOR}.${V_PATCH}"
+            TARGET_VERSION_CODE=$((CURRENT_VERSION_CODE + 1))
+            log_info "Tipo de versión: ${BOLD}Intermedia${NC} (nuevas funciones y modos)"
+            ;;
+        major)
+            V_MAJOR=$((V_MAJOR + 1))
+            V_MINOR=0
+            V_PATCH=0
+            TARGET_VERSION_NAME="${V_MAJOR}.${V_MINOR}.${V_PATCH}"
+            TARGET_VERSION_CODE=$((CURRENT_VERSION_CODE + 1))
+            log_info "Tipo de versión: ${BOLD}Mayor${NC} (gran lanzamiento o rediseño)"
+            ;;
+        custom)
+            TARGET_VERSION_NAME="$CUSTOM_VERSION_NAME"
+            TARGET_VERSION_CODE=$((CURRENT_VERSION_CODE + 1))
+            log_info "Tipo de versión: ${BOLD}Personalizada${NC}"
+            ;;
+    esac
+
+    # Aplicar cambios en app/build.gradle.kts
+    sed -i "s/versionCode = $CURRENT_VERSION_CODE/versionCode = $TARGET_VERSION_CODE/" "$GRADLE_FILE"
+    sed -i "s/versionName = \"$CURRENT_VERSION_NAME\"/versionName = \"$TARGET_VERSION_NAME\"/" "$GRADLE_FILE"
+
+    echo ""
+    log_success "Versión actualizada:"
+    echo -e "  Anterior: ${YELLOW}${CURRENT_VERSION_NAME}${NC} (Code: ${YELLOW}${CURRENT_VERSION_CODE}${NC})"
+    echo -e "  Nueva:    ${GREEN}${BOLD}${TARGET_VERSION_NAME}${NC} (Code: ${GREEN}${BOLD}${TARGET_VERSION_CODE}${NC})"
+else
+    log_info "Manteniendo versión actual:"
+    echo -e "  Versión: ${BOLD}${TARGET_VERSION_NAME}${NC} (Code: ${BOLD}${TARGET_VERSION_CODE}${NC})"
+fi
 
 # ── 5. Limpieza previa ──────────────────────────────────────────────────────
 if [ "$DO_CLEAN" = true ]; then
-    log_info "Limpiando proyecto..."
+    log_info "Limpiando proyecto con gradlew clean..."
     ./gradlew clean
 fi
 
@@ -132,8 +210,8 @@ if [ -f "$AAB_SOURCE" ]; then
     mkdir -p releases google_play_assets
 
     DATE=$(date +%Y%m%d_%H%M)
-    DEST_PLAY="google_play_assets/buscaminas_del_rancho_v${CURRENT_VERSION_CODE}_release.aab"
-    DEST_ARCHIVE="releases/buscaminas_v${CURRENT_VERSION_CODE}_${DATE}.aab"
+    DEST_PLAY="google_play_assets/buscaminas_del_rancho_v${TARGET_VERSION_CODE}_v${TARGET_VERSION_NAME}.aab"
+    DEST_ARCHIVE="releases/buscaminas_v${TARGET_VERSION_CODE}_v${TARGET_VERSION_NAME}_${DATE}.aab"
 
     cp "$AAB_SOURCE" "$DEST_PLAY"
     cp "$AAB_SOURCE" "$DEST_ARCHIVE"
@@ -141,8 +219,8 @@ if [ -f "$AAB_SOURCE" ]; then
     log_header "🎉 ¡App Bundle de Producción Listo!"
     echo -e "  ${BOLD}Archivo para Play Console:${NC}  ${GREEN}$DEST_PLAY${NC}"
     echo -e "  ${BOLD}Copia de Respaldo:${NC}          $DEST_ARCHIVE"
-    echo -e "  ${BOLD}Código de Versión:${NC}          ${CYAN}$CURRENT_VERSION_CODE${NC}"
-    echo -e "  ${BOLD}Nombre de Versión:${NC}          ${CYAN}$CURRENT_VERSION_NAME${NC}"
+    echo -e "  ${BOLD}Versión Semántica:${NC}          ${CYAN}v${TARGET_VERSION_NAME}${NC}"
+    echo -e "  ${BOLD}Código de Versión:${NC}          ${CYAN}${TARGET_VERSION_CODE}${NC}"
     echo -e "  ${BOLD}Tamaño del Bundle:${NC}          $AAB_SIZE (Optimizado con R8 + Símbolos Nativos)"
     echo -e "  ${BOLD}Tiempo de Compilación:${NC}      ${BUILD_TIME}s"
     echo ""
@@ -150,7 +228,8 @@ if [ -f "$AAB_SOURCE" ]; then
     echo -e "  1. Entra a ${CYAN}Prueba interna${NC} (o Prueba cerrada)."
     echo -e "  2. Haz clic en el botón azul ${CYAN}Crear nueva versión${NC}."
     echo -e "  3. Sube el archivo: ${BOLD}$DEST_PLAY${NC}"
-    echo -e "  4. Guarda y publica la versión."
+    echo -e "  4. En nombre de versión pon: ${BOLD}${TARGET_VERSION_NAME} (Build ${TARGET_VERSION_CODE})${NC}"
+    echo -e "  5. Guarda y publica la versión."
     echo ""
 else
     log_header "❌ Falló la Construcción del Bundle"
