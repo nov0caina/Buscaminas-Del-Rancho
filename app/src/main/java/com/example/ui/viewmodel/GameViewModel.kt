@@ -657,7 +657,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             )
             if (newlyUnlocked.isNotEmpty()) {
                 triggerVibration("achievement")
-                soundManager.playVictorySound()
+                soundManager.playVictorySequence()
                 newlyUnlocked.forEach { achievement ->
                     _achievementUnlockEvents.emit(achievement)
                     playGamesManager.unlockAchievement(achievement.id)
