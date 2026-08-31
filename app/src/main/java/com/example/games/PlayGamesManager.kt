@@ -33,6 +33,9 @@ class PlayGamesManager private constructor(private val appContext: Context) {
     private val _playerName = MutableStateFlow<String?>(null)
     val playerName: StateFlow<String?> = _playerName.asStateFlow()
 
+    private val _lastAuthError = MutableStateFlow<String?>(null)
+    val lastAuthError: StateFlow<String?> = _lastAuthError.asStateFlow()
+
     init {
         try {
             PlayGamesSdk.initialize(appContext)
@@ -54,6 +57,29 @@ class PlayGamesManager private constructor(private val appContext: Context) {
 
     private fun resolveActivity(provided: Activity? = null): Activity? = provided ?: currentActivity?.get()
 
+    private fun formatAuthError(exception: Throwable?): String {
+        if (exception == null) return "Error desconocido (sin excepción)"
+        if (exception is com.google.android.gms.common.api.ApiException) {
+            val code = exception.statusCode
+            val codeName = when (code) {
+                4 -> "SIGN_IN_REQUIRED (4: Se requiere abrir la app Play Juegos)"
+                7 -> "NETWORK_ERROR (7: Error de conexión)"
+                8 -> "INTERNAL_ERROR (8: Error interno de Google)"
+                10 -> "DEVELOPER_ERROR (10: SHA-1 o paquete no coincide en Google Cloud)"
+                13 -> "ERROR (13: Error general)"
+                14 -> "INTERRUPTED (14: Interrumpido)"
+                15 -> "TIMEOUT (15: Tiempo de espera agotado)"
+                16 -> "CANCELED (16: Sin permisos de tester en Play Games)"
+                17 -> "API_NOT_CONNECTED (17: API no conectada)"
+                12501 -> "SIGN_IN_CANCELLED (12501: Cancelado por el usuario)"
+                12502 -> "SIGN_IN_CURRENTLY_IN_PROGRESS (12502: En progreso)"
+                else -> "Código $code"
+            }
+            return "$codeName: ${exception.message ?: ""}"
+        }
+        return exception.message ?: exception.javaClass.simpleName
+    }
+
     /**
      * Intenta autenticar silenciosamente al usuario con Google Play Games.
      */
@@ -64,16 +90,21 @@ class PlayGamesManager private constructor(private val appContext: Context) {
             gamesSignInClient.isAuthenticated.addOnCompleteListener { task ->
                 if (task.isSuccessful && task.result.isAuthenticated) {
                     _isAuthenticated.value = true
+                    _lastAuthError.value = null
                     fetchPlayerInfo(targetActivity)
-                    Log.d(TAG, "Usuario autenticado en Google Play Games")
+                    Log.d(TAG, "Usuario autenticado silenciosamente en Google Play Games")
                 } else {
                     _isAuthenticated.value = false
                     _playerName.value = null
-                    Log.d(TAG, "Usuario no autenticado en Google Play Games")
+                    val err = if (!task.isSuccessful) formatAuthError(task.exception) else "Sesión no activa"
+                    _lastAuthError.value = err
+                    Log.d(TAG, "Usuario no autenticado silenciosamente: $err")
                 }
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Error comprobando autenticación de Google Play Games: ${e.message}")
+            val err = "Error comprobando autenticación: ${e.message}"
+            _lastAuthError.value = err
+            Log.w(TAG, err)
             _isAuthenticated.value = false
         }
     }
@@ -89,15 +120,32 @@ class PlayGamesManager private constructor(private val appContext: Context) {
         try {
             val gamesSignInClient = PlayGames.getGamesSignInClient(targetActivity)
             gamesSignInClient.signIn().addOnCompleteListener { task ->
-                val success = task.isSuccessful && task.result.isAuthenticated
-                _isAuthenticated.value = success
-                if (success) {
-                    fetchPlayerInfo(targetActivity)
+                if (task.isSuccessful) {
+                    val result = task.result
+                    val success = result.isAuthenticated
+                    _isAuthenticated.value = success
+                    if (success) {
+                        _lastAuthError.value = null
+                        fetchPlayerInfo(targetActivity)
+                        Log.d(TAG, "Inicio de sesión exitoso en Google Play Games")
+                    } else {
+                        val err = "Autenticación denegada por Google (isAuthenticated=false)"
+                        _lastAuthError.value = err
+                        Log.w(TAG, err)
+                    }
+                    onComplete?.invoke(success)
+                } else {
+                    val err = formatAuthError(task.exception)
+                    _lastAuthError.value = err
+                    _isAuthenticated.value = false
+                    Log.e(TAG, "Error en signIn: $err", task.exception)
+                    onComplete?.invoke(false)
                 }
-                onComplete?.invoke(success)
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error iniciando sesión en Google Play Games: ${e.message}")
+            val err = "Error iniciando sesión: ${e.message}"
+            _lastAuthError.value = err
+            Log.e(TAG, err, e)
             onComplete?.invoke(false)
         }
     }
@@ -165,10 +213,11 @@ class PlayGamesManager private constructor(private val appContext: Context) {
                 if (success) {
                     showAchievementsOverlay(targetActivity)
                 } else {
+                    val detail = _lastAuthError.value ?: "Error al autenticar"
                     Toast.makeText(
                         targetActivity,
-                        "Inicia sesión en Google Play Games para ver tus logros.",
-                        Toast.LENGTH_SHORT
+                        "Google Play Games: $detail",
+                        Toast.LENGTH_LONG
                     ).show()
                 }
             }
@@ -306,10 +355,11 @@ class PlayGamesManager private constructor(private val appContext: Context) {
                 if (success) {
                     showLeaderboardOverlay(difficulty, isTimeMetric, targetActivity)
                 } else {
+                    val detail = _lastAuthError.value ?: "Error al autenticar"
                     Toast.makeText(
                         targetActivity,
-                        "Inicia sesión en Google Play Games para ver las posiciones globales.",
-                        Toast.LENGTH_SHORT
+                        "Google Play Games: $detail",
+                        Toast.LENGTH_LONG
                     ).show()
                 }
             }
