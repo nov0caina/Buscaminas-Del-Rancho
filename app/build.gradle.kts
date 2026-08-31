@@ -19,8 +19,8 @@ android {
     applicationId = "com.nov0caina.buscaminas.estilo.sinaloa"
     minSdk = 24
     targetSdk = 36
-    versionCode = 5
-    versionName = "1.0.0"
+    versionCode = 6
+    versionName = "1.0.1"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
