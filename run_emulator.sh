@@ -25,15 +25,22 @@ cd "$SCRIPT_DIR"
 
 # ── Configuración ──────────────────────────────────────────────────────────
 AVD_NAME="Pixel_7"
-APP_PACKAGE="com.aistudio.buscaminas.rancho.sinaloa.vnfyzm"
+APP_PACKAGE="com.nov0caina.buscaminas.estilo.sinaloa"
 MAIN_ACTIVITY="com.example.MainActivity"
 APK_OUTPUT="app/build/outputs/apk/debug/app-debug.apk"
 GRADLEW="./gradlew"
 BOOT_TIMEOUT=120  # Segundos máximo para esperar el boot
 
 # ── Detectar Android SDK ───────────────────────────────────────────────────
+if [ -z "${ANDROID_HOME:-}" ] && [ -f "local.properties" ]; then
+    SDK_FROM_PROP=$(grep -E "^sdk\.dir=" local.properties | cut -d'=' -f2 | sed 's/\\:/:/g' | sed 's/\\\\/\//g' || true)
+    if [ -n "$SDK_FROM_PROP" ] && [ -d "$SDK_FROM_PROP" ]; then
+        export ANDROID_HOME="$SDK_FROM_PROP"
+    fi
+fi
+
 if [ -z "${ANDROID_HOME:-}" ]; then
-    for p in "$HOME/Android/Sdk" "$HOME/android-sdk" "/usr/local/android-sdk"; do
+    for p in "$HOME/Android/Sdk" "$HOME/android-sdk" "/usr/local/android-sdk" "/usr/lib/android-sdk" "/opt/android-sdk"; do
         [ -d "$p" ] && export ANDROID_HOME="$p" && break
     done
 fi
@@ -83,13 +90,14 @@ wait_for_boot() {
 
 show_help() {
     echo ""
-    echo "Uso: ./run_emulator.sh [opciones]"
+    echo "Uso: ./run_emulator.sh [opciones] [-- args_gradle]"
     echo ""
     echo "Opciones:"
     echo "  (sin args)     Lanza emulador + compila + instala + abre la app"
-    echo "  --clean        Limpia el build cache antes de compilar"
+    echo "  --clean        Limpia cache antes de compilar"
     echo "  --emulator     Solo lanza el emulador (sin compilar)"
     echo "  --build        Solo compila e instala (asume emulador ya corriendo)"
+    echo "  --extra-args   Pasa argumentos adicionales a Gradle"
     echo "  --kill         Cierra el emulador"
     echo "  --help, -h     Muestra esta ayuda"
     echo ""
@@ -101,15 +109,33 @@ DO_CLEAN=false
 ONLY_EMULATOR=false
 ONLY_BUILD=false
 DO_KILL=false
+EXTRA_GRADLE_ARGS=()
 
-for arg in "$@"; do
-    case "$arg" in
-        --clean)     DO_CLEAN=true ;;
-        --emulator)  ONLY_EMULATOR=true ;;
-        --build)     ONLY_BUILD=true ;;
-        --kill)      DO_KILL=true ;;
-        --help|-h)   show_help ;;
-        *) log_error "Argumento desconocido: $arg"; show_help ;;
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --clean)       DO_CLEAN=true; shift ;;
+        --emulator)    ONLY_EMULATOR=true; shift ;;
+        --build)       ONLY_BUILD=true; shift ;;
+        --kill)        DO_KILL=true; shift ;;
+        --extra-args)
+            if [ -n "${2:-}" ]; then
+                EXTRA_GRADLE_ARGS+=($2)
+                shift 2
+            else
+                log_error "Debes especificar argumentos después de --extra-args"
+                exit 1
+            fi
+            ;;
+        --help|-h)     show_help ;;
+        --)
+            shift
+            while [[ $# -gt 0 ]]; do
+                EXTRA_GRADLE_ARGS+=("$1")
+                shift
+            done
+            break
+            ;;
+        *)             EXTRA_GRADLE_ARGS+=("$1"); shift ;;
     esac
 done
 
@@ -201,7 +227,7 @@ if [ ! -x "$GRADLEW" ]; then
     chmod +x "$GRADLEW"
 fi
 
-GRADLE_ARGS="assembleDebug --no-daemon --console=plain --warning-mode=summary"
+GRADLE_ARGS="assembleDebug ${EXTRA_GRADLE_ARGS[*]:-} --no-daemon --console=plain --warning-mode=summary"
 if [ "$DO_CLEAN" = true ]; then
     GRADLE_ARGS="clean $GRADLE_ARGS"
     log_info "Limpiando build anterior..."

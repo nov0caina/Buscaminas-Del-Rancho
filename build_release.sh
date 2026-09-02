@@ -34,6 +34,7 @@ log_header()  { echo -e "\n${BOLD}═══════════════�
 DO_CLEAN=false
 BUMP_TYPE=""
 CUSTOM_VERSION_NAME=""
+EXTRA_GRADLE_ARGS=()
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -63,9 +64,18 @@ while [[ $# -gt 0 ]]; do
                 exit 1
             fi
             ;;
+        --extra-args|--gradle-args)
+            if [ -n "${2:-}" ]; then
+                EXTRA_GRADLE_ARGS+=($2)
+                shift 2
+            else
+                log_error "Debes especificar argumentos después de $1"
+                exit 1
+            fi
+            ;;
         --help|-h)
             echo ""
-            echo "Uso: ./build_release.sh [opciones de versión] [opciones de build]"
+            echo "Uso: ./build_release.sh [opciones de versión] [opciones de build] [-- args_gradle]"
             echo ""
             echo "Opciones de Incremento de Versión Semántica (SemVer):"
             echo "  --patch, --bump   Incrementa versión Menor/Parche   (ej. 1.0.0 ➔ 1.0.1 y versionCode +1)"
@@ -75,14 +85,22 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Opciones de Build:"
             echo "  --clean           Limpia el proyecto antes de compilar"
+            echo "  --extra-args      Pasa argumentos adicionales a Gradle"
             echo "  --help, -h        Muestra esta ayuda"
             echo ""
             exit 0
             ;;
+        --)
+            shift
+            while [[ $# -gt 0 ]]; do
+                EXTRA_GRADLE_ARGS+=("$1")
+                shift
+            done
+            break
+            ;;
         *)
-            log_error "Opción desconocida: $1"
-            echo "Usa ./build_release.sh --help para ver las opciones."
-            exit 1
+            EXTRA_GRADLE_ARGS+=("$1")
+            shift
             ;;
     esac
 done
@@ -101,12 +119,20 @@ fi
 
 # ── 2. Configurar ANDROID_HOME ──────────────────────────────────────────────
 log_info "Verificando Android SDK..."
+if [ -z "${ANDROID_HOME:-}" ] && [ -f "local.properties" ]; then
+    SDK_FROM_PROP=$(grep -E "^sdk\.dir=" local.properties | cut -d'=' -f2 | sed 's/\\:/:/g' | sed 's/\\\\/\//g' || true)
+    if [ -n "$SDK_FROM_PROP" ] && [ -d "$SDK_FROM_PROP" ]; then
+        export ANDROID_HOME="$SDK_FROM_PROP"
+    fi
+fi
+
 if [ -z "${ANDROID_HOME:-}" ]; then
     POSSIBLE_PATHS=(
         "$HOME/Android/Sdk"
         "$HOME/android-sdk"
         "/usr/local/android-sdk"
         "/opt/android-sdk"
+        "/usr/lib/android-sdk"
     )
     for sdk_path in "${POSSIBLE_PATHS[@]}"; do
         if [ -d "$sdk_path" ]; then
@@ -116,11 +142,12 @@ if [ -z "${ANDROID_HOME:-}" ]; then
     done
 fi
 
-if [ -z "${ANDROID_HOME:-}" ] || [ ! -d "$ANDROID_HOME" ]; then
-    log_error "No se encontró el Android SDK. Configura export ANDROID_HOME=\$HOME/Android/Sdk"
-    exit 1
+if [ -n "${ANDROID_HOME:-}" ] && [ -d "$ANDROID_HOME" ]; then
+    export ANDROID_SDK_ROOT="$ANDROID_HOME"
+    log_success "Android SDK: $ANDROID_HOME"
+else
+    log_warn "ANDROID_HOME no está configurado explícitamente. Gradle utilizará su configuración por defecto."
 fi
-log_success "Android SDK: $ANDROID_HOME"
 
 # ── 3. Verificar Keystore de Release ────────────────────────────────────────
 log_info "Verificando firma de Release..."
@@ -197,7 +224,7 @@ fi
 log_header "Construyendo Android App Bundle Oficial (Release)..."
 BUILD_START=$(date +%s)
 
-./gradlew bundleRelease
+./gradlew bundleRelease "${EXTRA_GRADLE_ARGS[@]}"
 
 BUILD_END=$(date +%s)
 BUILD_TIME=$((BUILD_END - BUILD_START))

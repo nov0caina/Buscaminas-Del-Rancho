@@ -35,26 +35,50 @@ log_header()  { echo -e "\n${BOLD}═══════════════�
 # ── Parsear argumentos ──────────────────────────────────────────────────────
 DO_CLEAN=false
 DO_INSTALL=false
+EXTRA_GRADLE_ARGS=()
 
-for arg in "$@"; do
-    case "$arg" in
-        --clean)   DO_CLEAN=true ;;
-        --install) DO_INSTALL=true ;;
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --clean)
+            DO_CLEAN=true
+            shift
+            ;;
+        --install)
+            DO_INSTALL=true
+            shift
+            ;;
+        --extra-args|--gradle-args)
+            if [ -n "${2:-}" ]; then
+                EXTRA_GRADLE_ARGS+=($2)
+                shift 2
+            else
+                log_error "Debes especificar argumentos después de $1"
+                exit 1
+            fi
+            ;;
         --help|-h)
             echo ""
-            echo "Uso: ./build_debug.sh [opciones]"
+            echo "Uso: ./build_debug.sh [opciones] [-- argumentos_extra_gradle]"
             echo ""
             echo "Opciones:"
-            echo "  --clean     Limpia el build cache antes de compilar"
-            echo "  --install   Instala el APK en un dispositivo conectado vía ADB"
-            echo "  --help, -h  Muestra esta ayuda"
+            echo "  --clean       Limpia el build cache antes de compilar"
+            echo "  --install     Instala el APK en un dispositivo conectado vía ADB"
+            echo "  --extra-args  Pasa argumentos adicionales a Gradle (ej. --extra-args '--stacktrace')"
+            echo "  --help, -h    Muestra esta ayuda"
             echo ""
             exit 0
             ;;
+        --)
+            shift
+            while [[ $# -gt 0 ]]; do
+                EXTRA_GRADLE_ARGS+=("$1")
+                shift
+            done
+            break
+            ;;
         *)
-            log_error "Argumento desconocido: $arg"
-            echo "Usa --help para ver las opciones disponibles."
-            exit 1
+            EXTRA_GRADLE_ARGS+=("$1")
+            shift
             ;;
     esac
 done
@@ -76,6 +100,13 @@ fi
 
 # ── 2. Verificar/configurar ANDROID_HOME ────────────────────────────────────
 log_info "Verificando Android SDK..."
+if [ -z "${ANDROID_HOME:-}" ] && [ -f "local.properties" ]; then
+    SDK_FROM_PROP=$(grep -E "^sdk\.dir=" local.properties | cut -d'=' -f2 | sed 's/\\:/:/g' | sed 's/\\\\/\//g' || true)
+    if [ -n "$SDK_FROM_PROP" ] && [ -d "$SDK_FROM_PROP" ]; then
+        export ANDROID_HOME="$SDK_FROM_PROP"
+    fi
+fi
+
 if [ -z "${ANDROID_HOME:-}" ]; then
     # Intentar detectar ubicaciones comunes
     POSSIBLE_PATHS=(
@@ -83,6 +114,7 @@ if [ -z "${ANDROID_HOME:-}" ]; then
         "$HOME/android-sdk"
         "/usr/local/android-sdk"
         "/opt/android-sdk"
+        "/usr/lib/android-sdk"
     )
     for sdk_path in "${POSSIBLE_PATHS[@]}"; do
         if [ -d "$sdk_path" ]; then
@@ -92,24 +124,15 @@ if [ -z "${ANDROID_HOME:-}" ]; then
     done
 fi
 
-if [ -z "${ANDROID_HOME:-}" ] || [ ! -d "$ANDROID_HOME" ]; then
-    log_error "No se encontró el Android SDK."
-    echo "  Configura la variable ANDROID_HOME:"
-    echo "  export ANDROID_HOME=\$HOME/Android/Sdk"
-    exit 1
+if [ -n "${ANDROID_HOME:-}" ] && [ -d "$ANDROID_HOME" ]; then
+    export ANDROID_SDK_ROOT="$ANDROID_HOME"
+    log_success "Android SDK: $ANDROID_HOME"
+    if [ -d "$ANDROID_HOME/platforms" ] && [ -n "$(ls -A "$ANDROID_HOME/platforms" 2>/dev/null)" ]; then
+        log_success "Plataformas SDK encontradas: $(ls "$ANDROID_HOME/platforms" | tr '\n' ' ')"
+    fi
+else
+    log_warn "ANDROID_HOME no está definido o no existe el directorio. Gradle intentará usar la configuración local o interna."
 fi
-
-export ANDROID_SDK_ROOT="$ANDROID_HOME"
-log_success "Android SDK: $ANDROID_HOME"
-
-# Verificar que existan las plataformas necesarias
-if [ ! -d "$ANDROID_HOME/platforms" ] || [ -z "$(ls -A "$ANDROID_HOME/platforms" 2>/dev/null)" ]; then
-    log_error "No hay plataformas SDK instaladas en $ANDROID_HOME/platforms"
-    echo "  Instala la plataforma con:"
-    echo "  \$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager 'platforms;android-36'"
-    exit 1
-fi
-log_success "Plataformas SDK encontradas: $(ls "$ANDROID_HOME/platforms" | tr '\n' ' ')"
 
 # ── 3. Verificar gradlew ───────────────────────────────────────────────────
 log_info "Verificando Gradle Wrapper..."
@@ -136,7 +159,7 @@ log_header "Compilando Debug APK..."
 
 BUILD_START=$(date +%s)
 
-"$GRADLEW" assembleDebug \
+"$GRADLEW" assembleDebug "${EXTRA_GRADLE_ARGS[@]}" \
     --no-daemon \
     --console=plain \
     --warning-mode=summary \
