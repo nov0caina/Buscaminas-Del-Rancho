@@ -17,11 +17,13 @@ debug.keystore
 keystore.properties
 local.properties
 secrets.properties
+keystore_env.sh
 .env
 .env.local
 .env.*.local
 !.env.example
 !keystore.properties.example
+!keystore_env.sh.example
 
 # --- Credenciales de Google Services y APIs ---
 google-services.json
