@@ -272,6 +272,77 @@ class SoundManager private constructor(private val appContext: Context) {
         }
     }
 
+    /**
+     * Reproduce el sonido de apertura de la tarjeta de detalle de logro.
+     */
+    fun playAchievementCardOpenSound(achievementId: String = "") {
+        if (!isSfxEnabled) return
+        audioScope.launch {
+            playSfx(R.raw.pop_double_01, volumeMultiplier = 0.60f, pitch = 1.42f)
+            delay(90L)
+            playAchievementThemedSound(achievementId, isIntro = true)
+        }
+    }
+
+    /**
+     * Reproduce el sonido característico y personalizado para cada logro del rancho.
+     */
+    fun playAchievementThemedSound(achievementId: String, isIntro: Boolean = false) {
+        if (!isSfxEnabled) return
+        audioScope.launch {
+            val volMultiplier = if (isIntro) 0.65f else 0.85f
+            when (achievementId) {
+                "first_win" -> {
+                    playSfx(R.raw.pop_double_01, volMultiplier * 0.9f, 1.28f)
+                    delay(120L)
+                    playSfx(R.raw.victory_celebration_01, volMultiplier * 0.70f, 1.10f)
+                }
+                "patron_experto" -> {
+                    playSfx(R.raw.victory_celebration_02, volMultiplier * 0.90f, 1.05f)
+                }
+                "fast_hand" -> {
+                    playSfx(R.raw.pop_01, volMultiplier, 1.75f)
+                    delay(80L)
+                    playSfx(R.raw.pop_double_02, volMultiplier * 0.9f, 1.60f)
+                }
+                "cazador_iguanas" -> {
+                    playSfx(R.raw.pop_01, volMultiplier * 0.85f, 0.85f)
+                    delay(110L)
+                    playSfx(R.raw.pop_double_01, volMultiplier, 1.45f)
+                }
+                "minero_veterano" -> {
+                    playSfx(R.raw.pop_double_02, volMultiplier, 1.40f)
+                    delay(100L)
+                    playSfx(R.raw.pop_01, volMultiplier * 0.9f, 1.65f)
+                }
+                "sin_banderas" -> {
+                    playSfx(R.raw.pop_double_01, volMultiplier, 1.50f)
+                    delay(120L)
+                    playSfx(R.raw.victory_woooow, volMultiplier * 0.75f, 1.15f)
+                }
+                else -> {
+                    playAchievementUnlockedSound()
+                }
+            }
+        }
+    }
+
+    /**
+     * Reproduce el sonido de cierre de la tarjeta de detalle de logro.
+     */
+    fun playAchievementCardCloseSound() {
+        if (!isSfxEnabled) return
+        playSfx(R.raw.pop_01, volumeMultiplier = 0.28f, pitch = 0.88f)
+    }
+
+    /**
+     * Reproduce un sonido sordo de retroalimentación táctil al intentar interactuar con un logro bloqueado.
+     */
+    fun playLockedAchievementSound() {
+        if (!isSfxEnabled) return
+        playSfx(R.raw.pop_01, volumeMultiplier = 0.32f, pitch = 0.60f)
+    }
+
     fun playWaitingSound() {
         if (!isSfxEnabled) return
         val waitingRes = waitingDeck.next()

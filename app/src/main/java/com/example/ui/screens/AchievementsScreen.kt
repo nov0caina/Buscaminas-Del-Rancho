@@ -63,6 +63,13 @@ import androidx.compose.foundation.border
 import androidx.compose.ui.res.painterResource
 import com.example.R
 
+import androidx.compose.runtime.rememberCoroutineScope
+import com.example.audio.SoundManager
+import com.example.ui.components.AchievementDetailModal
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
 @Composable
 fun AchievementsScreen(
     achievements: List<AchievementEntity>,
@@ -72,7 +79,13 @@ fun AchievementsScreen(
     modifier: Modifier = Modifier,
     isDarkTheme: Boolean = isSystemInDarkTheme()
 ) {
+    val context = LocalContext.current
+    val soundManager = remember { SoundManager.getInstance(context) }
+    val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
+
+    var selectedAchievement by remember { mutableStateOf<AchievementEntity?>(null) }
+    var shakingAchievementId by remember { mutableStateOf<String?>(null) }
 
     // Auto-scroll to highlighted achievement if coming from notification or toast
     LaunchedEffect(highlightedAchievementId, achievements) {
@@ -226,10 +239,26 @@ fun AchievementsScreen(
 
                 itemsIndexed(achievements) { index, achievement ->
                     val isHighlighted = achievement.id == highlightedAchievementId
+                    val isShaking = achievement.id == shakingAchievementId
                     AchievementCard(
                         achievement = achievement,
                         isDarkTheme = isDarkTheme,
                         isHighlighted = isHighlighted,
+                        isShaking = isShaking,
+                        onClick = {
+                            if (achievement.isUnlocked) {
+                                selectedAchievement = achievement
+                            } else {
+                                scope.launch {
+                                    shakingAchievementId = achievement.id
+                                    soundManager.playLockedAchievementSound()
+                                    delay(350L)
+                                    if (shakingAchievementId == achievement.id) {
+                                        shakingAchievementId = null
+                                    }
+                                }
+                            }
+                        },
                         modifier = Modifier.staggeredEntrance(index = index + 1)
                     )
                 }
@@ -237,6 +266,15 @@ fun AchievementsScreen(
                     Spacer(modifier = Modifier.height(40.dp))
                 }
             }
+        }
+
+        // Interactive Achievement Celebration Modal Dialog
+        selectedAchievement?.let { achievement ->
+            AchievementDetailModal(
+                achievement = achievement,
+                onDismiss = { selectedAchievement = null },
+                isDarkTheme = isDarkTheme
+            )
         }
     }
 }
@@ -330,6 +368,8 @@ private fun AchievementCard(
     achievement: AchievementEntity,
     isDarkTheme: Boolean,
     isHighlighted: Boolean = false,
+    isShaking: Boolean = false,
+    onClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val isUnlocked = achievement.isUnlocked
@@ -349,14 +389,34 @@ private fun AchievementCard(
         label = "achievement_item_progress"
     )
 
+    val shakeOffsetX = remember { androidx.compose.animation.core.Animatable(0f) }
+
     LaunchedEffect(Unit) {
         animationPlayed = true
+    }
+
+    LaunchedEffect(isShaking) {
+        if (isShaking) {
+            val keyframes = listOf(0f, -10f, 10f, -8f, 8f, -4f, 4f, 0f)
+            for (offset in keyframes) {
+                shakeOffsetX.animateTo(
+                    targetValue = offset,
+                    animationSpec = tween(durationMillis = 40, easing = LinearEasing)
+                )
+            }
+        } else {
+            shakeOffsetX.snapTo(0f)
+        }
     }
 
     Box(
         modifier = modifier
             .fillMaxWidth()
             .testTag("achievement_card_${achievement.id}")
+            .graphicsLayer {
+                translationX = shakeOffsetX.value
+            }
+            .bounceClick(onClick = onClick)
             .then(
                 if (isHighlighted) Modifier.shimmerGoldenSweep(durationMillis = 2000) else Modifier
             )
@@ -364,8 +424,8 @@ private fun AchievementCard(
             .padding(bottom = 6.dp)
             .background(surfaceCol, RoundedCornerShape(16.dp))
             .border(
-                width = if (isHighlighted) 2.dp else 1.dp,
-                color = if (isHighlighted) Color(0xFFFFD700) else if (isUnlocked) MaterialTheme.colorScheme.primary.copy(alpha = 0.4f) else Color.Transparent,
+                width = if (isHighlighted) 2.dp else if (isUnlocked) 1.5.dp else 1.dp,
+                color = if (isHighlighted) Color(0xFFFFD700) else if (isUnlocked) MaterialTheme.colorScheme.primary.copy(alpha = 0.6f) else Color.Transparent,
                 shape = RoundedCornerShape(16.dp)
             )
     ) {
@@ -447,7 +507,7 @@ private fun AchievementCard(
                                     )
                             ) {
                                 Text(
-                                    text = "✓ Listo",
+                                    text = "✨ Ver Festejo",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = Color.White,
                                     fontWeight = FontWeight.ExtraBold,
