@@ -265,10 +265,9 @@ class SoundManager private constructor(private val appContext: Context) {
     fun playAchievementUnlockedSound() {
         if (!isSfxEnabled) return
         audioScope.launch {
-            // Doble pop armónico brillante con pitch ascendente
-            playSfx(R.raw.pop_double_01, volumeMultiplier = 0.65f, pitch = 1.35f)
-            delay(110L)
-            playSfx(R.raw.pop_01, volumeMultiplier = 0.85f, pitch = 1.55f)
+            playSfx(R.raw.victory_woooow, volumeMultiplier = 0.65f, pitch = 1.35f)
+            //delay(110L)
+            //playSfx(R.raw.pop_01, volumeMultiplier = 0.85f, pitch = 1.55f)
         }
     }
 
@@ -278,15 +277,15 @@ class SoundManager private constructor(private val appContext: Context) {
     fun playAchievementCardOpenSound(achievementId: String = "") {
         if (!isSfxEnabled) return
         audioScope.launch {
-            playSfx(R.raw.pop_double_01, volumeMultiplier = 0.60f, pitch = 1.42f)
+            playSfx(R.raw.victory_woooow, volumeMultiplier = 0.60f, pitch = 1.42f)
             delay(90L)
-            playAchievementThemedSound(achievementId, isIntro = true)
+            //playAchievementThemedSound(achievementId, isIntro = true)
         }
     }
 
     /**
      * Reproduce el sonido característico y personalizado para cada logro del rancho.
-     */
+
     fun playAchievementThemedSound(achievementId: String, isIntro: Boolean = false) {
         if (!isSfxEnabled) return
         audioScope.launch {
@@ -326,7 +325,8 @@ class SoundManager private constructor(private val appContext: Context) {
             }
         }
     }
-
+     */
+    
     /**
      * Reproduce el sonido de cierre de la tarjeta de detalle de logro.
      */
