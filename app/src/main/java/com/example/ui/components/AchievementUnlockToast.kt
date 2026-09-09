@@ -60,6 +60,7 @@ import android.os.VibratorManager
 import com.example.audio.SoundManager
 import com.example.data.local.AchievementEntity
 import com.example.ui.screens.bounceClick
+import com.example.ui.screens.shimmerGoldenSweep
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharedFlow
 
@@ -197,18 +198,6 @@ private fun AchievementUnlockToastCard(
         )
     }
 
-    // Shimmer Sweep Animation across the card
-    val infiniteTransition = rememberInfiniteTransition(label = "achievement_shimmer")
-    val shimmerOffset by infiniteTransition.animateFloat(
-        initialValue = -300f,
-        targetValue = 900f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1800, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "shimmer_x"
-    )
-
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -216,15 +205,16 @@ private fun AchievementUnlockToastCard(
             .bounceClick(onClick = onClick)
             .background(Color.Black.copy(alpha = 0.40f), RoundedCornerShape(20.dp))
             .padding(bottom = 5.dp)
+            .clip(RoundedCornerShape(20.dp))
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(
                         Color(0xFF4A342B),
                         Color(0xFF281C16)
                     )
-                ),
-                shape = RoundedCornerShape(20.dp)
+                )
             )
+            .shimmerGoldenSweep(durationMillis = 2400)
             .border(
                 width = 2.dp,
                 brush = Brush.horizontalGradient(
@@ -238,23 +228,6 @@ private fun AchievementUnlockToastCard(
             )
             .clip(RoundedCornerShape(20.dp))
     ) {
-        // Continuous Shimmer Light Sweep
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .background(
-                    brush = Brush.linearGradient(
-                        colors = listOf(
-                            Color.Transparent,
-                            Color.White.copy(alpha = 0.15f),
-                            Color(0xFFFFD166).copy(alpha = 0.25f),
-                            Color.Transparent
-                        ),
-                        start = Offset(shimmerOffset, 0f),
-                        end = Offset(shimmerOffset + 180f, 180f)
-                    )
-                )
-        )
 
         Row(
             modifier = Modifier
@@ -262,39 +235,17 @@ private fun AchievementUnlockToastCard(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Animated Icon Avatar with Golden Bevel & Squash-Stretch Pop
-            Box(
-                modifier = Modifier
-                    .size(52.dp)
-                    .graphicsLayer {
-                        scaleX = medalScale.value
-                        scaleY = medalScale.value
-                        rotationZ = medalRotation.value
-                    }
-                    .background(Color.Black.copy(alpha = 0.30f), CircleShape)
-                    .padding(bottom = 3.dp)
-                    .background(
-                        brush = Brush.radialGradient(
-                            colors = listOf(
-                                Color(0xFFFFE29A),
-                                Color(0xFFFFB703),
-                                Color(0xFFE76F51)
-                            )
-                        ),
-                        shape = CircleShape
-                    )
-                    .border(
-                        width = 1.5.dp,
-                        color = Color(0xFFFFD166),
-                        shape = CircleShape
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = achievement.iconEmoji,
-                    fontSize = 26.sp
-                )
-            }
+            AchievementBadge(
+                achievementId = achievement.id,
+                isUnlocked = true,
+                size = 54.dp,
+                isHighlighted = true,
+                modifier = Modifier.graphicsLayer {
+                    scaleX = medalScale.value
+                    scaleY = medalScale.value
+                    rotationZ = medalRotation.value
+                }
+            )
 
             Spacer(modifier = Modifier.width(14.dp))
 

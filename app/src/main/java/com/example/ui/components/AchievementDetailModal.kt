@@ -183,13 +183,13 @@ fun AchievementDetailModal(
                     scaleY = scaleAnim.value
                     alpha = alphaAnim.value
                 }
-                .shimmerGoldenSweep(durationMillis = 2400)
                 .background(Color.Black.copy(alpha = 0.45f), RoundedCornerShape(24.dp))
                 .padding(bottom = 8.dp)
+                .clip(RoundedCornerShape(24.dp))
                 .background(
-                    if (isDarkTheme) Color(0xFF2C201A) else Color(0xFFFFFDF7),
-                    RoundedCornerShape(24.dp)
+                    if (isDarkTheme) Color(0xFF2C201A) else Color(0xFFFFFDF7)
                 )
+                .shimmerGoldenSweep(durationMillis = 2400)
                 .border(
                     width = 2.dp,
                     brush = Brush.linearGradient(
@@ -369,7 +369,9 @@ fun AchievementDetailModal(
                                 colors = listOf(Color(0xFFE65100), Color(0xFFFF8F00))
                             ),
                             shape = RoundedCornerShape(14.dp)
-                        ),
+                        )
+                        .clip(RoundedCornerShape(14.dp))
+                        .shimmerGoldenSweep(durationMillis = 2400),
                     contentAlignment = Alignment.Center
                 ) {
                     Row(

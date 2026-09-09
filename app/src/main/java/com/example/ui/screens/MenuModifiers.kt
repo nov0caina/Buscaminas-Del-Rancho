@@ -161,36 +161,63 @@ fun Modifier.staggeredEntrance(
 }
 
 /**
- * Aplica un barrido de destello dorado brillante continuo, ideal para elementos VIP y destacados.
+ * Aplica un barrido de destello dorado brillante continuo y sin cortes,
+ * con proyección normal cerrada sobre cualquier tamaño o proporción de elemento.
  */
 fun Modifier.shimmerGoldenSweep(
-    durationMillis: Int = 2400
+    durationMillis: Int = 2600,
+    shimmerColor: Color = Color(0xFFFFF7C2),
+    maxAlpha: Float = 0.38f
 ): Modifier = composed {
     val transition = rememberInfiniteTransition(label = "golden_shimmer")
-    val translateAnim by transition.animateFloat(
-        initialValue = -300f,
-        targetValue = 900f,
+    val progress by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
         animationSpec = infiniteRepeatable(
             animation = tween(durationMillis = durationMillis, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
-        label = "golden_shimmer_translate"
-    )
-
-    val shimmerColors = listOf(
-        Color(0xFFFFD700).copy(alpha = 0.0f),
-        Color(0xFFFFF7C2).copy(alpha = 0.35f),
-        Color(0xFFFFD700).copy(alpha = 0.0f)
+        label = "golden_shimmer_progress"
     )
 
     this.drawWithContent {
         drawContent()
-        val brush = Brush.linearGradient(
-            colors = shimmerColors,
-            start = Offset(translateAnim, 0f),
-            end = Offset(translateAnim + 200f, size.height)
-        )
-        drawRect(brush = brush)
+        val width = size.width
+        val height = size.height
+        if (width > 0f && height > 0f) {
+            val tiltX = height * 0.45f
+            val len = kotlin.math.sqrt(height * height + tiltX * tiltX)
+            val nx = height / len
+            val ny = -tiltX / len
+
+            // Proyecciones de las esquinas extremas del canvas sobre la normal
+            val pMin = -(height * tiltX) / len
+            val pMax = (width * height) / len
+
+            val bandWidth = (width * 0.42f).coerceIn(40f, 260f)
+            val buffer = bandWidth * 0.35f
+
+            // Recorrido cerrado: en progress = 0 y progress = 1 todo el canvas tiene alpha = 0
+            val startP = pMin - bandWidth - buffer
+            val endP = pMax + buffer
+            val currentP = startP + progress * (endP - startP)
+
+            val startOffset = Offset(currentP * nx, currentP * ny)
+            val endOffset = Offset((currentP + bandWidth) * nx, (currentP + bandWidth) * ny)
+
+            val brush = Brush.linearGradient(
+                colors = listOf(
+                    shimmerColor.copy(alpha = 0f),
+                    shimmerColor.copy(alpha = maxAlpha * 0.25f),
+                    shimmerColor.copy(alpha = maxAlpha),
+                    shimmerColor.copy(alpha = maxAlpha * 0.25f),
+                    shimmerColor.copy(alpha = 0f)
+                ),
+                start = startOffset,
+                end = endOffset
+            )
+            drawRect(brush = brush)
+        }
     }
 }
 

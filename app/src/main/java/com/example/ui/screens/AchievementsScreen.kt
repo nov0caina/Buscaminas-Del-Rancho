@@ -65,6 +65,7 @@ import com.example.R
 
 import androidx.compose.runtime.rememberCoroutineScope
 import com.example.audio.SoundManager
+import com.example.ui.components.AchievementBadge
 import com.example.ui.components.AchievementDetailModal
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.delay
@@ -417,12 +418,13 @@ private fun AchievementCard(
                 translationX = shakeOffsetX.value
             }
             .bounceClick(onClick = onClick)
-            .then(
-                if (isHighlighted) Modifier.shimmerGoldenSweep(durationMillis = 2000) else Modifier
-            )
             .background(Color.Black.copy(alpha = 0.25f), RoundedCornerShape(16.dp))
             .padding(bottom = 6.dp)
-            .background(surfaceCol, RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(16.dp))
+            .background(surfaceCol)
+            .then(
+                if (isHighlighted) Modifier.shimmerGoldenSweep(durationMillis = 2400) else Modifier
+            )
             .border(
                 width = if (isHighlighted) 2.dp else if (isUnlocked) 1.5.dp else 1.dp,
                 color = if (isHighlighted) Color(0xFFFFD700) else if (isUnlocked) MaterialTheme.colorScheme.primary.copy(alpha = 0.6f) else Color.Transparent,
@@ -456,25 +458,12 @@ private fun AchievementCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .background(Color.Black.copy(alpha = 0.2f), CircleShape)
-                        .padding(bottom = 4.dp)
-                        .background(
-                            if (isHighlighted) Color(0xFFFFD700) else if (isUnlocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-                            CircleShape
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = achievement.iconEmoji,
-                        fontSize = 28.sp,
-                        modifier = Modifier.graphicsLayer {
-                            if (!isUnlocked && !isHighlighted) alpha = 0.65f
-                        }
-                    )
-                }
+                AchievementBadge(
+                    achievementId = achievement.id,
+                    isUnlocked = isUnlocked,
+                    size = 58.dp,
+                    isHighlighted = isHighlighted
+                )
 
                 Spacer(modifier = Modifier.width(16.dp))
 
@@ -505,6 +494,8 @@ private fun AchievementCard(
                                         if (isDarkTheme) Color(0xFF2E7D32) else Color(0xFF388E3C),
                                         RoundedCornerShape(8.dp)
                                     )
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .shimmerGoldenSweep(durationMillis = 2400)
                             ) {
                                 Text(
                                     text = "✨ Ver Festejo",
