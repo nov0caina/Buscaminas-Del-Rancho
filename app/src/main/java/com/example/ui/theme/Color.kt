@@ -45,3 +45,46 @@ val Number6Teal = Color(0xFF008080)                  // Turquesa / Verde azulado
 val Number7Black = Color(0xFF212121)                 // Negro
 val Number8Gray = Color(0xFF616161)                  // Gris
 
+fun getNumberColor(number: Int): Color = when (number) {
+    1 -> Number1Blue
+    2 -> Number2Green
+    3 -> Number3Red
+    4 -> Number4Purple
+    5 -> Number5Maroon
+    6 -> Number6Teal
+    7 -> Number7Black
+    8 -> Number8Gray
+    else -> Color.Black
+}
+
+// Paleta Táctil 3D y Relieve Campirano (Board, Cells & Frame)
+// Casillas no reveladas (Losa elevada con bisel)
+val CellBevelHighlightDay = Color(0xFFFFF2DF)        // Reflejo de sol en bisel superior/izquierdo (Día)
+val CellBevelShadowDay = Color(0xFF5D381E)           // Sombra profunda en bisel inferior/derecho (Día)
+val CellBaseDay = Color(0xFF8B5E3C)                  // Ocre cuero / barro campirano (Día)
+
+val CellBevelHighlightNight = Color(0xFFFFD180)      // Luz ámbar dorada en bisel superior/izquierdo (Noche)
+val CellBevelShadowNight = Color(0xFF9E5700)         // Sombra ámbar tostada en bisel inferior/derecho (Noche)
+val CellBaseNight = Color(0xFFF39C12)                // Ámbar oro clásico del rancho (Noche)
+
+// Casillas presionadas (Press-down feedback)
+val CellPressedDay = Color(0xFF724A2D)               // Tono presionado día
+val CellPressedNight = Color(0xFFD68910)             // Tono presionado noche
+
+// Terreno excavado / Casillas reveladas (Hundidas en la tierra)
+val CellExcavatedDay = Color(0xFFEFE4DA)             // Tierra caliza clara excavada (Día)
+val CellExcavatedBorderDay = Color(0xFFD7CCC8)       // Borde interior de excavación (Día)
+val CellExcavatedNight = Color(0xFF1E1A17)           // Tierra negra fértil del rancho (Noche)
+val CellExcavatedBorderNight = Color(0xFF120F0D)     // Borde interior oscuro (Noche)
+
+// Marco Rústico Campirano (Madera y remaches)
+val BoardWoodBorderDark = Color(0xFF23170F)          // Madera roble oscuro
+val BoardWoodSurfaceDark = Color(0xFF332318)         // Veta de madera oscura
+val BoardWoodHighlightDark = Color(0xFF4A3425)       // Luz en la veta de madera
+val BoardRivetGold = Color(0xFFE6B800)               // Remache de latón / oro viejo
+val BoardRivetShadow = Color(0xFF140C07)             // Sombra del remache
+
+val BoardWoodBorderLight = Color(0xFF5D4037)         // Madera nogal rústica
+val BoardWoodSurfaceLight = Color(0xFF8D6E63)        // Madera cálida exterior
+val BoardWoodHighlightLight = Color(0xFFBCAAA4)      // Reflejo en madera
+

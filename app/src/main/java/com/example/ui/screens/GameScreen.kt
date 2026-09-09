@@ -99,8 +99,15 @@ import com.example.data.model.RanchFlagIcon
 import com.example.data.model.RevealCluster
 import com.example.data.model.VaqueroFace
 import com.example.ui.components.AnimatedRanchFlagEmoji
+import com.example.ui.components.RanchBoardFrame
+import com.example.ui.components.RanchTactileCell
 import com.example.ui.particles.DustParticleSystem
 import com.example.ui.particles.ExplosionParticleSystem
+import com.example.ui.theme.BoardRivetGold
+import com.example.ui.theme.BoardWoodBorderDark
+import com.example.ui.theme.BoardWoodBorderLight
+import com.example.ui.theme.BoardWoodSurfaceDark
+import com.example.ui.theme.BoardWoodSurfaceLight
 import com.example.ui.theme.Number1Blue
 import com.example.ui.theme.Number2Green
 import com.example.ui.theme.Number3Red
@@ -247,10 +254,11 @@ fun GameScreen(
                     minesLeft = (uiState.mines - uiState.flagsPlaced).coerceAtLeast(-99),
                     vaqueroFace = uiState.vaqueroFace,
                     timeElapsed = uiState.timeElapsed,
+                    isDarkTheme = isDarkTheme,
                     onFaceClick = onResetGame
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 // Minefield Grid container with free panning and zoom gestures
                 BoxWithConstraints(
@@ -260,19 +268,28 @@ fun GameScreen(
                         .clipToBounds(),
                     contentAlignment = Alignment.Center
                 ) {
+                    val availableWidth = (maxWidth - 12.dp).coerceAtLeast(100.dp)
+                    val availableHeight = (maxHeight - 12.dp).coerceAtLeast(100.dp)
+
+                    // Cálculo dinámico para optimizar el tamaño de celdas en pantallas alargadas
+                    val framePaddingTotal = 24.dp
+                    val spacingTotalX = 2.dp * (uiState.cols - 1)
+                    val spacingTotalY = 2.dp * (uiState.rows - 1)
+
+                    val maxCellWidth = (availableWidth - framePaddingTotal - spacingTotalX) / uiState.cols
+                    val maxCellHeight = (availableHeight - framePaddingTotal - spacingTotalY) / uiState.rows
+                    val maxPossibleCell = minOf(maxCellWidth, maxCellHeight)
+
                     val cellDp = when {
-                        uiState.cols <= 9 -> 36.dp
-                        uiState.cols <= 12 -> 32.dp
-                        else -> 28.dp
+                        uiState.cols <= 9 -> maxPossibleCell.coerceIn(34.dp, 44.dp)
+                        uiState.cols <= 12 -> maxPossibleCell.coerceIn(28.dp, 36.dp)
+                        else -> maxPossibleCell.coerceIn(24.dp, 32.dp)
                     }
 
                     val gridWidth = (cellDp * uiState.cols) + (2.dp * (uiState.cols - 1))
                     val gridHeight = (cellDp * uiState.rows) + (2.dp * (uiState.rows - 1))
-                    val boardWidth = gridWidth + 20.dp
-                    val boardHeight = gridHeight + 20.dp
-
-                    val availableWidth = (maxWidth - 16.dp).coerceAtLeast(100.dp)
-                    val availableHeight = (maxHeight - 16.dp).coerceAtLeast(100.dp)
+                    val boardWidth = gridWidth + framePaddingTotal
+                    val boardHeight = gridHeight + framePaddingTotal
 
                     val fitScaleX = availableWidth / boardWidth
                     val fitScaleY = availableHeight / boardHeight
@@ -346,7 +363,8 @@ fun GameScreen(
                             },
                         contentAlignment = Alignment.Center
                     ) {
-                        Box(
+                        RanchBoardFrame(
+                            isDarkTheme = isDarkTheme,
                             modifier = Modifier
                                 .requiredSize(width = boardWidth, height = boardHeight)
                                 .graphicsLayer(
@@ -355,12 +373,6 @@ fun GameScreen(
                                     translationX = offsetX + shakeOffsetX,
                                     translationY = offsetY + shakeOffsetY
                                 )
-                                .shadow(6.dp, RoundedCornerShape(10.dp))
-                                .background(
-                                    MaterialTheme.colorScheme.surfaceVariant,
-                                    RoundedCornerShape(10.dp)
-                                )
-                                .padding(10.dp)
                         ) {
                             MinefieldGrid(
                                 rows = uiState.rows,
@@ -368,6 +380,8 @@ fun GameScreen(
                                 grid = uiState.grid,
                                 activeRevealCluster = uiState.activeRevealCluster,
                                 ranchFlagIcon = uiState.ranchFlagIcon,
+                                cellDp = cellDp,
+                                isDarkTheme = isDarkTheme,
                                 onCellClick = onCellClick,
                                 onCellLongClick = onCellLongClick,
                                 onCellChord = onCellChord
@@ -382,19 +396,20 @@ fun GameScreen(
                         label = "fab_bottom_padding"
                     )
 
-                    // Floating Centering Control
+                    // Floating Centering Control (Campirano con remache dorado)
                     SmallFloatingActionButton(
                         onClick = {
                             scale = fitScale
                             offsetX = 0f
                             offsetY = 0f
                         },
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        containerColor = if (isDarkTheme) BoardWoodSurfaceDark else MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = if (isDarkTheme) BoardRivetGold else MaterialTheme.colorScheme.onPrimaryContainer,
                         shape = CircleShape,
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
                             .padding(end = 12.dp, bottom = fabBottomPadding)
+                            .border(1.5.dp, BoardRivetGold.copy(alpha = 0.6f), CircleShape)
                             .testTag("btn_zoom_reset")
                     ) {
                         Text("🎯", fontSize = 16.sp)
@@ -531,21 +546,25 @@ private fun GameHudHeader(
     minesLeft: Int,
     vaqueroFace: VaqueroFace,
     timeElapsed: Int,
+    isDarkTheme: Boolean = isSystemInDarkTheme(),
     onFaceClick: () -> Unit
 ) {
-    Card(
+    val woodBorder = if (isDarkTheme) BoardWoodBorderDark else BoardWoodBorderLight
+    val woodSurface = if (isDarkTheme) BoardWoodSurfaceDark else BoardWoodSurfaceLight
+    val shape = RoundedCornerShape(16.dp)
+
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            .padding(horizontal = 4.dp)
+            .shadow(6.dp, shape)
+            .border(2.dp, woodBorder, shape),
+        shape = shape,
+        color = woodSurface
     ) {
         Row(
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 10.dp)
+                .padding(horizontal = 14.dp, vertical = 8.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
@@ -554,6 +573,7 @@ private fun GameHudHeader(
             HudCounterBox(
                 emoji = "🧨",
                 valueString = String.format("%03d", minesLeft),
+                isDarkTheme = isDarkTheme,
                 testTag = "hud_mines_counter"
             )
 
@@ -562,8 +582,17 @@ private fun GameHudHeader(
                 modifier = Modifier
                     .size(52.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer)
-                    .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                    .shadow(4.dp, CircleShape)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                MaterialTheme.colorScheme.primaryContainer,
+                                MaterialTheme.colorScheme.primary
+                            )
+                        ),
+                        CircleShape
+                    )
+                    .border(2.dp, BoardRivetGold, CircleShape)
                     .clickable(onClick = onFaceClick)
                     .testTag("hud_vaquero_face"),
                 contentAlignment = Alignment.Center
@@ -586,6 +615,7 @@ private fun GameHudHeader(
             HudCounterBox(
                 emoji = "⏱️",
                 valueString = String.format("%02d:%02d", mins, secs),
+                isDarkTheme = isDarkTheme,
                 testTag = "hud_timer"
             )
         }
@@ -596,11 +626,13 @@ private fun GameHudHeader(
 private fun HudCounterBox(
     emoji: String,
     valueString: String,
+    isDarkTheme: Boolean = isSystemInDarkTheme(),
     testTag: String
 ) {
     Surface(
         shape = RoundedCornerShape(10.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
+        color = if (isDarkTheme) Color(0xFF16120F) else Color(0xFF2C1D14),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color.Black.copy(alpha = 0.4f)),
         modifier = Modifier.testTag(testTag)
     ) {
         Row(
@@ -613,7 +645,7 @@ private fun HudCounterBox(
                 text = valueString,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.ExtraBold,
-                color = MaterialTheme.colorScheme.primary,
+                color = Color(0xFFFFB300),
                 fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
             )
         }
@@ -627,16 +659,12 @@ private fun MinefieldGrid(
     grid: List<CellState>,
     activeRevealCluster: RevealCluster?,
     ranchFlagIcon: RanchFlagIcon,
+    cellDp: Dp,
+    isDarkTheme: Boolean = isSystemInDarkTheme(),
     onCellClick: (row: Int, col: Int, pressure: Float) -> Unit,
     onCellLongClick: (row: Int, col: Int) -> Unit,
     onCellChord: (row: Int, col: Int) -> Unit
 ) {
-    val cellDp = when {
-        cols <= 9 -> 36.dp
-        cols <= 12 -> 32.dp
-        else -> 28.dp
-    }
-
     val gridWidth = (cellDp * cols) + (2.dp * (cols - 1))
     val gridHeight = (cellDp * rows) + (2.dp * (rows - 1))
 
@@ -654,10 +682,11 @@ private fun MinefieldGrid(
                     for (c in 0 until cols) {
                         val index = r * cols + c
                         if (index in grid.indices) {
-                            CellItem(
+                            RanchTactileCell(
                                 cell = grid[index],
                                 cellDp = cellDp,
                                 ranchFlagIcon = ranchFlagIcon,
+                                isDarkTheme = isDarkTheme,
                                 onClick = { pressure -> onCellClick(r, c, pressure) },
                                 onLongClick = { onCellLongClick(r, c) },
                                 onChord = { onCellChord(r, c) }
@@ -676,93 +705,6 @@ private fun MinefieldGrid(
                     cellDp = cellDp,
                     spacingDp = 2.dp,
                     modifier = Modifier.fillMaxSize()
-                )
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun CellItem(
-    cell: CellState,
-    cellDp: Dp,
-    ranchFlagIcon: RanchFlagIcon,
-    onClick: (pressure: Float) -> Unit,
-    onLongClick: () -> Unit,
-    onChord: () -> Unit
-) {
-    val fontSizeSp = when {
-        cellDp >= 36.dp -> 16.sp
-        cellDp >= 32.dp -> 14.sp
-        else -> 12.sp
-    }
-
-    val cellBgColor = when {
-        cell.isExploded -> MaterialTheme.colorScheme.errorContainer
-        cell.isRevealed -> MaterialTheme.colorScheme.surface
-        cell.isFlagged -> MaterialTheme.colorScheme.primary.copy(alpha = 0.92f)
-        else -> MaterialTheme.colorScheme.primary
-    }
-
-    val cellBorderColor = if (cell.isRevealed) {
-        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
-    } else {
-        MaterialTheme.colorScheme.primaryContainer
-    }
-
-    var touchPressure by remember { mutableStateOf(0.5f) }
-
-    Box(
-        modifier = Modifier
-            .size(cellDp)
-            .aspectRatio(1f)
-            .clip(RoundedCornerShape(4.dp))
-            .background(cellBgColor)
-            .border(
-                width = if (cell.isRevealed) 0.5.dp else 1.5.dp,
-                color = cellBorderColor,
-                shape = RoundedCornerShape(4.dp)
-            )
-            .pointerInput(Unit) {
-                awaitEachGesture {
-                    val down = awaitFirstDown(requireUnconsumed = false)
-                    touchPressure = down.pressure.coerceIn(0.1f, 1.0f)
-                }
-            }
-            .combinedClickable(
-                onClick = {
-                    if (cell.isRevealed) {
-                        onChord()
-                    } else {
-                        onClick(touchPressure)
-                    }
-                },
-                onLongClick = onLongClick
-            )
-            .testTag("cell_${cell.row}_${cell.col}"),
-        contentAlignment = Alignment.Center
-    ) {
-        if (cell.isRevealed) {
-            if (cell.isMine) {
-                Text(
-                    text = if (cell.isExploded) "💥" else "💣",
-                    fontSize = fontSizeSp
-                )
-            } else if (cell.adjacentMines > 0) {
-                val color = getNumberColor(cell.adjacentMines)
-                Text(
-                    text = "${cell.adjacentMines}",
-                    fontSize = fontSizeSp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = color
-                )
-            }
-        } else {
-            if (cell.isFlagged) {
-                AnimatedRanchFlagEmoji(
-                    emoji = ranchFlagIcon.emoji,
-                    fontSize = fontSizeSp
                 )
             }
         }
@@ -1058,20 +1000,6 @@ private fun VictoryFiestaOverlay(
     }
 }
 
-@Composable
-private fun getNumberColor(number: Int): Color {
-    return when (number) {
-        1 -> Number1Blue
-        2 -> Number2Green
-        3 -> Number3Red
-        4 -> Number4Purple
-        5 -> Number5Maroon
-        6 -> Number6Teal
-        7 -> Number7Black
-        8 -> Number8Gray
-        else -> MaterialTheme.colorScheme.onSurface
-    }
-}
 
 @Composable
 private fun GameEndOverlayDialog(
