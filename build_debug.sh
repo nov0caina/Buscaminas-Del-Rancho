@@ -47,6 +47,10 @@ while [[ $# -gt 0 ]]; do
             DO_INSTALL=true
             shift
             ;;
+        --extra-args=*|--gradle-args=*)
+            EXTRA_GRADLE_ARGS+=("${1#*=}")
+            shift
+            ;;
         --extra-args|--gradle-args)
             if [ -n "${2:-}" ]; then
                 EXTRA_GRADLE_ARGS+=($2)
