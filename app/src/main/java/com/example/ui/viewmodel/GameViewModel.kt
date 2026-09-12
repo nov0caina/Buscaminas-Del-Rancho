@@ -72,6 +72,7 @@ private const val KEY_PREF_DARK_THEME = "pref_dark_theme"
 private const val KEY_PREF_HAPTICS = "pref_haptics"
 private const val KEY_PREF_DAILY_NOTIF = "pref_daily_notif"
 private const val KEY_PREF_FLAG_ICON = "pref_flag_icon"
+private const val KEY_PREF_UNVIEWED_ACHIEVEMENT_IDS = "pref_unviewed_achievement_ids"
 
 class GameViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -117,6 +118,10 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     val topScores: StateFlow<List<GameScoreEntity>>
     val recentMatches: StateFlow<List<GameScoreEntity>>
     val allAchievements = MutableStateFlow<List<com.example.data.local.AchievementEntity>>(emptyList())
+    private val _unviewedAchievementIds = MutableStateFlow<Set<String>>(
+        appPrefs.getStringSet(KEY_PREF_UNVIEWED_ACHIEVEMENT_IDS, emptySet())?.toSet() ?: emptySet()
+    )
+    val unviewedAchievementIds: StateFlow<Set<String>> = _unviewedAchievementIds.asStateFlow()
 
     init {
         val database = AppDatabase.getDatabase(application)
@@ -138,8 +143,16 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             repository.initDefaultAchievementsIfNeeded()
             repository.allAchievements.collect { achievements ->
                 allAchievements.value = achievements
-                val unlockedIds = achievements.filter { it.isUnlocked }.map { it.id }
-                playGamesManager.syncAllUnlockedAchievements(unlockedIds)
+                val unlockedIds = achievements.filter { it.isUnlocked }.map { it.id }.toSet()
+                playGamesManager.syncAllUnlockedAchievements(unlockedIds.toList())
+
+                // Sanitize unviewed achievements to keep only currently unlocked ones
+                val currentUnviewed = _unviewedAchievementIds.value
+                val sanitized = currentUnviewed.intersect(unlockedIds)
+                if (sanitized != currentUnviewed) {
+                    _unviewedAchievementIds.value = sanitized
+                    appPrefs.edit().putStringSet(KEY_PREF_UNVIEWED_ACHIEVEMENT_IDS, sanitized).apply()
+                }
             }
         }
 
@@ -292,6 +305,15 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     fun setRanchFlagIcon(icon: RanchFlagIcon) {
         appPrefs.edit().putString(KEY_PREF_FLAG_ICON, icon.name).apply()
         _uiState.value = _uiState.value.copy(ranchFlagIcon = icon)
+    }
+
+    fun markAchievementAsViewed(achievementId: String) {
+        val current = _unviewedAchievementIds.value
+        if (achievementId in current) {
+            val updated = current - achievementId
+            _unviewedAchievementIds.value = updated
+            appPrefs.edit().putStringSet(KEY_PREF_UNVIEWED_ACHIEVEMENT_IDS, updated).apply()
+        }
     }
 
     private fun resetIdleTimer() {
@@ -656,6 +678,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 flagsPlaced = state.flagsPlaced
             )
             if (newlyUnlocked.isNotEmpty()) {
+                val newIds = newlyUnlocked.map { it.id }.toSet()
+                val updated = _unviewedAchievementIds.value + newIds
+                _unviewedAchievementIds.value = updated
+                appPrefs.edit().putStringSet(KEY_PREF_UNVIEWED_ACHIEVEMENT_IDS, updated).apply()
+
                 // Escalonamiento temporal de cortesía: dar 2.0s para asimilar la victoria en el tablero
                 delay(2000L)
                 newlyUnlocked.forEach { achievement ->

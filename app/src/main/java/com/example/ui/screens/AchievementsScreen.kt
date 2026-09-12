@@ -74,8 +74,10 @@ import kotlinx.coroutines.launch
 @Composable
 fun AchievementsScreen(
     achievements: List<AchievementEntity>,
-    highlightedAchievementId: String? = null,
+    unviewedAchievementIds: Set<String> = emptySet(),
+    targetScrollAchievementId: String? = null,
     onOpenPlayGamesAchievements: () -> Unit = {},
+    onDismissDetailModal: (String) -> Unit = {},
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     isDarkTheme: Boolean = isSystemInDarkTheme()
@@ -88,10 +90,10 @@ fun AchievementsScreen(
     var selectedAchievement by remember { mutableStateOf<AchievementEntity?>(null) }
     var shakingAchievementId by remember { mutableStateOf<String?>(null) }
 
-    // Auto-scroll to highlighted achievement if coming from notification or toast
-    LaunchedEffect(highlightedAchievementId, achievements) {
-        if (highlightedAchievementId != null && achievements.isNotEmpty()) {
-            val index = achievements.indexOfFirst { it.id == highlightedAchievementId }
+    // Auto-scroll to target achievement if coming from notification or toast
+    LaunchedEffect(targetScrollAchievementId, achievements) {
+        if (targetScrollAchievementId != null && achievements.isNotEmpty()) {
+            val index = achievements.indexOfFirst { it.id == targetScrollAchievementId }
             if (index >= 0) {
                 // Item 0 is progress card, items 1..N are achievements
                 listState.animateScrollToItem(index + 1)
@@ -239,7 +241,7 @@ fun AchievementsScreen(
                 }
 
                 itemsIndexed(achievements) { index, achievement ->
-                    val isHighlighted = achievement.id == highlightedAchievementId
+                    val isHighlighted = achievement.id in unviewedAchievementIds
                     val isShaking = achievement.id == shakingAchievementId
                     AchievementCard(
                         achievement = achievement,
@@ -273,7 +275,11 @@ fun AchievementsScreen(
         selectedAchievement?.let { achievement ->
             AchievementDetailModal(
                 achievement = achievement,
-                onDismiss = { selectedAchievement = null },
+                onDismiss = {
+                    val dismissedId = achievement.id
+                    selectedAchievement = null
+                    onDismissDetailModal(dismissedId)
+                },
                 isDarkTheme = isDarkTheme
             )
         }

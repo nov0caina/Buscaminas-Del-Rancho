@@ -105,6 +105,7 @@ fun RanchoMinesweeperApp(
     val uiState by viewModel.uiState.collectAsState()
     val topScores by viewModel.topScores.collectAsState()
     val achievements by viewModel.allAchievements.collectAsState()
+    val unviewedAchievementIds by viewModel.unviewedAchievementIds.collectAsState()
     val isPlayGamesAuth: Boolean by viewModel.playGamesManager.isAuthenticated.collectAsState()
     val playGamesPlayerName: String? by viewModel.playGamesManager.playerName.collectAsState()
 
@@ -143,7 +144,7 @@ fun RanchoMinesweeperApp(
 
     RanchoTheme(darkTheme = isDark) {
         val navController = rememberNavController()
-        var highlightedAchievementId by remember { mutableStateOf<String?>(null) }
+        var targetScrollAchievementId by remember { mutableStateOf<String?>(null) }
 
         // Reactive Deep-Link / Notification Intent handler
         LaunchedEffect(incomingIntent) {
@@ -151,7 +152,7 @@ fun RanchoMinesweeperApp(
                 val dest = incomingIntent.getStringExtra("destination")
                 val achId = incomingIntent.getStringExtra("achievement_id")
                 if (dest == "achievements") {
-                    highlightedAchievementId = achId
+                    targetScrollAchievementId = achId
                     onConsumeIntent()
                     viewModel.startBackgroundMusic()
                     navController.navigate("achievements") {
@@ -171,7 +172,7 @@ fun RanchoMinesweeperApp(
                     AnimatedSplashScreen(
                         onSplashFinished = {
                             viewModel.startBackgroundMusic()
-                            if (highlightedAchievementId != null) {
+                            if (targetScrollAchievementId != null) {
                                 navController.navigate("achievements") {
                                     popUpTo("splash") { inclusive = true }
                                 }
@@ -266,10 +267,14 @@ fun RanchoMinesweeperApp(
                     AchievementsScreen(
                         isDarkTheme = isDark,
                         achievements = achievements,
-                        highlightedAchievementId = highlightedAchievementId,
+                        unviewedAchievementIds = unviewedAchievementIds,
+                        targetScrollAchievementId = targetScrollAchievementId,
                         onOpenPlayGamesAchievements = { viewModel.playGamesManager.showAchievementsOverlay(activity) },
+                        onDismissDetailModal = { achievementId ->
+                            viewModel.markAchievementAsViewed(achievementId)
+                        },
                         onBack = {
-                            highlightedAchievementId = null
+                            targetScrollAchievementId = null
                             navController.popBackStack()
                         }
                     )
@@ -308,7 +313,7 @@ fun RanchoMinesweeperApp(
             AchievementUnlockOverlay(
                 unlockEvents = viewModel.achievementUnlockEvents,
                 onAchievementClick = { achievement ->
-                    highlightedAchievementId = achievement.id
+                    targetScrollAchievementId = achievement.id
                     navController.navigate("achievements") {
                         launchSingleTop = true
                     }
