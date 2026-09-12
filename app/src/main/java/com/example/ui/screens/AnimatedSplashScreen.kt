@@ -205,7 +205,8 @@ fun AnimatedSplashScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "n  o  v  0  c  a  i  n  a",
+                        text = "n  o  v  0  c  a  i  n  a" + 
+                                "\n\n        S t u d i o",
                         style = TextStyle(
                             fontFamily = FontFamily.Serif,
                             fontWeight = FontWeight.Light,
