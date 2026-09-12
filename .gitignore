@@ -66,11 +66,9 @@ Thumbs.db
 *.swo
 *~
 
-# --- Herramientas de Capturas Web / Screenshots Editor ---
-screenshots_editor/node_modules/
-screenshots_editor/.next/
-screenshots_editor/out/
-screenshots_editor/*.log
+# --- Herramientas de Capturas Web / Screenshots Editor (Uso local) ---
+play_store_screenshots_server.sh
+screenshots_editor/
 
 # --- Agentes y Metadatos Locales ---
 /.agent/
