@@ -8,8 +8,6 @@ data class AchievementLore(
     val title: String,
     val badgeName: String,
     val sinaloaPhrase: String,
-    val soundActionLabel: String,
-    val soundTheme: String,
     @DrawableRes val iconResId: Int = R.drawable.img_rancho_icon
 )
 
@@ -20,8 +18,6 @@ object RanchAchievementLore {
             title = "Primer Espuelazo 🤠",
             badgeName = "Vaquero Graduado",
             sinaloaPhrase = "¡Eso es todo, plebe! ¡Ya cayó la primera y puro pa' delante!",
-            soundActionLabel = "¡Echar Grito Vaquero! 🤠",
-            soundTheme = "first_win",
             iconResId = R.drawable.ic_achievement_first_win
         ),
         "patron_experto" to AchievementLore(
@@ -29,8 +25,6 @@ object RanchAchievementLore {
             title = "El Patrón del Rancho 👑",
             badgeName = "Patrón Supremo",
             sinaloaPhrase = "¡Aquí nomás mis chicharrones truenan, compa!",
-            soundActionLabel = "¡Tocar Tambora de Mando! 🎺",
-            soundTheme = "patron_experto",
             iconResId = R.drawable.ic_achievement_patron_experto
         ),
         "fast_hand" to AchievementLore(
@@ -38,8 +32,6 @@ object RanchAchievementLore {
             title = "Rápido como el Viento ⚡",
             badgeName = "Velocidad Costera",
             sinaloaPhrase = "¡A doscientos por la costera! ¡Ni el polvo vieron!",
-            soundActionLabel = "¡Acelerar la Troca! ⚡",
-            soundTheme = "fast_hand",
             iconResId = R.drawable.ic_achievement_fast_hand
         ),
         "cazador_iguanas" to AchievementLore(
@@ -47,8 +39,6 @@ object RanchAchievementLore {
             title = "Cazador de Iguanas 🦎",
             badgeName = "Tirador del Guamúchil",
             sinaloaPhrase = "¡No se me va ni una viva del guamúchil, compa!",
-            soundActionLabel = "¡Tirar Resorterazo! 🎯",
-            soundTheme = "cazador_iguanas",
             iconResId = R.drawable.ic_achievement_cazador_iguanas
         ),
         "minero_veterano" to AchievementLore(
@@ -56,8 +46,6 @@ object RanchAchievementLore {
             title = "Minero Sinaloense ⛏️",
             badgeName = "Barretero de Ley",
             sinaloaPhrase = "¡Puro jale macizo, pariente! ¡Aquí no nos rajamos!",
-            soundActionLabel = "¡Picar Veta de Oro! 💎",
-            soundTheme = "minero_veterano",
             iconResId = R.drawable.ic_achievement_minero_veterano
         ),
         "sin_banderas" to AchievementLore(
@@ -65,8 +53,6 @@ object RanchAchievementLore {
             title = "A Ojo de Buen Cubero 👁️",
             badgeName = "Colmillo Fino",
             sinaloaPhrase = "¡A puro colmillo, pariente! ¿Pa' qué queremos banderitas?",
-            soundActionLabel = "¡Activar Colmillo! 👁️",
-            soundTheme = "sin_banderas",
             iconResId = R.drawable.ic_achievement_sin_banderas
         )
     )
@@ -77,8 +63,6 @@ object RanchAchievementLore {
             title = "Logro del Rancho 🏆",
             badgeName = "Hazaña Cumplida",
             sinaloaPhrase = "¡Puro pa' delante, pariente!",
-            soundActionLabel = "¡Festejar Logro! 🤠",
-            soundTheme = "default",
             iconResId = R.drawable.img_rancho_icon
         )
     }

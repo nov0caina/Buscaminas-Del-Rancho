@@ -21,14 +21,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -81,7 +79,6 @@ fun AchievementDetailModal(
     val alphaAnim = remember { Animatable(0f) }
     val scrimAlpha = remember { Animatable(0f) }
 
-    var isReplayActive by remember { mutableStateOf(false) }
     var isClosing by remember { mutableStateOf(false) }
 
     val formattedDate = remember(achievement.unlockedTimestamp) {
@@ -293,8 +290,7 @@ fun AchievementDetailModal(
                     contentAlignment = Alignment.Center
                 ) {
                     AchievementMemeArt(
-                        achievementId = achievement.id,
-                        isReplaying = isReplayActive
+                        achievementId = achievement.id
                     )
                 }
 
@@ -347,52 +343,7 @@ fun AchievementDetailModal(
                     color = if (isDarkTheme) Color(0xFFFFD166) else Color(0xFF8D6E63)
                 )
 
-                Spacer(modifier = Modifier.height(18.dp))
-
-                // Interactive 3D Arcade Replay Button
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp)
-                        .bounceClick(onClick = {
-                            isReplayActive = true
-                            soundManager.playAchievementThemedSound(achievement.id)
-                            scope.launch {
-                                delay(600L)
-                                isReplayActive = false
-                            }
-                        })
-                        .background(Color.Black.copy(alpha = 0.35f), RoundedCornerShape(14.dp))
-                        .padding(bottom = 5.dp)
-                        .background(
-                            brush = Brush.horizontalGradient(
-                                colors = listOf(Color(0xFFE65100), Color(0xFFFF8F00))
-                            ),
-                            shape = RoundedCornerShape(14.dp)
-                        )
-                        .clip(RoundedCornerShape(14.dp))
-                        .shimmerGoldenSweep(durationMillis = 2400),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.VolumeUp,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = lore.soundActionLabel,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = Color.White
-                        )
-                    }
-                }
+                Spacer(modifier = Modifier.height(4.dp))
             }
         }
     }
