@@ -385,7 +385,7 @@ private fun AchievementCard(
     } else if (isUnlocked) {
         if (isDarkTheme) Color(0xFF3E2D26) else MaterialTheme.colorScheme.primaryContainer
     } else {
-        if (isDarkTheme) Color(0xFF1E1714) else MaterialTheme.colorScheme.surface
+        if (isDarkTheme) Color(0xFF1E1714) else Color(0xFFF0ECE1)
     }
 
     val targetRatio = (achievement.progress.toFloat() / achievement.maxProgress).coerceIn(0f, 1f)
@@ -433,7 +433,9 @@ private fun AchievementCard(
             )
             .border(
                 width = if (isHighlighted) 2.dp else if (isUnlocked) 1.5.dp else 1.dp,
-                color = if (isHighlighted) Color(0xFFFFD700) else if (isUnlocked) MaterialTheme.colorScheme.primary.copy(alpha = 0.6f) else Color.Transparent,
+                color = if (isHighlighted) Color(0xFFFFD700) 
+                        else if (isUnlocked) MaterialTheme.colorScheme.primary.copy(alpha = 0.6f) 
+                        else (if (isDarkTheme) Color.Transparent else Color(0xFFD7CCC8)),
                 shape = RoundedCornerShape(16.dp)
             )
     ) {
@@ -486,8 +488,8 @@ private fun AchievementCard(
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = if (isHighlighted) (if (isDarkTheme) Color(0xFFFFD700) else Color(0xFF7A5800)) else if (isUnlocked && isDarkTheme) Color.White else MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.weight(1f, fill = false).padding(end = 8.dp),
-                            maxLines = 1,
+                            modifier = Modifier.weight(1f).padding(end = 8.dp),
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
 
@@ -497,7 +499,12 @@ private fun AchievementCard(
                                     .background(Color.Black.copy(alpha = 0.25f), RoundedCornerShape(8.dp))
                                     .padding(bottom = 3.dp)
                                     .background(
-                                        if (isDarkTheme) Color(0xFF2E7D32) else Color(0xFF388E3C),
+                                        if (isDarkTheme) Color(0xFF2E7D32) else Color(0xFF2E7D32),
+                                        RoundedCornerShape(8.dp)
+                                    )
+                                    .border(
+                                        width = 1.dp,
+                                        color = if (isDarkTheme) Color(0xFFFFD700).copy(alpha = 0.5f) else Color(0xFFFFD700).copy(alpha = 0.7f),
                                         RoundedCornerShape(8.dp)
                                     )
                                     .clip(RoundedCornerShape(8.dp))

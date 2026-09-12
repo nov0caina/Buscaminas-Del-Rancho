@@ -199,9 +199,9 @@ fun HomeScreen(
                                     text = "BUSCAMINAS DEL RANCHO\n🤠",
                                     style = MaterialTheme.typography.headlineMedium.copy(
                                         shadow = androidx.compose.ui.graphics.Shadow(
-                                            color = Color.Black.copy(alpha = 0.9f),
+                                            color = if (isDarkTheme) Color.Black.copy(alpha = 0.9f) else Color(0xFF3E1F07).copy(alpha = 0.95f),
                                             offset = androidx.compose.ui.geometry.Offset(2f, 4f),
-                                            blurRadius = 8f
+                                            blurRadius = if (isDarkTheme) 8f else 10f
                                         )
                                     ),
                                     color = if (isDarkTheme) RanchoBannerTitleNight else RanchoBannerTitleDay,
@@ -387,7 +387,10 @@ fun HomeScreen(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Row(
+                                        modifier = Modifier.weight(1f).padding(end = 8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
                                         Box(
                                             modifier = Modifier
                                                 .size(42.dp)
@@ -416,13 +419,18 @@ fun HomeScreen(
                                     Box(
                                         modifier = Modifier
                                             .background(Color(0xFFFFD700), RoundedCornerShape(12.dp))
-                                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                                            .widthIn(min = 76.dp),
+                                        contentAlignment = Alignment.Center
                                     ) {
                                         Text(
                                             text = patronPrice,
                                             style = MaterialTheme.typography.labelSmall,
                                             fontWeight = FontWeight.Black,
-                                            color = Color(0xFF2A1708)
+                                            color = Color(0xFF2A1708),
+                                            maxLines = 1,
+                                            softWrap = false,
+                                            overflow = androidx.compose.ui.text.style.TextOverflow.Clip
                                         )
                                     }
                                 }
@@ -493,7 +501,7 @@ fun HomeScreen(
                             .fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            containerColor = if (isDarkTheme) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f)
                         )
                     ) {
                         Row(
@@ -504,9 +512,10 @@ fun HomeScreen(
                             horizontalArrangement = Arrangement.Center
                         ) {
                             Text(
-                                text = "🌵 100% Offline • Sin Anuncios Intrusivos ",
+                                text = "🌵 100% Offline • Sin Anuncios Intrusivos",
                                 style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (isDarkTheme) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
                                 textAlign = TextAlign.Center
                             )
                         }
@@ -524,6 +533,7 @@ private fun LevelDirectCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isDark = isSystemInDarkTheme()
     val (containerColor, contentColor) = when (difficulty) {
         GameDifficulty.PRINCIPIANTE -> Pair(
             MaterialTheme.colorScheme.primaryContainer,
@@ -534,12 +544,12 @@ private fun LevelDirectCard(
             MaterialTheme.colorScheme.onSecondaryContainer
         )
         GameDifficulty.EXPERTO -> Pair(
-            if (isLocked) Color(0xFF382515) else MaterialTheme.colorScheme.tertiaryContainer,
-            if (isLocked) Color(0xFFFFD700) else MaterialTheme.colorScheme.onTertiaryContainer
+            if (isLocked) (if (isDark) Color(0xFF382515) else Color(0xFFEAD8C3)) else MaterialTheme.colorScheme.tertiaryContainer,
+            if (isLocked) (if (isDark) Color(0xFFFFD700) else Color(0xFF5D4037)) else MaterialTheme.colorScheme.onTertiaryContainer
         )
         GameDifficulty.PERSONALIZADA -> Pair(
-            if (isLocked) Color(0xFF2E2018) else MaterialTheme.colorScheme.surfaceVariant,
-            if (isLocked) Color(0xFFFFE082) else MaterialTheme.colorScheme.onSurfaceVariant
+            if (isLocked) (if (isDark) Color(0xFF2E2018) else Color(0xFFE5D2BC)) else MaterialTheme.colorScheme.surfaceVariant,
+            if (isLocked) (if (isDark) Color(0xFFFFE082) else Color(0xFF4E342E)) else MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 
@@ -553,8 +563,11 @@ private fun LevelDirectCard(
             .padding(bottom = 5.dp)
             .background(color = containerColor, shape = RoundedCornerShape(16.dp))
             .then(
-                if (isLocked) Modifier.border(1.5.dp, Color(0xFFFFD700).copy(alpha = 0.6f), RoundedCornerShape(16.dp))
-                else Modifier
+                if (isLocked) Modifier.border(
+                    1.5.dp,
+                    if (isDark) Color(0xFFFFD700).copy(alpha = 0.6f) else Color(0xFFC59B27),
+                    RoundedCornerShape(16.dp)
+                ) else Modifier
             )
     ) {
         Row(
@@ -564,13 +577,18 @@ private fun LevelDirectCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
                     text = difficulty.iconEmoji,
                     fontSize = 26.sp
                 )
                 Spacer(modifier = Modifier.width(14.dp))
-                Column {
+                Column(modifier = Modifier.weight(1f, fill = false)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = difficulty.displayName,
@@ -582,15 +600,22 @@ private fun LevelDirectCard(
                             Spacer(modifier = Modifier.width(6.dp))
                             Box(
                                 modifier = Modifier
-                                    .background(Color(0xFFFFD700).copy(alpha = 0.25f), RoundedCornerShape(6.dp))
-                                    .border(1.dp, Color(0xFFFFD700), RoundedCornerShape(6.dp))
+                                    .background(
+                                        if (isDark) Color(0xFFFFD700).copy(alpha = 0.25f) else Color(0xFFD4AF37).copy(alpha = 0.2f),
+                                        RoundedCornerShape(6.dp)
+                                    )
+                                    .border(
+                                        1.dp,
+                                        if (isDark) Color(0xFFFFD700) else Color(0xFFB78103),
+                                        RoundedCornerShape(6.dp)
+                                    )
                                     .padding(horizontal = 5.dp, vertical = 1.dp)
                             ) {
                                 Text(
                                     text = "🔒 VIP",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.ExtraBold,
-                                    color = Color(0xFFFFD700),
+                                    color = if (isDark) Color(0xFFFFD700) else Color(0xFF8B5E3C),
                                     fontSize = 10.sp
                                 )
                             }
@@ -647,7 +672,7 @@ private fun MenuSecondaryButton(
             .background(color = MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(16.dp))
             .border(
                 width = 1.5.dp,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = if (isSystemInDarkTheme()) 0.3f else 0.45f),
                 shape = RoundedCornerShape(16.dp)
             )
     ) {

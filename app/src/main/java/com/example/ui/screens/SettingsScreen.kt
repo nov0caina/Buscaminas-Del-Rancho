@@ -65,6 +65,7 @@ import com.example.ui.viewmodel.GameUiState
 import com.example.ui.viewmodel.ThemeMode
 import com.example.ui.particles.DustParticleSystem
 import com.example.ui.particles.RanchoSmokeParticleSystem
+import com.example.ui.theme.RanchoCactusSecondary
 import kotlin.math.PI
 import kotlin.math.sin
 
@@ -283,7 +284,7 @@ fun SettingsScreen(
                                                             text = "VIP",
                                                             fontSize = 9.sp,
                                                             fontWeight = FontWeight.Black,
-                                                            color = Color(0xFFFFD700)
+                                                            color = if (isDarkTheme) Color(0xFFFFD700) else Color(0xFF8B5E3C)
                                                         )
                                                     }
                                                 }
@@ -424,7 +425,9 @@ fun SettingsScreen(
                                             )
                                             .border(
                                                 width = if (isSelected) 1.5.dp else 1.dp,
-                                                color = if (isSelected) Color.White.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                                                color = if (isSelected) Color.White.copy(alpha = 0.4f) 
+                                                        else if (isDarkTheme) MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                                                        else MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
                                                 shape = RoundedCornerShape(12.dp)
                                             ),
                                         contentAlignment = Alignment.Center
@@ -516,10 +519,13 @@ fun SettingsScreen(
                             .bounceClick(onClick = onNavigateToCredits)
                             .background(Color.Black.copy(alpha = 0.4f), RoundedCornerShape(16.dp))
                             .padding(bottom = 6.dp)
-                            .background(Color(0xFF4E342E), RoundedCornerShape(16.dp)) // Dark wood/leather
+                            .background(
+                                if (isDarkTheme) Color(0xFF332B25) else Color(0xFF8D6E63),
+                                RoundedCornerShape(16.dp)
+                            )
                             .border(
                                 width = 1.dp,
-                                color = Color(0xFFFFB300).copy(alpha = 0.4f),
+                                color = Color(0xFFFFB300).copy(alpha = if (isDarkTheme) 0.4f else 0.6f),
                                 shape = RoundedCornerShape(16.dp)
                             )
                     ) {
@@ -638,8 +644,13 @@ private fun SettingsToggleCard(
 
 @Composable
 private fun MechanicalToggleSwitch(checked: Boolean) {
+    val isDark = isSystemInDarkTheme()
     val thumbOffset by animateDpAsState(targetValue = if (checked) 24.dp else 2.dp, label = "thumbOffset")
-    val trackColor = if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+    val trackColor = if (checked) {
+        if (isDark) MaterialTheme.colorScheme.primary else RanchoCactusSecondary
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant
+    }
     
     // Track (Ranura)
     Box(
@@ -749,10 +760,11 @@ private fun SettingsAudioCard(
                         )
                     )
 
+                    val isDarkSlider = isSystemInDarkTheme()
                     Box(
                         modifier = Modifier
-                            .background(Color(0xFF2C221E), RoundedCornerShape(8.dp))
-                            .border(1.dp, Color(0xFFFFD166).copy(alpha = 0.6f), RoundedCornerShape(8.dp))
+                            .background(if (isDarkSlider) Color(0xFF2C221E) else MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp))
+                            .border(1.dp, if (isDarkSlider) Color(0xFFFFD166).copy(alpha = 0.6f) else Color(0xFFD4AF37).copy(alpha = 0.6f), RoundedCornerShape(8.dp))
                             .padding(horizontal = 8.dp, vertical = 4.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -760,7 +772,7 @@ private fun SettingsAudioCard(
                             text = "${(volume * 100).toInt()}%",
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFFFFD166)
+                            color = if (isDarkSlider) Color(0xFFFFD166) else Color.White
                         )
                     }
                 }
