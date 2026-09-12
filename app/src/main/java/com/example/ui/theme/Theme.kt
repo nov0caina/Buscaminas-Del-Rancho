@@ -32,8 +32,9 @@ private val LightColorScheme = lightColorScheme(
     tertiaryContainer = RanchoTerracottaContainer,
     background = RanchoSunBackground,
     surface = RanchoWoodSurface,
-    onSurface = androidx.compose.ui.graphics.Color(0xFF3E2723),
-    surfaceVariant = RanchoSandSurfaceVariant
+    onSurface = androidx.compose.ui.graphics.Color(0xFF2C1810),
+    surfaceVariant = RanchoSandSurfaceVariant,
+    onSurfaceVariant = androidx.compose.ui.graphics.Color(0xFF4A3528)
 )
 
 @Composable

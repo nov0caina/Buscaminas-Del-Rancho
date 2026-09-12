@@ -533,7 +533,6 @@ private fun LevelDirectCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val isDark = isSystemInDarkTheme()
     val (containerColor, contentColor) = when (difficulty) {
         GameDifficulty.PRINCIPIANTE -> Pair(
             MaterialTheme.colorScheme.primaryContainer,
@@ -544,12 +543,12 @@ private fun LevelDirectCard(
             MaterialTheme.colorScheme.onSecondaryContainer
         )
         GameDifficulty.EXPERTO -> Pair(
-            if (isLocked) (if (isDark) Color(0xFF382515) else Color(0xFFEAD8C3)) else MaterialTheme.colorScheme.tertiaryContainer,
-            if (isLocked) (if (isDark) Color(0xFFFFD700) else Color(0xFF5D4037)) else MaterialTheme.colorScheme.onTertiaryContainer
+            if (isLocked) Color(0xFF382515) else MaterialTheme.colorScheme.tertiaryContainer,
+            if (isLocked) Color(0xFFFFD700) else MaterialTheme.colorScheme.onTertiaryContainer
         )
         GameDifficulty.PERSONALIZADA -> Pair(
-            if (isLocked) (if (isDark) Color(0xFF2E2018) else Color(0xFFE5D2BC)) else MaterialTheme.colorScheme.surfaceVariant,
-            if (isLocked) (if (isDark) Color(0xFFFFE082) else Color(0xFF4E342E)) else MaterialTheme.colorScheme.onSurfaceVariant
+            if (isLocked) Color(0xFF2E2018) else MaterialTheme.colorScheme.surfaceVariant,
+            if (isLocked) Color(0xFFFFE082) else MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 
@@ -565,7 +564,7 @@ private fun LevelDirectCard(
             .then(
                 if (isLocked) Modifier.border(
                     1.5.dp,
-                    if (isDark) Color(0xFFFFD700).copy(alpha = 0.6f) else Color(0xFFC59B27),
+                    Color(0xFFFFD700).copy(alpha = 0.6f),
                     RoundedCornerShape(16.dp)
                 ) else Modifier
             )
@@ -601,12 +600,12 @@ private fun LevelDirectCard(
                             Box(
                                 modifier = Modifier
                                     .background(
-                                        if (isDark) Color(0xFFFFD700).copy(alpha = 0.25f) else Color(0xFFD4AF37).copy(alpha = 0.2f),
+                                        Color(0xFFFFD700).copy(alpha = 0.25f),
                                         RoundedCornerShape(6.dp)
                                     )
                                     .border(
                                         1.dp,
-                                        if (isDark) Color(0xFFFFD700) else Color(0xFFB78103),
+                                        Color(0xFFFFD700),
                                         RoundedCornerShape(6.dp)
                                     )
                                     .padding(horizontal = 5.dp, vertical = 1.dp)
@@ -615,7 +614,7 @@ private fun LevelDirectCard(
                                     text = "🔒 VIP",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.ExtraBold,
-                                    color = if (isDark) Color(0xFFFFD700) else Color(0xFF8B5E3C),
+                                    color = Color(0xFFFFD700),
                                     fontSize = 10.sp
                                 )
                             }

@@ -16,9 +16,9 @@ val RanchoCactusOnContainer = Color(0xFF003300)      // Verde bosque profundo
 val RanchoTerracottaTertiary = Color(0xFFC0392B)     // Rojo terracota / Ladrillo
 val RanchoTerracottaContainer = Color(0xFFFFCDD2)    // Rosa claro / Arcilla suave
 
-val RanchoSunBackground = Color(0xFFFFF8F2)          // Crema sol / Hueso cálido
-val RanchoWoodSurface = Color(0xFFFFF3E0)            // Madera clara / Arena cálida
-val RanchoSandSurfaceVariant = Color(0xFFEFEBE9)     // Arena grisáceo / Cuero crudo
+val RanchoSunBackground = Color(0xFFEDE3D4)          // Pergamino cálido / Arena desértica suave (anti-fatiga visual)
+val RanchoWoodSurface = Color(0xFFE2D5C3)            // Madera suave / Arena cálida al sol
+val RanchoSandSurfaceVariant = Color(0xFFD5C6B1)     // Arena tostada / Cuero suave
 
 // Rancho Noche (Dark Theme Palette)
 val RanchoBannerTitleNight = Color(0xFFF39C12)           // Amarillo oro / Ámbar brillante
@@ -72,8 +72,8 @@ val CellPressedDay = Color(0xFF724A2D)               // Tono presionado día
 val CellPressedNight = Color(0xFFD68910)             // Tono presionado noche
 
 // Terreno excavado / Casillas reveladas (Hundidas en la tierra)
-val CellExcavatedDay = Color(0xFFEFE4DA)             // Tierra caliza clara excavada (Día)
-val CellExcavatedBorderDay = Color(0xFFD7CCC8)       // Borde interior de excavación (Día)
+val CellExcavatedDay = Color(0xFFDDD2C2)             // Tierra caliza suave excavada (Día antideslumbrante)
+val CellExcavatedBorderDay = Color(0xFFC5B7A5)       // Borde interior de excavación suave (Día)
 val CellExcavatedNight = Color(0xFF1E1A17)           // Tierra negra fértil del rancho (Noche)
 val CellExcavatedBorderNight = Color(0xFF120F0D)     // Borde interior oscuro (Noche)
 

@@ -385,7 +385,7 @@ private fun AchievementCard(
     } else if (isUnlocked) {
         if (isDarkTheme) Color(0xFF3E2D26) else MaterialTheme.colorScheme.primaryContainer
     } else {
-        if (isDarkTheme) Color(0xFF1E1714) else Color(0xFFF0ECE1)
+        if (isDarkTheme) Color(0xFF1E1714) else Color(0xFFDDD2C2)
     }
 
     val targetRatio = (achievement.progress.toFloat() / achievement.maxProgress).coerceIn(0f, 1f)
@@ -435,7 +435,7 @@ private fun AchievementCard(
                 width = if (isHighlighted) 2.dp else if (isUnlocked) 1.5.dp else 1.dp,
                 color = if (isHighlighted) Color(0xFFFFD700) 
                         else if (isUnlocked) MaterialTheme.colorScheme.primary.copy(alpha = 0.6f) 
-                        else (if (isDarkTheme) Color.Transparent else Color(0xFFD7CCC8)),
+                        else (if (isDarkTheme) Color.Transparent else Color(0xFFC5B7A5)),
                 shape = RoundedCornerShape(16.dp)
             )
     ) {
