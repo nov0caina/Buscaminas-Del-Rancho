@@ -85,6 +85,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -271,23 +272,35 @@ fun GameScreen(
                     val availableWidth = (maxWidth - 12.dp).coerceAtLeast(100.dp)
                     val availableHeight = (maxHeight - 12.dp).coerceAtLeast(100.dp)
 
+                    val density = LocalDensity.current
+
                     // Cálculo dinámico para optimizar el tamaño de celdas en pantallas alargadas
-                    val framePaddingTotal = 24.dp
-                    val spacingTotalX = 2.dp * (uiState.cols - 1)
-                    val spacingTotalY = 2.dp * (uiState.rows - 1)
+                    val framePadding = 12.dp
+                    val framePaddingTotal = framePadding * 2 // 24.dp simétrico
+                    val spacingDp = 2.dp
+                    val spacingTotalX = spacingDp * (uiState.cols - 1)
+                    val spacingTotalY = spacingDp * (uiState.rows - 1)
 
                     val maxCellWidth = (availableWidth - framePaddingTotal - spacingTotalX) / uiState.cols
                     val maxCellHeight = (availableHeight - framePaddingTotal - spacingTotalY) / uiState.rows
                     val maxPossibleCell = minOf(maxCellWidth, maxCellHeight)
 
-                    val cellDp = when {
+                    val rawCellDp = when {
                         uiState.cols <= 9 -> maxPossibleCell.coerceIn(34.dp, 44.dp)
                         uiState.cols <= 12 -> maxPossibleCell.coerceIn(28.dp, 36.dp)
                         else -> maxPossibleCell.coerceIn(24.dp, 32.dp)
                     }
 
-                    val gridWidth = (cellDp * uiState.cols) + (2.dp * (uiState.cols - 1))
-                    val gridHeight = (cellDp * uiState.rows) + (2.dp * (uiState.rows - 1))
+                    // Cuantización a píxeles enteros para garantizar coherencia dimensional idéntica en todas las columnas
+                    val cellPx = with(density) { rawCellDp.roundToPx() }
+                    val spacingPx = with(density) { spacingDp.roundToPx() }
+                    val cellDp = with(density) { cellPx.toDp() }
+
+                    val gridWidthPx = (cellPx * uiState.cols) + (spacingPx * (uiState.cols - 1))
+                    val gridHeightPx = (cellPx * uiState.rows) + (spacingPx * (uiState.rows - 1))
+                    val gridWidth = with(density) { gridWidthPx.toDp() }
+                    val gridHeight = with(density) { gridHeightPx.toDp() }
+
                     val boardWidth = gridWidth + framePaddingTotal
                     val boardHeight = gridHeight + framePaddingTotal
 
@@ -365,6 +378,7 @@ fun GameScreen(
                     ) {
                         RanchBoardFrame(
                             isDarkTheme = isDarkTheme,
+                            framePadding = framePadding,
                             modifier = Modifier
                                 .requiredSize(width = boardWidth, height = boardHeight)
                                 .graphicsLayer(
@@ -665,8 +679,13 @@ private fun MinefieldGrid(
     onCellLongClick: (row: Int, col: Int) -> Unit,
     onCellChord: (row: Int, col: Int) -> Unit
 ) {
-    val gridWidth = (cellDp * cols) + (2.dp * (cols - 1))
-    val gridHeight = (cellDp * rows) + (2.dp * (rows - 1))
+    val density = LocalDensity.current
+    val cellPx = with(density) { cellDp.roundToPx() }
+    val spacingPx = with(density) { 2.dp.roundToPx() }
+    val gridWidthPx = (cellPx * cols) + (spacingPx * (cols - 1))
+    val gridHeightPx = (cellPx * rows) + (spacingPx * (rows - 1))
+    val gridWidth = with(density) { gridWidthPx.toDp() }
+    val gridHeight = with(density) { gridHeightPx.toDp() }
 
     Box(
         modifier = Modifier.requiredSize(width = gridWidth, height = gridHeight)
@@ -735,7 +754,7 @@ private fun MassiveDesertDustOverlay(
 
     val globalProgress = dustAnim.value
     if (globalProgress < 1f) {
-        val density = androidx.compose.ui.platform.LocalDensity.current
+        val density = LocalDensity.current
         val cellStepPx = with(density) { (cellDp + spacingDp).toPx() }
         val cellDpPx = with(density) { cellDp.toPx() }
 

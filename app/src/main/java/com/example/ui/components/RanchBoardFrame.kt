@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -35,7 +36,7 @@ import com.example.ui.theme.BoardWoodSurfaceLight
 fun RanchBoardFrame(
     isDarkTheme: Boolean = isSystemInDarkTheme(),
     modifier: Modifier = Modifier,
-    framePadding: Dp = 10.dp,
+    framePadding: Dp = 12.dp,
     content: @Composable () -> Unit
 ) {
     val cornerRadius = 14.dp
@@ -129,7 +130,8 @@ fun RanchBoardFrame(
 
         // Contenedor del contenido (Grid del tablero)
         Box(
-            modifier = Modifier.padding(framePadding)
+            modifier = Modifier.padding(framePadding),
+            contentAlignment = Alignment.Center
         ) {
             content()
         }
