@@ -41,8 +41,8 @@ class DailyReminderReceiver : BroadcastReceiver() {
 
         val notification = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("🤠 ¡Órale compa! Es hora del Rancho")
-            .setContentText("Tus minas en Sinaloa te están esperando. ¡Ven a despejar el terreno!")
+            .setContentTitle("🤠 ¡Qué onda, plebe! Hay jale en el rancho")
+            .setContentText("El terreno te está esperando. ¡Échate una partida tranquilón!")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)

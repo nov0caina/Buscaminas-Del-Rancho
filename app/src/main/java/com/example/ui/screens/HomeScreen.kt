@@ -300,7 +300,7 @@ fun HomeScreen(
                                                 color = Color.White
                                             )
                                             Text(
-                                                text = "Continúa tu juego guardado",
+                                                text = "Sigue con tu partida pendiente",
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = Color.White.copy(alpha = 0.85f)
                                             )
@@ -463,7 +463,7 @@ fun HomeScreen(
                         // Achievements Button
                         MenuSecondaryButton(
                             title = "Logros del Rancho",
-                            subtitle = "Medallas de Compadre",
+                            subtitle = "Tus Medallas y Trofeos",
                             icon = Icons.Default.Star,
                             testTag = "btn_achievements",
                             modifier = Modifier.staggeredEntrance(index = baseSecondaryIndex + 3),

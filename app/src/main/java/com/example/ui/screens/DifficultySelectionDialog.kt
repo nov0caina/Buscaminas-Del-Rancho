@@ -475,7 +475,7 @@ fun CustomDifficultyDialog(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "¡A Jugar! ⛏️",
+                            text = "¡A jugar! ⛏️",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.ExtraBold,
                             color = MaterialTheme.colorScheme.onPrimary

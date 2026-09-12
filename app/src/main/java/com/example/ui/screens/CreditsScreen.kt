@@ -343,7 +343,7 @@ fun CreditsScreen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = "¡Gracias por jugar compa! 🤠🌵",
+                                text = "¡Gracias por jugar, pariente! 🤠🌵",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary

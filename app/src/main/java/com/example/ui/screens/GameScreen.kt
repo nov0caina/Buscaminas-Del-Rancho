@@ -203,7 +203,7 @@ fun GameScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
-                            contentDescription = "Reiniciar Game"
+                            contentDescription = "Reiniciar partida"
                         )
                     }
                 },
@@ -226,7 +226,7 @@ fun GameScreen(
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            text = "⛏️ Clic simple: Revelar  •  ${uiState.ranchFlagIcon.emoji} Mantén presionado: Poner ${uiState.ranchFlagIcon.title}",
+                            text = "⛏️ Toca para descubrir  •  ${uiState.ranchFlagIcon.emoji} Mantén presionado para marcar",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.Medium,
@@ -1088,7 +1088,7 @@ private fun GameEndOverlayDialog(
 
                 // Title
                 Text(
-                    text = if (isWin) "¡VICTORIA EN EL RANCHO!" else "¡BUM! VALIÓ GAVER",
+                    text = if (isWin) "¡GANASTE EN EL RANCHO, PLEBE!" else "¡BUM! VALIÓ VERDURA",
                     style = MaterialTheme.typography.titleLarge.copy(
                         shadow = Shadow(
                             color = Color.Black.copy(alpha = 0.35f),
@@ -1110,9 +1110,9 @@ private fun GameEndOverlayDialog(
                 // Description
                 Text(
                     text = if (isWin)
-                        "¡Rifado padresanto! Has limpiado todas las minas de $difficultyName sin un solo rasguño."
+                        "¡Te la rifaste macizo! Limpiaste todas las minas de $difficultyName sin un solo rasguño."
                     else
-                        "Pisaste una dinamita en $difficultyName. ¡No te agüites y vuelve a intentarlo!",
+                        "Pisaste una dinamita en $difficultyName. ¡Ni modo, pariente, dale otra vez!",
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.9f),
@@ -1282,7 +1282,7 @@ private fun GameEndOverlayDialog(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = if (isWin) "Otra Partida" else "Reintentar",
+                                text = if (isWin) "Échate otra" else "Darle otra vez",
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = Color.White

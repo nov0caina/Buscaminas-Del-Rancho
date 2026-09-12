@@ -167,8 +167,8 @@ fun PatronPassDialog(
                 ) {
                     PatronBenefitRow(
                         emoji = "💣",
-                        title = "Modo Belikon (99 Minas)",
-                        description = "El reto supremo para los vaqueros más bravos de la sierra."
+                        title = "Modo Belikón (99 Minas)",
+                        description = "El reto supremo para los más bravos de la sierra."
                     )
                     PatronBenefitRow(
                         emoji = "📐",

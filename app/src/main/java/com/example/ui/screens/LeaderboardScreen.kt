@@ -436,7 +436,7 @@ fun LeaderboardScreen(
                     val filteredLocal = localScores.filter { it.difficultyName == selectedDifficulty.displayName && it.isWin }
                     if (filteredLocal.isEmpty()) {
                         EmptyLeaderboardState(
-                            message = "Aún no tienes victorias en ${selectedDifficulty.displayName}. ¡Ponte el sombrero y juega!",
+                            message = "Todavía no tienes victorias en ${selectedDifficulty.displayName}. ¡Ponte al tiro y échate una partida!",
                             isDarkTheme = isDarkTheme
                         )
                     } else {
@@ -465,7 +465,7 @@ fun LeaderboardScreen(
                     // TAB PARTIDAS RECIENTES
                     if (recentMatches.isEmpty()) {
                         EmptyLeaderboardState(
-                            message = "Aún no has jugado partidas. ¡Inicia una partida en el Rancho para registrar tu historial!",
+                            message = "Todavía no hay partidas por aquí. ¡Échate la primera en el rancho!",
                             isDarkTheme = isDarkTheme
                         )
                     } else {

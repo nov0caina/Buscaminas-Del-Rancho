@@ -67,11 +67,11 @@ object AchievementNotificationHelper {
             val notification = NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setContentTitle("🏆 ¡Logro Desbloqueado: ${achievement.title}! ✨")
-                .setContentText("¡Ajúa vaquero! ${achievement.description}")
+                .setContentText("¡Te la rifaste, plebe! ${achievement.description}")
                 .setStyle(
                     NotificationCompat.BigTextStyle()
                         .setBigContentTitle("🏆 ¡Logro Desbloqueado: ${achievement.title}! ✨")
-                        .bigText("¡Ajúa vaquero! Conseguiste \"${achievement.title}\".\n${achievement.description}\n\n👉 Toca aquí para ver tu colección de trofeos.")
+                        .bigText("¡Te la rifaste, plebe! Conseguiste \"${achievement.title}\".\n${achievement.description}\n\n👉 Toca aquí para ver tus logros.")
                 )
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setCategory(NotificationCompat.CATEGORY_STATUS)

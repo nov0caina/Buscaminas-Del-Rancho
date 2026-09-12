@@ -24,21 +24,21 @@ object RanchAchievementLore {
             id = "patron_experto",
             title = "El Patrón del Rancho 👑",
             badgeName = "Patrón Supremo",
-            sinaloaPhrase = "¡Aquí nomás mis chicharrones truenan, compa!",
+            sinaloaPhrase = "¡Aquí manda la pura experiencia, viejón!",
             iconResId = R.drawable.ic_achievement_patron_experto
         ),
         "fast_hand" to AchievementLore(
             id = "fast_hand",
             title = "Rápido como el Viento ⚡",
             badgeName = "Velocidad Costera",
-            sinaloaPhrase = "¡A doscientos por la costera! ¡Ni el polvo vieron!",
+            sinaloaPhrase = "¡Fierro por la costera! ¡Ni el polvo te vieron!",
             iconResId = R.drawable.ic_achievement_fast_hand
         ),
         "cazador_iguanas" to AchievementLore(
             id = "cazador_iguanas",
             title = "Cazador de Iguanas 🦎",
             badgeName = "Tirador del Guamúchil",
-            sinaloaPhrase = "¡No se me va ni una viva del guamúchil, compa!",
+            sinaloaPhrase = "¡Ni una sola se nos va, pariente!",
             iconResId = R.drawable.ic_achievement_cazador_iguanas
         ),
         "minero_veterano" to AchievementLore(
