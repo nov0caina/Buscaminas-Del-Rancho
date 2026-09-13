@@ -161,7 +161,15 @@ fun SettingsScreen(
                         .bounceClick(onClick = onBack)
                         .background(Color.Black.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
                         .padding(bottom = 5.dp)
-                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp)),
+                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+                        .leatherStitchBorder(
+                            color = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.4f)
+                            else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.4f),
+                            cornerRadius = 12.dp,
+                            inset = 2.5.dp,
+                            dashLength = 3.5.dp,
+                            gapLength = 2.5.dp
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -208,6 +216,11 @@ fun SettingsScreen(
                             .background(Color.Black.copy(alpha = 0.15f), RoundedCornerShape(20.dp))
                             .padding(bottom = 6.dp)
                             .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(20.dp))
+                            .leatherStitchBorder(
+                                color = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.35f)
+                                else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.35f),
+                                cornerRadius = 20.dp
+                            )
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text(
@@ -268,6 +281,19 @@ fun SettingsScreen(
                                                         width = if (isSelected) 2.dp else 1.dp,
                                                         color = if (isSelected) Color(0xFFFFD700) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
                                                         shape = RoundedCornerShape(14.dp)
+                                                    )
+                                                    .leatherStitchBorder(
+                                                        color = if (isSelected) {
+                                                            if (isDarkTheme) LeatherStitchDefaults.GoldStitch.copy(alpha = 0.6f)
+                                                            else Color.White.copy(alpha = 0.5f)
+                                                        } else {
+                                                            if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.25f)
+                                                            else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.25f)
+                                                        },
+                                                        cornerRadius = 14.dp,
+                                                        inset = 2.5.dp,
+                                                        dashLength = 3.dp,
+                                                        gapLength = 2.dp
                                                     ),
                                                 contentAlignment = Alignment.Center
                                             ) {
@@ -358,6 +384,11 @@ fun SettingsScreen(
                             .background(Color.Black.copy(alpha = 0.15f), RoundedCornerShape(20.dp))
                             .padding(bottom = 6.dp)
                             .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(20.dp))
+                            .leatherStitchBorder(
+                                color = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.35f)
+                                else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.35f),
+                                cornerRadius = 20.dp
+                            )
                     ) {
                         Column(
                             modifier = Modifier
@@ -429,6 +460,19 @@ fun SettingsScreen(
                                                         else if (isDarkTheme) MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
                                                         else MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
                                                 shape = RoundedCornerShape(12.dp)
+                                            )
+                                            .leatherStitchBorder(
+                                                color = if (isSelected) {
+                                                    if (isDarkTheme) LeatherStitchDefaults.GoldStitch.copy(alpha = 0.55f)
+                                                    else Color.White.copy(alpha = 0.5f)
+                                                } else {
+                                                    if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.25f)
+                                                    else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.25f)
+                                                },
+                                                cornerRadius = 12.dp,
+                                                inset = 2.5.dp,
+                                                dashLength = 3.5.dp,
+                                                gapLength = 2.5.dp
                                             ),
                                         contentAlignment = Alignment.Center
                                     ) {
@@ -528,6 +572,10 @@ fun SettingsScreen(
                                 color = Color(0xFFFFB300).copy(alpha = if (isDarkTheme) 0.4f else 0.6f),
                                 shape = RoundedCornerShape(16.dp)
                             )
+                            .leatherStitchBorder(
+                                color = LeatherStitchDefaults.GoldStitch.copy(alpha = 0.5f),
+                                cornerRadius = 16.dp
+                            )
                     ) {
                         Column(
                             modifier = Modifier.padding(16.dp)
@@ -595,6 +643,7 @@ private fun SettingsToggleCard(
     testTag: String,
     modifier: Modifier = Modifier
 ) {
+    val isDark = isSystemInDarkTheme()
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -603,6 +652,16 @@ private fun SettingsToggleCard(
             .background(Color.Black.copy(alpha = 0.25f), RoundedCornerShape(16.dp))
             .padding(bottom = 6.dp)
             .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
+            .border(
+                1.dp,
+                if (isDark) Color(0xFF5D4037).copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
+                RoundedCornerShape(16.dp)
+            )
+            .leatherStitchBorder(
+                color = if (isDark) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.35f)
+                else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.35f),
+                cornerRadius = 16.dp
+            )
     ) {
         Row(
             modifier = Modifier
@@ -687,6 +746,7 @@ private fun SettingsAudioCard(
     testTag: String,
     modifier: Modifier = Modifier
 ) {
+    val isDark = isSystemInDarkTheme()
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -694,6 +754,16 @@ private fun SettingsAudioCard(
             .background(Color.Black.copy(alpha = 0.25f), RoundedCornerShape(16.dp))
             .padding(bottom = 6.dp)
             .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
+            .border(
+                1.dp,
+                if (isDark) Color(0xFF5D4037).copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
+                RoundedCornerShape(16.dp)
+            )
+            .leatherStitchBorder(
+                color = if (isDark) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.35f)
+                else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.35f),
+                cornerRadius = 16.dp
+            )
     ) {
         Column(
             modifier = Modifier

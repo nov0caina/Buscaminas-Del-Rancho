@@ -164,7 +164,15 @@ fun AchievementsScreen(
                             .bounceClick(onClick = onBack)
                             .background(Color.Black.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
                             .padding(bottom = 5.dp)
-                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp)),
+                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+                            .leatherStitchBorder(
+                                color = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.4f)
+                                else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.4f),
+                                cornerRadius = 12.dp,
+                                inset = 2.5.dp,
+                                dashLength = 3.5.dp,
+                                gapLength = 2.5.dp
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -206,6 +214,13 @@ fun AchievementsScreen(
                         .background(Color.Black.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
                         .padding(bottom = 5.dp)
                         .background(Color(0xFF2E7D32), RoundedCornerShape(12.dp))
+                        .leatherStitchBorder(
+                            color = LeatherStitchDefaults.GreenStitch,
+                            cornerRadius = 12.dp,
+                            inset = 2.5.dp,
+                            dashLength = 3.5.dp,
+                            gapLength = 2.5.dp
+                        )
                         .padding(10.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -315,6 +330,11 @@ private fun AchievementProgressCard(
             .background(
                 if (isDarkTheme) Color(0xFF2C221E) else MaterialTheme.colorScheme.surfaceVariant,
                 RoundedCornerShape(16.dp)
+            )
+            .leatherStitchBorder(
+                color = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.35f)
+                else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.35f),
+                cornerRadius = 16.dp
             )
             .padding(16.dp)
     ) {
@@ -437,6 +457,17 @@ private fun AchievementCard(
                         else if (isUnlocked) MaterialTheme.colorScheme.primary.copy(alpha = 0.6f) 
                         else (if (isDarkTheme) Color.Transparent else Color(0xFFC5B7A5)),
                 shape = RoundedCornerShape(16.dp)
+            )
+            .leatherStitchBorder(
+                color = if (isHighlighted) LeatherStitchDefaults.GoldStitch
+                else if (isUnlocked) {
+                    if (isDarkTheme) LeatherStitchDefaults.GoldStitch.copy(alpha = 0.5f)
+                    else LeatherStitchDefaults.AmberStitch.copy(alpha = 0.5f)
+                } else {
+                    if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.25f)
+                    else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.3f)
+                },
+                cornerRadius = 16.dp
             )
     ) {
         Column(

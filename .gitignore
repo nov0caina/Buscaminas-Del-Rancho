@@ -41,6 +41,7 @@ GoogleService-Info.plist
 /google_play_assets/*.aab
 /google_play_assets/*.apk
 /captured_screens/
+/play store images/
 
 # --- Directorios de Construcción y Caché de Android / Gradle ---
 .gradle/

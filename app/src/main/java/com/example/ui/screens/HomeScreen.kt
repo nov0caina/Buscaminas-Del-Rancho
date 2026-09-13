@@ -60,6 +60,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.sin
@@ -256,7 +257,7 @@ fun HomeScreen(
                                 modifier = Modifier
                                     .staggeredEntrance(index = 1)
                                     .fillMaxWidth()
-                                    .height(68.dp)
+                                    .height(72.dp)
                                     .testTag("btn_resume_game")
                                     .bounceClick(onClick = onResumeGame)
                                     .background(color = Color.Black.copy(alpha = 0.25f), shape = RoundedCornerShape(16.dp))
@@ -265,11 +266,15 @@ fun HomeScreen(
                                         color = if (isDarkTheme) Color(0xFF2E7D32) else Color(0xFF388E3C),
                                         shape = RoundedCornerShape(16.dp)
                                     )
+                                    .leatherStitchBorder(
+                                        color = LeatherStitchDefaults.GreenStitch,
+                                        cornerRadius = 16.dp
+                                    )
                             ) {
                                 Row(
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .padding(horizontal = 16.dp),
+                                        .padding(horizontal = 14.dp, vertical = 6.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
@@ -344,6 +349,7 @@ fun HomeScreen(
                             LevelDirectCard(
                                 difficulty = diff,
                                 isLocked = isLocked,
+                                isDarkTheme = isDarkTheme,
                                 modifier = Modifier.staggeredEntrance(index = baseLevelIndex + idx),
                                 onClick = {
                                     if (isLocked) {
@@ -378,6 +384,10 @@ fun HomeScreen(
                                         1.5.dp,
                                         Brush.horizontalGradient(listOf(Color(0xFFFFD700), Color(0xFFC59B27))),
                                         RoundedCornerShape(18.dp)
+                                    )
+                                    .leatherStitchBorder(
+                                        color = LeatherStitchDefaults.GoldStitch,
+                                        cornerRadius = 18.dp
                                     )
                                     .shimmerGoldenSweep()
                                     .padding(14.dp)
@@ -530,6 +540,7 @@ fun HomeScreen(
 private fun LevelDirectCard(
     difficulty: GameDifficulty,
     isLocked: Boolean = false,
+    isDarkTheme: Boolean = true,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -552,10 +563,16 @@ private fun LevelDirectCard(
         )
     }
 
+    val stitchColor = when {
+        isLocked -> LeatherStitchDefaults.GoldStitch
+        isDarkTheme -> LeatherStitchDefaults.DarkThemeStitch
+        else -> LeatherStitchDefaults.DayThemeStitch
+    }
+
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(68.dp)
+            .height(72.dp)
             .testTag("btn_level_${difficulty.name.lowercase()}")
             .bounceClick(onClick = onClick)
             .background(color = Color.Black.copy(alpha = 0.25f), shape = RoundedCornerShape(16.dp))
@@ -568,32 +585,45 @@ private fun LevelDirectCard(
                     RoundedCornerShape(16.dp)
                 ) else Modifier
             )
+            .leatherStitchBorder(
+                color = stitchColor,
+                cornerRadius = 16.dp
+            )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 14.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(end = 10.dp),
+                    .padding(end = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = difficulty.iconEmoji,
                     fontSize = 26.sp
                 )
-                Spacer(modifier = Modifier.width(14.dp))
-                Column(modifier = Modifier.weight(1f, fill = false)) {
+                Spacer(modifier = Modifier.width(10.dp))
+                Column(
+                    modifier = Modifier.weight(1f, fill = false),
+                    verticalArrangement = Arrangement.Center
+                ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = difficulty.displayName,
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontSize = 15.sp,
+                                lineHeight = 19.sp,
+                                letterSpacing = (-0.2).sp
+                            ),
                             fontWeight = FontWeight.Bold,
-                            color = contentColor
+                            color = contentColor,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         if (isLocked) {
                             Spacer(modifier = Modifier.width(6.dp))
@@ -620,10 +650,16 @@ private fun LevelDirectCard(
                             }
                         }
                     }
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = if (isLocked) "Desbloquea con Pase del Patrón" else difficulty.subtitle,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = contentColor.copy(alpha = 0.8f)
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontSize = 12.sp,
+                            lineHeight = 15.sp
+                        ),
+                        color = contentColor.copy(alpha = 0.8f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
@@ -663,7 +699,7 @@ private fun MenuSecondaryButton(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(68.dp)
+            .height(72.dp)
             .testTag(testTag)
             .bounceClick(onClick = onClick)
             .background(color = Color.Black.copy(alpha = 0.2f), shape = RoundedCornerShape(16.dp))
@@ -674,11 +710,16 @@ private fun MenuSecondaryButton(
                 color = MaterialTheme.colorScheme.primary.copy(alpha = if (isSystemInDarkTheme()) 0.3f else 0.45f),
                 shape = RoundedCornerShape(16.dp)
             )
+            .leatherStitchBorder(
+                color = if (isSystemInDarkTheme()) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.35f)
+                else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.35f),
+                cornerRadius = 16.dp
+            )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 14.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start
         ) {
@@ -696,18 +737,25 @@ private fun MenuSecondaryButton(
                     modifier = Modifier.size(24.dp)
                 )
             }
-            Spacer(modifier = Modifier.width(16.dp))
-            Column {
+            Spacer(modifier = Modifier.width(14.dp))
+            Column(
+                modifier = Modifier.weight(1f, fill = false),
+                verticalArrangement = Arrangement.Center
+            ) {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }

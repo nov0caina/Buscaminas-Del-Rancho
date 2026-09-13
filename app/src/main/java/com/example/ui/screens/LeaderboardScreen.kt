@@ -190,7 +190,15 @@ fun LeaderboardScreen(
                             .bounceClick(onClick = onBack)
                             .background(Color.Black.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
                             .padding(bottom = 5.dp)
-                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp)),
+                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+                            .leatherStitchBorder(
+                                color = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.4f)
+                                else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.4f),
+                                cornerRadius = 12.dp,
+                                inset = 2.5.dp,
+                                dashLength = 3.5.dp,
+                                gapLength = 2.5.dp
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -229,6 +237,14 @@ fun LeaderboardScreen(
                         .padding(bottom = 4.dp)
                         .background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(12.dp))
                         .border(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                        .leatherStitchBorder(
+                            color = if (isDarkTheme) LeatherStitchDefaults.AmberStitch.copy(alpha = 0.5f)
+                            else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.45f),
+                            cornerRadius = 12.dp,
+                            inset = 2.5.dp,
+                            dashLength = 3.5.dp,
+                            gapLength = 2.5.dp
+                        )
                         .padding(horizontal = 12.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -501,7 +517,20 @@ private fun TabButton(text: String, isSelected: Boolean, onClick: () -> Unit, mo
             .bounceClick(onClick = onClick)
             .background(Color.Black.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
             .padding(bottom = lipSize)
-            .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp)),
+            .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+            .leatherStitchBorder(
+                color = if (isSelected) {
+                    if (isDarkTheme) LeatherStitchDefaults.GoldStitch.copy(alpha = 0.6f)
+                    else Color.White.copy(alpha = 0.5f)
+                } else {
+                    if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.3f)
+                    else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.3f)
+                },
+                cornerRadius = 12.dp,
+                inset = 2.5.dp,
+                dashLength = 3.5.dp,
+                gapLength = 2.5.dp
+            ),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -569,6 +598,11 @@ private fun LocalScoreCard(
                 1.dp,
                 if (isDarkTheme) Color(0xFF5D4037).copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
                 RoundedCornerShape(16.dp)
+            )
+            .leatherStitchBorder(
+                color = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.35f)
+                else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.35f),
+                cornerRadius = 16.dp
             )
     ) {
         Row(
@@ -659,6 +693,11 @@ private fun GlobalScoreCard(
                 1.dp,
                 if (isDarkTheme) Color(0xFF5D4037).copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
                 RoundedCornerShape(16.dp)
+            )
+            .leatherStitchBorder(
+                color = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.35f)
+                else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.35f),
+                cornerRadius = 16.dp
             )
     ) {
         Row(
@@ -787,6 +826,11 @@ private fun RecentMatchCard(
                 1.dp,
                 if (isDarkTheme) Color(0xFF5D4037).copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
                 RoundedCornerShape(16.dp)
+            )
+            .leatherStitchBorder(
+                color = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.35f)
+                else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.35f),
+                cornerRadius = 16.dp
             )
     ) {
         Row(

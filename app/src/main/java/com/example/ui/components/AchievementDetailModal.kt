@@ -55,7 +55,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.audio.SoundManager
 import com.example.data.local.AchievementEntity
+import com.example.ui.screens.LeatherStitchDefaults
 import com.example.ui.screens.bounceClick
+import com.example.ui.screens.leatherStitchBorder
 import com.example.ui.screens.shimmerGoldenSweep
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -199,6 +201,13 @@ fun AchievementDetailModal(
                     ),
                     shape = RoundedCornerShape(24.dp)
                 )
+                .leatherStitchBorder(
+                    color = LeatherStitchDefaults.GoldStitch,
+                    cornerRadius = 24.dp,
+                    inset = 4.dp,
+                    dashLength = 4.5.dp,
+                    gapLength = 3.dp
+                )
                 .padding(20.dp)
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
@@ -308,6 +317,12 @@ fun AchievementDetailModal(
                             1.dp,
                             if (isDarkTheme) Color(0xFF5D4037) else Color(0xFFFFCC80),
                             RoundedCornerShape(16.dp)
+                        )
+                        .leatherStitchBorder(
+                            color = if (isDarkTheme) LeatherStitchDefaults.AmberStitch.copy(alpha = 0.45f)
+                            else LeatherStitchDefaults.GoldStitch.copy(alpha = 0.5f),
+                            cornerRadius = 16.dp,
+                            inset = 3.dp
                         )
                         .padding(14.dp)
                 ) {

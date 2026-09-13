@@ -201,7 +201,15 @@ fun CreditsScreen(
                         .bounceClick(onClick = onBack)
                         .background(Color.Black.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
                         .padding(bottom = 5.dp)
-                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp)),
+                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+                        .leatherStitchBorder(
+                            color = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.4f)
+                            else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.4f),
+                            cornerRadius = 12.dp,
+                            inset = 2.5.dp,
+                            dashLength = 3.5.dp,
+                            gapLength = 2.5.dp
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -260,6 +268,11 @@ fun CreditsScreen(
                                 width = 1.5.dp,
                                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
                                 shape = RoundedCornerShape(20.dp)
+                            )
+                            .leatherStitchBorder(
+                                color = if (isDarkTheme) LeatherStitchDefaults.GoldStitch.copy(alpha = 0.6f)
+                                else LeatherStitchDefaults.AmberStitch.copy(alpha = 0.55f),
+                                cornerRadius = 20.dp
                             )
                     ) {
                         Column(
@@ -335,6 +348,16 @@ fun CreditsScreen(
                                 if (isDarkTheme) Color(0xFF2C221E) else MaterialTheme.colorScheme.surfaceVariant,
                                 RoundedCornerShape(16.dp)
                             )
+                            .border(
+                                1.dp,
+                                if (isDarkTheme) Color(0xFF5D4037).copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
+                                RoundedCornerShape(16.dp)
+                            )
+                            .leatherStitchBorder(
+                                color = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.35f)
+                                else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.35f),
+                                cornerRadius = 16.dp
+                            )
                     ) {
                         Column(
                             modifier = Modifier
@@ -385,6 +408,11 @@ private fun ContributorCard(
                 width = 1.dp,
                 color = if (isDarkTheme) Color(0xFF5D4037).copy(alpha = 0.6f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
                 shape = RoundedCornerShape(16.dp)
+            )
+            .leatherStitchBorder(
+                color = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.35f)
+                else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.35f),
+                cornerRadius = 16.dp
             )
     ) {
         Column(
@@ -467,6 +495,13 @@ private fun ContributorCard(
                             1.dp,
                             contributor.roleColor.copy(alpha = 0.6f),
                             RoundedCornerShape(12.dp)
+                        )
+                        .leatherStitchBorder(
+                            color = contributor.roleColor.copy(alpha = 0.45f),
+                            cornerRadius = 12.dp,
+                            inset = 2.5.dp,
+                            dashLength = 3.5.dp,
+                            gapLength = 2.5.dp
                         )
                         .padding(horizontal = 14.dp),
                     contentAlignment = Alignment.Center

@@ -30,10 +30,20 @@ import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.RoundRect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -244,6 +254,83 @@ fun Modifier.idleFloat(
         translationY = floatAnim * maxOffsetY
         scaleX = 1f + (floatAnim * scaleRange * 0.5f)
         scaleY = 1f + (floatAnim * scaleRange * 0.5f)
+    }
+}
+
+/**
+ * Valores y configuraciones predeterminadas para los bordes de talabartería (pespunte y remaches sobre cuero).
+ */
+object LeatherStitchDefaults {
+    val StrokeWidth: Dp = 1.5.dp
+    val DashLength: Dp = 4.5.dp
+    val GapLength: Dp = 3.5.dp
+    val Inset: Dp = 3.5.dp
+    val CornerRadius: Dp = 16.dp
+
+    // Paletas temáticas de alta legibilidad
+    val GoldStitch: Color = Color(0xFFFFD700).copy(alpha = 0.75f)
+    val AmberStitch: Color = Color(0xFFE2B85A).copy(alpha = 0.75f)
+    val DarkThemeStitch: Color = Color(0xFFFFE082).copy(alpha = 0.45f)
+    val DayThemeStitch: Color = Color(0xFF8D5B28).copy(alpha = 0.50f)
+    val GreenStitch: Color = Color(0xFFA5D6A7).copy(alpha = 0.55f)
+}
+
+/**
+ * Dibuja un borde perimetral discontinuo (*saddle stitch* / remaches y pespunte de talabartería)
+ * con esquinas redondeadas concéntricas al contenedor, simulando costura artesanal sobre cuero.
+ *
+ * Emplea [drawWithCache] para garantizar que el cálculo del trazado ([Path]) y el efecto punteado
+ * ([PathEffect]) se conserven en caché y solo se reevalúen si cambian las dimensiones del componente,
+ * evitando cualquier asignación en el hilo de render durante animaciones a 60/120 FPS.
+ */
+fun Modifier.leatherStitchBorder(
+    color: Color,
+    strokeWidth: Dp = LeatherStitchDefaults.StrokeWidth,
+    dashLength: Dp = LeatherStitchDefaults.DashLength,
+    gapLength: Dp = LeatherStitchDefaults.GapLength,
+    cornerRadius: Dp = LeatherStitchDefaults.CornerRadius,
+    inset: Dp = LeatherStitchDefaults.Inset
+): Modifier = this.drawWithCache {
+    val strokeWidthPx = strokeWidth.toPx()
+    val insetPx = inset.toPx() + strokeWidthPx / 2f
+    val cornerRadiusPx = (cornerRadius.toPx() - insetPx).coerceAtLeast(0f)
+    val width = size.width - insetPx * 2f
+    val height = size.height - insetPx * 2f
+
+    if (width <= 0f || height <= 0f) {
+        onDrawWithContent {
+            drawContent()
+        }
+    } else {
+        val path = Path().apply {
+            addRoundRect(
+                RoundRect(
+                    rect = Rect(
+                        offset = Offset(insetPx, insetPx),
+                        size = Size(width, height)
+                    ),
+                    cornerRadius = CornerRadius(cornerRadiusPx, cornerRadiusPx)
+                )
+            )
+        }
+        val pathEffect = PathEffect.dashPathEffect(
+            floatArrayOf(dashLength.toPx(), gapLength.toPx()),
+            0f
+        )
+        val stroke = Stroke(
+            width = strokeWidthPx,
+            pathEffect = pathEffect,
+            cap = StrokeCap.Round
+        )
+
+        onDrawWithContent {
+            drawPath(
+                path = path,
+                color = color,
+                style = stroke
+            )
+            drawContent()
+        }
     }
 }
 
