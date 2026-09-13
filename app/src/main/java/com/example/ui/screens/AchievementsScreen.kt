@@ -166,8 +166,8 @@ fun AchievementsScreen(
                             .padding(bottom = 5.dp)
                             .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
                             .leatherStitchBorder(
-                                color = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.4f)
-                                else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.4f),
+                                color = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.60f)
+                                else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.75f),
                                 cornerRadius = 12.dp,
                                 inset = 2.5.dp,
                                 dashLength = 3.5.dp,
@@ -332,8 +332,8 @@ private fun AchievementProgressCard(
                 RoundedCornerShape(16.dp)
             )
             .leatherStitchBorder(
-                color = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.35f)
-                else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.35f),
+                color = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.55f)
+                else LeatherStitchDefaults.DayThemePanelStitch,
                 cornerRadius = 16.dp
             )
             .padding(16.dp)
@@ -461,11 +461,11 @@ private fun AchievementCard(
             .leatherStitchBorder(
                 color = if (isHighlighted) LeatherStitchDefaults.GoldStitch
                 else if (isUnlocked) {
-                    if (isDarkTheme) LeatherStitchDefaults.GoldStitch.copy(alpha = 0.5f)
-                    else LeatherStitchDefaults.AmberStitch.copy(alpha = 0.5f)
+                    if (isDarkTheme) LeatherStitchDefaults.GoldStitch.copy(alpha = 0.65f)
+                    else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.75f)
                 } else {
-                    if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.25f)
-                    else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.3f)
+                    if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.45f)
+                    else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.65f)
                 },
                 cornerRadius = 16.dp
             )

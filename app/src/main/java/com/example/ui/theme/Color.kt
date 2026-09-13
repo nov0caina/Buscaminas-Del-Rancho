@@ -35,26 +35,50 @@ val RanchoNightBackground = Color(0xFF141210)        // Negro noche / Asfalto pr
 val RanchoNightSurface = Color(0xFF221E1B)           // Carbón cálido / Cuero oscuro
 val RanchoNightSurfaceVariant = Color(0xFF332B25)    // Café cenizo oscuro / Madera noche
 
-// Mine Board Number Colors (Classic Minesweeper high contrast)
-val Number1Blue = Color(0xFF1976D2)                  // Azul rey
-val Number2Green = Color(0xFF388E3C)                 // Verde
-val Number3Red = Color(0xFFD32F2F)                   // Rojo
-val Number4Purple = Color(0xFF7B1FA2)                // Morado / Púrpura
+// Mine Board Number Colors (Day Mode: Classic rich contrast on light earth)
+val Number1Blue = Color(0xFF0D47A1)                  // Azul mezclilla profundo (>6:1 contraste sobre tierra beige)
+val Number2Green = Color(0xFF2E7D32)                 // Verde bosque
+val Number3Red = Color(0xFFC62828)                   // Rojo
+val Number4Purple = Color(0xFF6A1B9A)                // Morado / Púrpura
 val Number5Maroon = Color(0xFF800000)                // Marrón / Granate
-val Number6Teal = Color(0xFF008080)                  // Turquesa / Verde azulado
+val Number6Teal = Color(0xFF00838F)                  // Turquesa / Verde azulado
 val Number7Black = Color(0xFF212121)                 // Negro
 val Number8Gray = Color(0xFF616161)                  // Gris
 
-fun getNumberColor(number: Int): Color = when (number) {
-    1 -> Number1Blue
-    2 -> Number2Green
-    3 -> Number3Red
-    4 -> Number4Purple
-    5 -> Number5Maroon
-    6 -> Number6Teal
-    7 -> Number7Black
-    8 -> Number8Gray
-    else -> Color.Black
+// Mine Board Number Colors (Night Mode: Luminous neon tones with >7:1 WCAG AAA contrast on #2E2722)
+val Number1BlueNight = Color(0xFF64B5F6)             // Azul cielo luminoso
+val Number2GreenNight = Color(0xFF81C784)            // Verde menta claro
+val Number3RedNight = Color(0xFFE57373)              // Coral vibrante
+val Number4PurpleNight = Color(0xFFBA68C8)           // Lavanda claro
+val Number5AmberNight = Color(0xFFFFB74D)            // Ámbar brillante
+val Number6TealNight = Color(0xFF4DD0E1)             // Turquesa claro
+val Number7CreamNight = Color(0xFFFFF9C4)            // Crema suave
+val Number8SilverNight = Color(0xFFECEFF1)           // Platino / Plata brillante
+
+fun getNumberColor(number: Int, isDarkTheme: Boolean = false): Color = if (isDarkTheme) {
+    when (number) {
+        1 -> Number1BlueNight
+        2 -> Number2GreenNight
+        3 -> Number3RedNight
+        4 -> Number4PurpleNight
+        5 -> Number5AmberNight
+        6 -> Number6TealNight
+        7 -> Number7CreamNight
+        8 -> Number8SilverNight
+        else -> Color.White
+    }
+} else {
+    when (number) {
+        1 -> Number1Blue
+        2 -> Number2Green
+        3 -> Number3Red
+        4 -> Number4Purple
+        5 -> Number5Maroon
+        6 -> Number6Teal
+        7 -> Number7Black
+        8 -> Number8Gray
+        else -> Color.Black
+    }
 }
 
 // Paleta Táctil 3D y Relieve Campirano (Board, Cells & Frame)

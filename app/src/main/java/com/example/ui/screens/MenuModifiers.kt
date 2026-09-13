@@ -267,12 +267,14 @@ object LeatherStitchDefaults {
     val Inset: Dp = 3.5.dp
     val CornerRadius: Dp = 16.dp
 
-    // Paletas temáticas de alta legibilidad
-    val GoldStitch: Color = Color(0xFFFFD700).copy(alpha = 0.75f)
-    val AmberStitch: Color = Color(0xFFE2B85A).copy(alpha = 0.75f)
-    val DarkThemeStitch: Color = Color(0xFFFFE082).copy(alpha = 0.45f)
-    val DayThemeStitch: Color = Color(0xFF8D5B28).copy(alpha = 0.50f)
-    val GreenStitch: Color = Color(0xFFA5D6A7).copy(alpha = 0.55f)
+    // Paletas temáticas de alta legibilidad y artesanía de talabartería
+    val GoldStitch: Color = Color(0xFFFFD700).copy(alpha = 0.85f)
+    val AmberStitch: Color = Color(0xFFE2B85A).copy(alpha = 0.85f)
+    val DarkThemeStitch: Color = Color(0xFFFFE082).copy(alpha = 0.65f)
+    // Hilo de talabartería encerado oscuro para modo Día (máximo contraste y definición sobre cuero claro/beige)
+    val DayThemeStitch: Color = Color(0xFF3E200C).copy(alpha = 0.80f)
+    val DayThemePanelStitch: Color = Color(0xFF4A2A14).copy(alpha = 0.70f)
+    val GreenStitch: Color = Color(0xFFA5D6A7).copy(alpha = 0.75f)
 }
 
 /**
@@ -324,12 +326,12 @@ fun Modifier.leatherStitchBorder(
         )
 
         onDrawWithContent {
+            drawContent()
             drawPath(
                 path = path,
                 color = color,
                 style = stroke
             )
-            drawContent()
         }
     }
 }

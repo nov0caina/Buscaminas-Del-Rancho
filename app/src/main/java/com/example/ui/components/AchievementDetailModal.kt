@@ -319,8 +319,8 @@ fun AchievementDetailModal(
                             RoundedCornerShape(16.dp)
                         )
                         .leatherStitchBorder(
-                            color = if (isDarkTheme) LeatherStitchDefaults.AmberStitch.copy(alpha = 0.45f)
-                            else LeatherStitchDefaults.GoldStitch.copy(alpha = 0.5f),
+                            color = if (isDarkTheme) LeatherStitchDefaults.AmberStitch.copy(alpha = 0.55f)
+                            else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.75f),
                             cornerRadius = 16.dp,
                             inset = 3.dp
                         )

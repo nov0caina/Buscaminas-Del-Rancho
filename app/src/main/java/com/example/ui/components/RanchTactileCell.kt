@@ -264,7 +264,7 @@ fun RanchTactileCell(
                     fontSize = fontSizeSp
                 )
             } else if (cell.adjacentMines > 0) {
-                val color = getNumberColor(cell.adjacentMines)
+                val color = getNumberColor(cell.adjacentMines, isDarkTheme)
                 Text(
                     text = "${cell.adjacentMines}",
                     fontSize = fontSizeSp,

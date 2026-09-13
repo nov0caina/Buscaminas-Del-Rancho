@@ -5,11 +5,16 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -216,7 +221,8 @@ fun GameScreen(
             if (uiState.gameStatus == GameStatus.PLAYING || uiState.gameStatus == GameStatus.IDLE) {
                 Surface(
                     tonalElevation = 4.dp,
-                    color = MaterialTheme.colorScheme.surface
+                    color = MaterialTheme.colorScheme.surface,
+                    modifier = Modifier.navigationBarsPadding()
                 ) {
                     Row(
                         modifier = Modifier
@@ -244,6 +250,26 @@ fun GameScreen(
                 .padding(innerPadding)
                 .background(MaterialTheme.colorScheme.background)
         ) {
+            // Partículas ambientales de fondo (polvo soleado en Día, brasas crepusculares en Noche)
+            val ambientDust = remember { DustParticleSystem(capacity = 35) }
+            val dustInfiniteTransition = rememberInfiniteTransition(label = "ambient_dust_game")
+            val dustProgress by dustInfiniteTransition.animateFloat(
+                initialValue = 0f,
+                targetValue = 1f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(durationMillis = 20000, easing = LinearEasing),
+                    repeatMode = RepeatMode.Restart
+                ),
+                label = "ambient_dust_progress"
+            )
+
+            Canvas(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                ambientDust.setupAmbientDust(size.width, size.height)
+                ambientDust.render(this, dustProgress)
+            }
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -465,6 +491,7 @@ fun GameScreen(
                     Box(
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
+                            .navigationBarsPadding()
                             .padding(16.dp)
                             .background(Color.Black.copy(alpha = 0.30f), RoundedCornerShape(20.dp))
                             .padding(bottom = 4.dp)
@@ -565,6 +592,7 @@ private fun GameHudHeader(
 ) {
     val woodBorder = if (isDarkTheme) BoardWoodBorderDark else BoardWoodBorderLight
     val woodSurface = if (isDarkTheme) BoardWoodSurfaceDark else BoardWoodSurfaceLight
+    val stitchColor = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch else LeatherStitchDefaults.DayThemeStitch
     val shape = RoundedCornerShape(16.dp)
 
     Surface(
@@ -572,7 +600,8 @@ private fun GameHudHeader(
             .fillMaxWidth()
             .padding(horizontal = 4.dp)
             .shadow(6.dp, shape)
-            .border(2.dp, woodBorder, shape),
+            .border(2.dp, woodBorder, shape)
+            .leatherStitchBorder(color = stitchColor, cornerRadius = 16.dp),
         shape = shape,
         color = woodSurface
     ) {
@@ -607,7 +636,10 @@ private fun GameHudHeader(
                         CircleShape
                     )
                     .border(2.dp, BoardRivetGold, CircleShape)
-                    .clickable(onClick = onFaceClick)
+                    .bounceClick(
+                        onClick = onFaceClick,
+                        bounceScale = 0.82f
+                    )
                     .testTag("hud_vaquero_face"),
                 contentAlignment = Alignment.Center
             ) {

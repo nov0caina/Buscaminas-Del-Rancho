@@ -106,9 +106,9 @@ fun CreditsScreen(
         listOf(
             Contributor(
                 name = "nov0caina",
-                role = "Desarrollador & Creador",
+                role = "Desarrollador",
                 badgeEmoji = "👨‍💻",
-                description = "Arquitectura de software, mecánicas de juego, partículas visuales, audio reactivo y universo sinaloense.",
+                description = "Código y Diseño",
                 linkUrl = "https://github.com/nov0caina",
                 linkType = SocialLinkType.GITHUB,
                 linkCustomLabel = "github.com/nov0caina",
@@ -203,8 +203,8 @@ fun CreditsScreen(
                         .padding(bottom = 5.dp)
                         .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
                         .leatherStitchBorder(
-                            color = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.4f)
-                            else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.4f),
+                            color = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.60f)
+                            else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.75f),
                             cornerRadius = 12.dp,
                             inset = 2.5.dp,
                             dashLength = 3.5.dp,
@@ -270,8 +270,8 @@ fun CreditsScreen(
                                 shape = RoundedCornerShape(20.dp)
                             )
                             .leatherStitchBorder(
-                                color = if (isDarkTheme) LeatherStitchDefaults.GoldStitch.copy(alpha = 0.6f)
-                                else LeatherStitchDefaults.AmberStitch.copy(alpha = 0.55f),
+                                color = if (isDarkTheme) LeatherStitchDefaults.GoldStitch.copy(alpha = 0.70f)
+                                else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.75f),
                                 cornerRadius = 20.dp
                             )
                     ) {
@@ -354,8 +354,8 @@ fun CreditsScreen(
                                 RoundedCornerShape(16.dp)
                             )
                             .leatherStitchBorder(
-                                color = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.35f)
-                                else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.35f),
+                                color = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.55f)
+                                else LeatherStitchDefaults.DayThemePanelStitch,
                                 cornerRadius = 16.dp
                             )
                     ) {
@@ -410,8 +410,8 @@ private fun ContributorCard(
                 shape = RoundedCornerShape(16.dp)
             )
             .leatherStitchBorder(
-                color = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.35f)
-                else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.35f),
+                color = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.55f)
+                else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.70f),
                 cornerRadius = 16.dp
             )
     ) {

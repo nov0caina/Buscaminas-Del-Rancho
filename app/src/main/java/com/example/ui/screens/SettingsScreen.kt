@@ -163,8 +163,8 @@ fun SettingsScreen(
                         .padding(bottom = 5.dp)
                         .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
                         .leatherStitchBorder(
-                            color = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.4f)
-                            else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.4f),
+                            color = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.60f)
+                            else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.75f),
                             cornerRadius = 12.dp,
                             inset = 2.5.dp,
                             dashLength = 3.5.dp,
@@ -217,8 +217,8 @@ fun SettingsScreen(
                             .padding(bottom = 6.dp)
                             .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(20.dp))
                             .leatherStitchBorder(
-                                color = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.35f)
-                                else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.35f),
+                                color = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.55f)
+                                else LeatherStitchDefaults.DayThemePanelStitch,
                                 cornerRadius = 20.dp
                             )
                     ) {
@@ -284,11 +284,11 @@ fun SettingsScreen(
                                                     )
                                                     .leatherStitchBorder(
                                                         color = if (isSelected) {
-                                                            if (isDarkTheme) LeatherStitchDefaults.GoldStitch.copy(alpha = 0.6f)
-                                                            else Color.White.copy(alpha = 0.5f)
+                                                            if (isDarkTheme) LeatherStitchDefaults.GoldStitch.copy(alpha = 0.70f)
+                                                            else Color.White.copy(alpha = 0.75f)
                                                         } else {
-                                                            if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.25f)
-                                                            else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.25f)
+                                                            if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.50f)
+                                                            else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.65f)
                                                         },
                                                         cornerRadius = 14.dp,
                                                         inset = 2.5.dp,
@@ -348,7 +348,8 @@ fun SettingsScreen(
                         onToggleEnabled = onToggleMusic,
                         volume = uiState.musicVolume,
                         onVolumeChange = onMusicVolumeChange,
-                        testTag = "card_music_volume"
+                        testTag = "card_music_volume",
+                        isDarkTheme = isDarkTheme
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -361,7 +362,8 @@ fun SettingsScreen(
                         onToggleEnabled = onToggleSfx,
                         volume = uiState.sfxVolume,
                         onVolumeChange = onSfxVolumeChange,
-                        testTag = "card_sfx_volume"
+                        testTag = "card_sfx_volume",
+                        isDarkTheme = isDarkTheme
                     )
                 }
 
@@ -385,8 +387,8 @@ fun SettingsScreen(
                             .padding(bottom = 6.dp)
                             .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(20.dp))
                             .leatherStitchBorder(
-                                color = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.35f)
-                                else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.35f),
+                                color = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.55f)
+                                else LeatherStitchDefaults.DayThemePanelStitch,
                                 cornerRadius = 20.dp
                             )
                     ) {
@@ -463,11 +465,11 @@ fun SettingsScreen(
                                             )
                                             .leatherStitchBorder(
                                                 color = if (isSelected) {
-                                                    if (isDarkTheme) LeatherStitchDefaults.GoldStitch.copy(alpha = 0.55f)
-                                                    else Color.White.copy(alpha = 0.5f)
+                                                    if (isDarkTheme) LeatherStitchDefaults.GoldStitch.copy(alpha = 0.70f)
+                                                    else Color.White.copy(alpha = 0.75f)
                                                 } else {
-                                                    if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.25f)
-                                                    else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.25f)
+                                                    if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.50f)
+                                                    else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.65f)
                                                 },
                                                 cornerRadius = 12.dp,
                                                 inset = 2.5.dp,
@@ -485,12 +487,8 @@ fun SettingsScreen(
                                             Text(
                                                 text = mode.title,
                                                 style = MaterialTheme.typography.labelMedium,
-                                                fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
-                                                color = if (isSelected) {
-                                                    MaterialTheme.colorScheme.onPrimary
-                                                } else {
-                                                    MaterialTheme.colorScheme.onSurface
-                                                }
+                                                fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Medium,
+                                                color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
                                             )
                                         }
                                     }
@@ -509,7 +507,8 @@ fun SettingsScreen(
                     checked = uiState.isHapticsEnabled,
                     onCheckedChange = onToggleHaptics,
                     testTag = "switch_haptics",
-                    modifier = Modifier.staggeredEntrance(index = 3)
+                    modifier = Modifier.staggeredEntrance(index = 3),
+                    isDarkTheme = isDarkTheme
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -539,7 +538,8 @@ fun SettingsScreen(
                         }
                     },
                     testTag = "switch_notifications",
-                    modifier = Modifier.staggeredEntrance(index = 4)
+                    modifier = Modifier.staggeredEntrance(index = 4),
+                    isDarkTheme = isDarkTheme
                 )
 
                 Spacer(modifier = Modifier.height(36.dp))
@@ -641,9 +641,9 @@ private fun SettingsToggleCard(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     testTag: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isDarkTheme: Boolean = false
 ) {
-    val isDark = isSystemInDarkTheme()
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -654,12 +654,12 @@ private fun SettingsToggleCard(
             .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
             .border(
                 1.dp,
-                if (isDark) Color(0xFF5D4037).copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
+                if (isDarkTheme) Color(0xFF5D4037).copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
                 RoundedCornerShape(16.dp)
             )
             .leatherStitchBorder(
-                color = if (isDark) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.35f)
-                else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.35f),
+                color = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.55f)
+                else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.70f),
                 cornerRadius = 16.dp
             )
     ) {
@@ -696,17 +696,16 @@ private fun SettingsToggleCard(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            MechanicalToggleSwitch(checked = checked)
+            MechanicalToggleSwitch(checked = checked, isDarkTheme = isDarkTheme)
         }
     }
 }
 
 @Composable
-private fun MechanicalToggleSwitch(checked: Boolean) {
-    val isDark = isSystemInDarkTheme()
+private fun MechanicalToggleSwitch(checked: Boolean, isDarkTheme: Boolean = false) {
     val thumbOffset by animateDpAsState(targetValue = if (checked) 24.dp else 2.dp, label = "thumbOffset")
     val trackColor = if (checked) {
-        if (isDark) MaterialTheme.colorScheme.primary else RanchoCactusSecondary
+        if (isDarkTheme) MaterialTheme.colorScheme.primary else RanchoCactusSecondary
     } else {
         MaterialTheme.colorScheme.surfaceVariant
     }
@@ -728,8 +727,8 @@ private fun MechanicalToggleSwitch(checked: Boolean) {
                 .size(24.dp)
                 .align(Alignment.CenterStart)
                 .background(Color.Black.copy(alpha = 0.35f), RoundedCornerShape(4.dp)) // Sombra/Labio del botón
-                .padding(bottom = 3.dp)
-                .background(Color.White, RoundedCornerShape(4.dp))
+            .padding(bottom = 3.dp)
+            .background(Color.White, RoundedCornerShape(4.dp))
         )
     }
 }
@@ -744,9 +743,9 @@ private fun SettingsAudioCard(
     volume: Float,
     onVolumeChange: (Float) -> Unit,
     testTag: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isDarkTheme: Boolean = false
 ) {
-    val isDark = isSystemInDarkTheme()
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -756,12 +755,12 @@ private fun SettingsAudioCard(
             .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
             .border(
                 1.dp,
-                if (isDark) Color(0xFF5D4037).copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
+                if (isDarkTheme) Color(0xFF5D4037).copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
                 RoundedCornerShape(16.dp)
             )
             .leatherStitchBorder(
-                color = if (isDark) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.35f)
-                else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.35f),
+                color = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.55f)
+                else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.70f),
                 cornerRadius = 16.dp
             )
     ) {
@@ -804,7 +803,7 @@ private fun SettingsAudioCard(
                 Box(
                     modifier = Modifier.bounceClick(onClick = { onToggleEnabled(!enabled) })
                 ) {
-                    MechanicalToggleSwitch(checked = enabled)
+                    MechanicalToggleSwitch(checked = enabled, isDarkTheme = isDarkTheme)
                 }
             }
 
@@ -830,11 +829,10 @@ private fun SettingsAudioCard(
                         )
                     )
 
-                    val isDarkSlider = isSystemInDarkTheme()
                     Box(
                         modifier = Modifier
-                            .background(if (isDarkSlider) Color(0xFF2C221E) else MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp))
-                            .border(1.dp, if (isDarkSlider) Color(0xFFFFD166).copy(alpha = 0.6f) else Color(0xFFD4AF37).copy(alpha = 0.6f), RoundedCornerShape(8.dp))
+                            .background(if (isDarkTheme) Color(0xFF2C221E) else MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp))
+                            .border(1.dp, if (isDarkTheme) Color(0xFFFFD166).copy(alpha = 0.6f) else Color(0xFFD4AF37).copy(alpha = 0.6f), RoundedCornerShape(8.dp))
                             .padding(horizontal = 8.dp, vertical = 4.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -842,7 +840,7 @@ private fun SettingsAudioCard(
                             text = "${(volume * 100).toInt()}%",
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
-                            color = if (isDarkSlider) Color(0xFFFFD166) else Color.White
+                            color = if (isDarkTheme) Color(0xFFFFD166) else Color.White
                         )
                     }
                 }
