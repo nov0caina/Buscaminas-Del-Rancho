@@ -4,13 +4,22 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.CompositingStrategy
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.runtime.mutableIntStateOf
+import kotlinx.coroutines.delay
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -74,6 +83,12 @@ import androidx.compose.foundation.Canvas
 import com.example.ui.particles.DustParticleSystem
 import com.example.ui.particles.RanchoSmokeParticleSystem
 
+data class SinaloaBannerLocation(
+    val drawableResId: Int,
+    val city: String,
+    val placeName: String
+)
+
 @Composable
 fun HomeScreen(
     uiState: GameUiState,
@@ -89,6 +104,37 @@ fun HomeScreen(
     modifier: Modifier = Modifier
 ) {
     var showCustomDialog by remember { mutableStateOf(false) }
+
+    val dayBanners = remember {
+        listOf(
+            SinaloaBannerLocation(R.drawable.banner_day_mazatlan, "Mazatlán", "Malecón y Tres Islas"),
+            SinaloaBannerLocation(R.drawable.banner_day_guasave, "Guasave", "Playa Las Glorias"),
+            SinaloaBannerLocation(R.drawable.banner_day_culiacan, "Culiacán", "Parque Las Riberas"),
+            SinaloaBannerLocation(R.drawable.banner_day_los_mochis, "Los Mochis", "Bahía de Topolobampo")
+        )
+    }
+
+    val nightBanners = remember {
+        listOf(
+            SinaloaBannerLocation(R.drawable.banner_night_mazatlan, "Mazatlán", "Olas Altas de Noche"),
+            SinaloaBannerLocation(R.drawable.banner_night_guasave, "Guasave", "Malecón del Río Sinaloa"),
+            SinaloaBannerLocation(R.drawable.banner_night_culiacan, "Culiacán", "Mirador de La Lomita"),
+            SinaloaBannerLocation(R.drawable.banner_night_los_mochis, "Los Mochis", "Cerro de la Memoria y Faro")
+        )
+    }
+
+    val currentBannerPack = if (isDarkTheme) nightBanners else dayBanners
+    var bannerIndex by remember { mutableIntStateOf(0) }
+    val safeBannerIndex = (bannerIndex % currentBannerPack.size).coerceAtLeast(0)
+    val currentBanner = currentBannerPack[safeBannerIndex]
+
+    // Rotación suave de paisajes sinaloenses cada 6.5 segundos
+    LaunchedEffect(isDarkTheme) {
+        while (true) {
+            delay(6500L)
+            bannerIndex = (bannerIndex + 1) % currentBannerPack.size
+        }
+    }
     
     val dustParticleSystem = remember { DustParticleSystem(150) }
     val smokeParticleSystem = remember { RanchoSmokeParticleSystem(150) }
@@ -155,34 +201,143 @@ fun HomeScreen(
                             .fillMaxWidth()
                             .height(310.dp)
                     ) {
-                        // 1. Banner Image with Bidirectional Alpha Mask (DstIn) that fades out at top and bottom
-                        Image(
-                            painter = painterResource(id = R.drawable.img_rancho_banner),
-                            contentDescription = "Banner del Rancho Sinaloense",
+                        // 1. Crossfade between banner illustrations with Bidirectional Alpha Mask (DstIn)
+                        Crossfade(
+                            targetState = safeBannerIndex,
+                            animationSpec = tween(700),
+                            label = "banner_crossfade",
+                            modifier = Modifier.fillMaxSize()
+                        ) { index ->
+                            val item = currentBannerPack.getOrNull(index) ?: currentBannerPack[0]
+                            Image(
+                                painter = painterResource(id = item.drawableResId),
+                                contentDescription = "${item.placeName}, ${item.city}",
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .graphicsLayer {
+                                        compositingStrategy = CompositingStrategy.Offscreen
+                                    }
+                                    .drawWithContent {
+                                        drawContent()
+                                        drawRect(
+                                            brush = Brush.verticalGradient(
+                                                0.0f to Color.Transparent,
+                                                0.05f to Color.Black.copy(alpha = 0.25f),
+                                                0.12f to Color.Black.copy(alpha = 0.70f),
+                                                0.20f to Color.Black,
+                                                0.40f to Color.Black,
+                                                0.55f to Color.Black.copy(alpha = 0.80f),
+                                                0.70f to Color.Black.copy(alpha = 0.35f),
+                                                0.85f to Color.Transparent,
+                                                1.0f to Color.Transparent
+                                            ),
+                                            blendMode = BlendMode.DstIn
+                                        )
+                                    },
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+
+                        // 2. Aesthetic Location Badge & Indicator (Clickable to advance to next Sinaloa location)
+                        Box(
                             modifier = Modifier
-                                .fillMaxSize()
-                                .graphicsLayer {
-                                    compositingStrategy = CompositingStrategy.Offscreen
-                                }
-                                .drawWithContent {
-                                    drawContent()
-                                    drawRect(
-                                        brush = Brush.verticalGradient(
-                                            0.0f to Color.Transparent,
-                                            0.05f to Color.Black.copy(alpha = 0.25f),
-                                            0.12f to Color.Black.copy(alpha = 0.70f),
-                                            0.20f to Color.Black,
-                                            0.40f to Color.Black,
-                                            0.55f to Color.Black.copy(alpha = 0.80f),
-                                            0.70f to Color.Black.copy(alpha = 0.35f),
-                                            0.85f to Color.Transparent,
-                                            1.0f to Color.Transparent
-                                        ),
-                                        blendMode = BlendMode.DstIn
+                                .align(Alignment.TopCenter)
+                                .padding(top = 14.dp)
+                                .bounceClick(
+                                    onClick = {
+                                        bannerIndex = (bannerIndex + 1) % currentBannerPack.size
+                                    },
+                                    bounceScale = 0.94f
+                                )
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(
+                                    brush = Brush.verticalGradient(
+                                        if (isDarkTheme) {
+                                            listOf(
+                                                Color(0xE6261A12),
+                                                Color(0xF0160F08)
+                                            )
+                                        } else {
+                                            listOf(
+                                                Color(0xEB4A2C18),
+                                                Color(0xF5331C0E)
+                                            )
+                                        }
                                     )
-                                },
-                            contentScale = ContentScale.Crop
-                        )
+                                )
+                                .leatherStitchBorder(
+                                    color = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch else LeatherStitchDefaults.GoldStitch,
+                                    strokeWidth = 1.2.dp,
+                                    dashLength = 3.5.dp,
+                                    gapLength = 3.dp,
+                                    cornerRadius = 20.dp,
+                                    inset = 2.dp
+                                )
+                                .padding(horizontal = 14.dp, vertical = 6.dp)
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Text(
+                                        text = "📍",
+                                        fontSize = 12.sp,
+                                        modifier = Modifier.padding(end = 4.dp)
+                                    )
+                                    AnimatedContent(
+                                        targetState = "${currentBanner.city} • ${currentBanner.placeName}",
+                                        transitionSpec = {
+                                            (fadeIn(tween(350)) + slideInVertically { it / 2 })
+                                                .togetherWith(fadeOut(tween(250)) + slideOutVertically { -it / 2 })
+                                        },
+                                        label = "location_text"
+                                    ) { locationText ->
+                                        Text(
+                                            text = locationText,
+                                            style = MaterialTheme.typography.labelMedium.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                letterSpacing = 0.5.sp,
+                                                shadow = androidx.compose.ui.graphics.Shadow(
+                                                    color = Color.Black.copy(alpha = 0.85f),
+                                                    offset = androidx.compose.ui.geometry.Offset(1f, 1f),
+                                                    blurRadius = 3f
+                                                )
+                                            ),
+                                            color = Color(0xFFFFF6E5),
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(3.dp))
+
+                                // Dots indicator (4 iconic locations)
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    currentBannerPack.indices.forEach { dotIdx ->
+                                        val isSelected = dotIdx == safeBannerIndex
+                                        Box(
+                                            modifier = Modifier
+                                                .size(width = if (isSelected) 10.dp else 4.dp, height = 3.dp)
+                                                .clip(RoundedCornerShape(2.dp))
+                                                .background(
+                                                    if (isSelected) {
+                                                        if (isDarkTheme) Color(0xFFFFD166) else Color(0xFFFFE082)
+                                                    } else {
+                                                        Color.White.copy(alpha = 0.35f)
+                                                    }
+                                                )
+                                        )
+                                    }
+                                }
+                            }
+                        }
 
                         // 3. Title and Slogans
                         Column(
@@ -467,7 +622,8 @@ fun HomeScreen(
                             icon = Icons.Default.EmojiEvents,
                             testTag = "btn_leaderboards",
                             modifier = Modifier.staggeredEntrance(index = baseSecondaryIndex + 2),
-                            onClick = onLeaderboardClick
+                            onClick = onLeaderboardClick,
+                            isDarkTheme = isDarkTheme
                         )
 
                         // Achievements Button
@@ -477,7 +633,8 @@ fun HomeScreen(
                             icon = Icons.Default.Star,
                             testTag = "btn_achievements",
                             modifier = Modifier.staggeredEntrance(index = baseSecondaryIndex + 3),
-                            onClick = onAchievementsClick
+                            onClick = onAchievementsClick,
+                            isDarkTheme = isDarkTheme
                         )
 
                         // Settings Button
@@ -487,7 +644,8 @@ fun HomeScreen(
                             icon = Icons.Default.Settings,
                             testTag = "btn_settings",
                             modifier = Modifier.staggeredEntrance(index = baseSecondaryIndex + 4),
-                            onClick = onSettingsClick
+                            onClick = onSettingsClick,
+                            isDarkTheme = isDarkTheme
                         )
                     }
 
@@ -694,7 +852,8 @@ private fun MenuSecondaryButton(
     icon: ImageVector,
     testTag: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isDarkTheme: Boolean = false
 ) {
     Box(
         modifier = modifier
@@ -707,12 +866,12 @@ private fun MenuSecondaryButton(
             .background(color = MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(16.dp))
             .border(
                 width = 1.5.dp,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = if (isSystemInDarkTheme()) 0.3f else 0.45f),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = if (isDarkTheme) 0.3f else 0.45f),
                 shape = RoundedCornerShape(16.dp)
             )
             .leatherStitchBorder(
-                color = if (isSystemInDarkTheme()) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.35f)
-                else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.35f),
+                color = if (isDarkTheme) LeatherStitchDefaults.DarkThemeStitch.copy(alpha = 0.55f)
+                else LeatherStitchDefaults.DayThemeStitch.copy(alpha = 0.75f),
                 cornerRadius = 16.dp
             )
     ) {
