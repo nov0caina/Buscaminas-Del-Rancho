@@ -118,9 +118,9 @@ fun HomeScreen(
     val nightBanners = remember {
         listOf(
             SinaloaBannerLocation(R.drawable.banner_night_mazatlan, "Mazatlán", "Olas Altas de Noche"),
-            SinaloaBannerLocation(R.drawable.banner_night_guasave, "Guasave", "Malecón del Río Sinaloa"),
-            SinaloaBannerLocation(R.drawable.banner_night_culiacan, "Culiacán", "Mirador de La Lomita"),
-            SinaloaBannerLocation(R.drawable.banner_night_los_mochis, "Los Mochis", "Cerro de la Memoria y Faro")
+            SinaloaBannerLocation(R.drawable.banner_night_guasave, "Guasave", "Malecón Ma. del Rosario"),
+            SinaloaBannerLocation(R.drawable.banner_night_culiacan, "Culiacán", "Observatorio Natural Asta de Bandera"),
+            SinaloaBannerLocation(R.drawable.banner_night_los_mochis, "Los Mochis", "Cerro de la Memoria")
         )
     }
 
@@ -348,28 +348,27 @@ fun HomeScreen(
                                 .staggeredEntrance(index = 0),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
+                            Text(
+                                text = "BUSCAMINAS DEL RANCHO",
+                                style = MaterialTheme.typography.headlineMedium.copy(
+                                    shadow = androidx.compose.ui.graphics.Shadow(
+                                        color = if (isDarkTheme) Color.Black.copy(alpha = 0.9f) else Color(0xFF3E1F07).copy(alpha = 0.95f),
+                                        offset = androidx.compose.ui.geometry.Offset(2f, 4f),
+                                        blurRadius = if (isDarkTheme) 8f else 10f
+                                    )
+                                ),
+                                color = if (isDarkTheme) RanchoBannerTitleNight else RanchoBannerTitleDay,
+                                fontWeight = FontWeight.ExtraBold,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Box(
+                                modifier = Modifier.idleFloat(),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Text(
-                                    text = "BUSCAMINAS DEL RANCHO\n🤠",
-                                    style = MaterialTheme.typography.headlineMedium.copy(
-                                        shadow = androidx.compose.ui.graphics.Shadow(
-                                            color = if (isDarkTheme) Color.Black.copy(alpha = 0.9f) else Color(0xFF3E1F07).copy(alpha = 0.95f),
-                                            offset = androidx.compose.ui.geometry.Offset(2f, 4f),
-                                            blurRadius = if (isDarkTheme) 8f else 10f
-                                        )
-                                    ),
-                                    color = if (isDarkTheme) RanchoBannerTitleNight else RanchoBannerTitleDay,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    textAlign = TextAlign.Center
-                                )
-                                Box(modifier = Modifier.idleFloat()) {
-                                    Text(text = "🤠", fontSize = 28.sp)
-                                }
+                                Text(text = "🤠", fontSize = 28.sp)
                             }
-                            Spacer(modifier = Modifier.height(6.dp))
+                            Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = "PURO SINALOA VIEJON",
                                 style = MaterialTheme.typography.titleMedium.copy(
