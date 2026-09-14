@@ -138,6 +138,14 @@ else
     log_warn "ANDROID_HOME no está definido o no existe el directorio. Gradle intentará usar la configuración local o interna."
 fi
 
+# Configurar ANDROID_USER_HOME si ~/.android no tiene permisos de escritura
+if [ -z "${ANDROID_USER_HOME:-}" ]; then
+    if [ ! -w "${HOME:-}/.android" ] 2>/dev/null; then
+        export ANDROID_USER_HOME="$SCRIPT_DIR/.android"
+        mkdir -p "$ANDROID_USER_HOME"
+    fi
+fi
+
 # ── 3. Verificar gradlew ───────────────────────────────────────────────────
 log_info "Verificando Gradle Wrapper..."
 if [ ! -f "$GRADLEW" ]; then
