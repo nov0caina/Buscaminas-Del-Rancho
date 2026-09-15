@@ -19,8 +19,8 @@ android {
     applicationId = "com.nov0caina.buscaminas.estilo.sinaloa"
     minSdk = 24
     targetSdk = 36
-    versionCode = 7
-    versionName = "1.0.2"
+    versionCode = 9
+    versionName = "1.0.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -128,7 +128,7 @@ dependencies {
   implementation(libs.converter.moshi)
   implementation(libs.firebase.ai)
   implementation(libs.play.services.games.v2)
-  implementation("com.android.billingclient:billing-ktx:7.1.1")
+  implementation("com.android.billingclient:billing-ktx:8.0.0")
   // Uncomment to use Firestore:
   // implementation(libs.firebase.firestore)
 

@@ -110,9 +110,10 @@ class BillingManager private constructor(private val appContext: Context) : Purc
             .setProductList(productList)
             .build()
 
-        billingClient.queryProductDetailsAsync(params) { billingResult, queryProductDetailsList ->
-            if (billingResult.responseCode == BillingClient.BillingResponseCode.OK && queryProductDetailsList.isNotEmpty()) {
-                val details = queryProductDetailsList.first()
+        billingClient.queryProductDetailsAsync(params) { billingResult, queryProductDetailsResult ->
+            val productDetailsList = queryProductDetailsResult.productDetailsList
+            if (billingResult.responseCode == BillingClient.BillingResponseCode.OK && !productDetailsList.isNullOrEmpty()) {
+                val details = productDetailsList.first()
                 productDetails = details
                 val priceFormatted = details.oneTimePurchaseOfferDetails?.formattedPrice
                 if (!priceFormatted.isNullOrBlank()) {
