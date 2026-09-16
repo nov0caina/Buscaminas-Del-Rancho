@@ -194,6 +194,12 @@ fun PatronPassDialog(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     PatronBenefitRow(
+                        emoji = "🛡️",
+                        title = "Blindaje del Patrón (Segunda Oportunidad)",
+                        description = "Salva tu partida de 1 dinamita por juego. ¡El mero dueño no cae a la primera!",
+                        isDarkTheme = isDarkTheme
+                    )
+                    PatronBenefitRow(
                         emoji = "⚙️",
                         title = "Modo Personalizado Ilimitado",
                         description = "Crea tableros a tu medida con casillas y densidad a tu gusto.",

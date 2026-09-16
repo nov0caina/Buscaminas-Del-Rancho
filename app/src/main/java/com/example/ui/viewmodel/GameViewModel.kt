@@ -63,7 +63,11 @@ data class GameUiState(
     val activeRevealCluster: RevealCluster? = null,
     val detonatedCell: Pair<Int, Int>? = null,
     val explosionEventId: Long = 0L,
-    val victoryEventId: Long = 0L
+    val victoryEventId: Long = 0L,
+    val isPatronVip: Boolean = false,
+    val isShieldAvailable: Boolean = false,
+    val isShieldUsed: Boolean = false,
+    val shieldActivatedEventId: Long = 0L
 )
 
 private const val APP_PREFS_NAME = "rancho_app_preferences"
@@ -80,6 +84,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     private val vibrator = application.getSystemService(Vibrator::class.java)
     val soundManager = com.example.audio.SoundManager.getInstance(application)
     val playGamesManager = com.example.games.PlayGamesManager.getInstance(application)
+    val billingManager = com.example.billing.BillingManager.getInstance(application)
     private val appPrefs = application.getSharedPreferences(APP_PREFS_NAME, Context.MODE_PRIVATE)
 
     private val _uiState = MutableStateFlow(
@@ -104,7 +109,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             isMusicEnabled = soundManager.isMusicEnabled,
             musicVolume = soundManager.musicVolume,
             isSfxEnabled = soundManager.isSfxEnabled,
-            sfxVolume = soundManager.sfxVolume
+            sfxVolume = soundManager.sfxVolume,
+            isPatronVip = billingManager.isPatronUnlocked.value,
+            isShieldAvailable = billingManager.isPatronUnlocked.value,
+            isShieldUsed = false,
+            shieldActivatedEventId = 0L
         )
     )
     val uiState: StateFlow<GameUiState> = _uiState.asStateFlow()
@@ -156,6 +165,15 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
 
+        viewModelScope.launch {
+            billingManager.isPatronUnlocked.collect { unlocked ->
+                _uiState.value = _uiState.value.copy(
+                    isPatronVip = unlocked,
+                    isShieldAvailable = unlocked && !_uiState.value.isShieldUsed
+                )
+            }
+        }
+
         playGamesManager.checkAuthentication()
         checkSavedGameAvailable()
         resetUiStateToDefaultGrid(GameDifficulty.PRINCIPIANTE)
@@ -168,6 +186,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         val emptyGrid = List(rows * cols) { index ->
             CellState(row = index / cols, col = index % cols)
         }
+        val isVip = billingManager.isPatronUnlocked.value
 
         _uiState.value = _uiState.value.copy(
             difficulty = difficulty,
@@ -182,7 +201,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             activeRevealCluster = null,
             detonatedCell = null,
             explosionEventId = 0L,
-            victoryEventId = 0L
+            victoryEventId = 0L,
+            isPatronVip = isVip,
+            isShieldAvailable = isVip,
+            isShieldUsed = false,
+            shieldActivatedEventId = 0L
         )
     }
 
@@ -214,6 +237,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         val emptyGrid = List(rows * cols) { index ->
             CellState(row = index / cols, col = index % cols)
         }
+        val isVip = billingManager.isPatronUnlocked.value
 
         _uiState.value = _uiState.value.copy(
             difficulty = difficulty,
@@ -228,7 +252,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             activeRevealCluster = null,
             detonatedCell = null,
             explosionEventId = 0L,
-            victoryEventId = 0L
+            victoryEventId = 0L,
+            isPatronVip = isVip,
+            isShieldAvailable = isVip,
+            isShieldUsed = false,
+            shieldActivatedEventId = 0L
         )
 
         viewModelScope.launch {
@@ -338,6 +366,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 "explode" -> vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 100, 50, 200), -1))
                 "win" -> vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 50, 50, 100, 50, 150), -1))
                 "achievement" -> vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 100, 60, 120, 60, 200), -1))
+                "shield" -> vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 120, 70, 180), -1))
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -432,7 +461,12 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             if (hitMine) {
-                gameOverLoss(detonatedRow = detonatedR, detonatedCol = detonatedC)
+                val isVip = billingManager.isPatronUnlocked.value
+                if (isVip && state.isShieldAvailable && !state.isShieldUsed) {
+                    triggerPatronShield(detonatedRow = detonatedR, detonatedCol = detonatedC)
+                } else {
+                    gameOverLoss(detonatedRow = detonatedR, detonatedCol = detonatedC)
+                }
             } else {
                 if (newlyRevealedAll.isNotEmpty()) {
                     soundManager.playCellReveal(0.6f)
@@ -521,6 +555,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         val cell = state.grid[index]
 
         if (cell.isMine) {
+            val isVip = billingManager.isPatronUnlocked.value
+            if (isVip && state.isShieldAvailable && !state.isShieldUsed) {
+                triggerPatronShield(detonatedRow = row, detonatedCol = col)
+                return
+            }
             gameOverLoss(detonatedRow = row, detonatedCol = col)
             return
         }
@@ -604,6 +643,33 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         } else {
             autoSaveActiveGame()
         }
+    }
+
+    private fun triggerPatronShield(detonatedRow: Int, detonatedCol: Int) {
+        val state = _uiState.value
+        val index = detonatedRow * state.cols + detonatedCol
+        if (index !in state.grid.indices) return
+
+        triggerVibration("shield")
+        soundManager.playShieldDeflect()
+
+        val newGrid = state.grid.toMutableList()
+        val mineCell = newGrid[index]
+        newGrid[index] = mineCell.copy(isFlagged = true)
+
+        val newFlagsCount = state.flagsPlaced + 1
+        val eventId = System.currentTimeMillis() + Random.nextLong(1000)
+
+        _uiState.value = state.copy(
+            grid = newGrid,
+            flagsPlaced = newFlagsCount,
+            isShieldAvailable = false,
+            isShieldUsed = true,
+            shieldActivatedEventId = eventId
+        )
+
+        autoSaveActiveGame()
+        checkWinCondition()
     }
 
     private fun gameOverLoss(detonatedRow: Int, detonatedCol: Int) {
@@ -695,10 +761,12 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
 
-            // Enviar mejores tiempos y acumulado de victorias a Google Play Games
-            playGamesManager.submitBestTime(state.difficulty, state.timeElapsed)
-            val currentWins = repository.getWinCountByDifficulty(state.difficulty.displayName).firstOrNull() ?: 1
-            playGamesManager.submitWinCount(state.difficulty, currentWins)
+            // Enviar mejores tiempos y acumulado de victorias a Google Play Games (Fair Play: solo si no usó blindaje)
+            if (!state.isShieldUsed) {
+                playGamesManager.submitBestTime(state.difficulty, state.timeElapsed)
+                val currentWins = repository.getWinCountByDifficulty(state.difficulty.displayName).firstOrNull() ?: 1
+                playGamesManager.submitWinCount(state.difficulty, currentWins)
+            }
 
             repository.clearSavedGame()
             checkSavedGameAvailable()

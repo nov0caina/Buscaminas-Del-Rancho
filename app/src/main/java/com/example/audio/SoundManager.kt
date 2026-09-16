@@ -348,6 +348,20 @@ class SoundManager private constructor(private val appContext: Context) {
         playSfx(waitingRes, 1.0f)
     }
 
+    /**
+     * Reproduce el efecto de rebote metálico/deflexión del Blindaje del Patrón al salvar una mina.
+     */
+    fun playShieldDeflect() {
+        if (!isSfxEnabled) return
+        audioScope.launch {
+            playSfx(R.raw.pop_double_02, volumeMultiplier = 0.95f, pitch = 1.85f)
+            delay(90L)
+            playSfx(R.raw.pop_01, volumeMultiplier = 0.90f, pitch = 1.95f)
+            delay(110L)
+            playSfx(R.raw.victory_woooow, volumeMultiplier = 0.65f, pitch = 1.30f)
+        }
+    }
+
     // ================= Soundtrack Management =================
 
     fun startSoundtrack() {

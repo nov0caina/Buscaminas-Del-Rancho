@@ -1,6 +1,10 @@
 package com.example.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -15,6 +19,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -98,6 +103,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.zIndex
 import com.example.data.model.CellState
 import com.example.data.model.ClickMode
 import com.example.data.model.GameStatus
@@ -178,6 +184,16 @@ fun GameScreen(
         scale = 1f
         offsetX = 0f
         offsetY = 0f
+    }
+
+    // Estado para el banner animado de activación del Blindaje del Patrón
+    var showShieldBanner by remember { mutableStateOf(false) }
+    LaunchedEffect(uiState.shieldActivatedEventId) {
+        if (uiState.shieldActivatedEventId != 0L) {
+            showShieldBanner = true
+            delay(3500)
+            showShieldBanner = false
+        }
     }
 
     Scaffold(
@@ -282,6 +298,9 @@ fun GameScreen(
                     vaqueroFace = uiState.vaqueroFace,
                     timeElapsed = uiState.timeElapsed,
                     isDarkTheme = isDarkTheme,
+                    isPatronVip = uiState.isPatronVip,
+                    isShieldAvailable = uiState.isShieldAvailable,
+                    isShieldUsed = uiState.isShieldUsed,
                     onFaceClick = onResetGame
                 )
 
@@ -578,6 +597,49 @@ fun GameScreen(
                     }
                 }
             }
+
+            // Blindaje del Patrón activation banner
+            AnimatedVisibility(
+                visible = showShieldBanner,
+                enter = fadeIn(animationSpec = tween(300)) + slideInVertically(animationSpec = tween(400)) { -it },
+                exit = fadeOut(animationSpec = tween(300)) + slideOutVertically(animationSpec = tween(400)) { -it },
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 10.dp, start = 16.dp, end = 16.dp)
+                    .zIndex(20f)
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = if (isDarkTheme) Color(0xFF2E1C14) else Color(0xFFFFF8E7),
+                    border = BorderStroke(2.dp, Color(0xFFFFD700)),
+                    shadowElevation = 8.dp,
+                    modifier = Modifier
+                        .fillMaxWidth(0.95f)
+                        .testTag("hud_patron_shield_banner")
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(text = "🛡️", fontSize = 28.sp)
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column {
+                            Text(
+                                text = "¡EL PATRÓN TIENE BLINDAJE!",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Black,
+                                color = Color(0xFFFFB300)
+                            )
+                            Text(
+                                text = "Mina neutralizada y marcada con sombrero vaquero 🤠",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -588,6 +650,9 @@ private fun GameHudHeader(
     vaqueroFace: VaqueroFace,
     timeElapsed: Int,
     isDarkTheme: Boolean = isSystemInDarkTheme(),
+    isPatronVip: Boolean = false,
+    isShieldAvailable: Boolean = false,
+    isShieldUsed: Boolean = false,
     onFaceClick: () -> Unit
 ) {
     val woodBorder = if (isDarkTheme) BoardWoodBorderDark else BoardWoodBorderLight
@@ -620,39 +685,77 @@ private fun GameHudHeader(
                 testTag = "hud_mines_counter"
             )
 
-            // Vaquero Reset Face Button
-            Box(
-                modifier = Modifier
-                    .size(52.dp)
-                    .clip(CircleShape)
-                    .shadow(4.dp, CircleShape)
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(
-                                MaterialTheme.colorScheme.primaryContainer,
-                                MaterialTheme.colorScheme.primary
-                            )
-                        ),
-                        CircleShape
-                    )
-                    .border(2.dp, BoardRivetGold, CircleShape)
-                    .bounceClick(
-                        onClick = onFaceClick,
-                        bounceScale = 0.82f
-                    )
-                    .testTag("hud_vaquero_face"),
-                contentAlignment = Alignment.Center
+            // Vaquero Reset Face Button & VIP Shield Badge
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
             ) {
-                val faceEmoji = when (vaqueroFace) {
-                    VaqueroFace.HAPPY -> "🤠"
-                    VaqueroFace.SUSPENSE -> "😲"
-                    VaqueroFace.DEAD -> "😵"
-                    VaqueroFace.VICTORIOUS -> "🏆"
+                Box(
+                    modifier = Modifier
+                        .size(52.dp)
+                        .clip(CircleShape)
+                        .shadow(4.dp, CircleShape)
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(
+                                    MaterialTheme.colorScheme.primaryContainer,
+                                    MaterialTheme.colorScheme.primary
+                                )
+                            ),
+                            CircleShape
+                        )
+                        .border(2.dp, BoardRivetGold, CircleShape)
+                        .bounceClick(
+                            onClick = onFaceClick,
+                            bounceScale = 0.82f
+                        )
+                        .testTag("hud_vaquero_face"),
+                    contentAlignment = Alignment.Center
+                ) {
+                    val faceEmoji = when (vaqueroFace) {
+                        VaqueroFace.HAPPY -> "🤠"
+                        VaqueroFace.SUSPENSE -> "😲"
+                        VaqueroFace.DEAD -> "😵"
+                        VaqueroFace.VICTORIOUS -> "🏆"
+                    }
+                    Text(
+                        text = faceEmoji,
+                        fontSize = 28.sp
+                    )
                 }
-                Text(
-                    text = faceEmoji,
-                    fontSize = 28.sp
-                )
+
+                if (isPatronVip) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isShieldAvailable && !isShieldUsed) Color(0xFF2C1D14) else Color(0xFF1E1E1E),
+                        border = BorderStroke(
+                            1.5.dp,
+                            if (isShieldAvailable && !isShieldUsed) Color(0xFFFFD700) else Color(0xFF616161)
+                        ),
+                        modifier = Modifier.testTag("hud_patron_shield_badge")
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "🛡️",
+                                fontSize = 16.sp,
+                                modifier = Modifier.graphicsLayer {
+                                    alpha = if (isShieldAvailable && !isShieldUsed) 1f else 0.4f
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Text(
+                                text = if (isShieldAvailable && !isShieldUsed) "1" else "0",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isShieldAvailable && !isShieldUsed) Color(0xFFFFD700) else Color(0xFF9E9E9E)
+                            )
+                        }
+                    }
+                }
             }
 
             // Timer Display
