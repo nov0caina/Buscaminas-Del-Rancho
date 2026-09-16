@@ -500,7 +500,7 @@ fun HomeScreen(
                         // Direct Level Buttons
                         val baseLevelIndex = if (uiState.hasSavedGame) 3 else 2
                         GameDifficulty.entries.forEachIndexed { idx, diff ->
-                            val isLocked = !isPatronUnlocked && (diff == GameDifficulty.EXPERTO || diff == GameDifficulty.PERSONALIZADA)
+                            val isLocked = !isPatronUnlocked && diff == GameDifficulty.PERSONALIZADA
                             LevelDirectCard(
                                 difficulty = diff,
                                 isLocked = isLocked,

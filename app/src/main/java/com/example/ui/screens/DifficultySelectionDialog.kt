@@ -109,7 +109,7 @@ fun DifficultySelectionDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 GameDifficulty.entries.forEach { diff ->
-                    val isLocked = !isPatronUnlocked && (diff == GameDifficulty.EXPERTO || diff == GameDifficulty.PERSONALIZADA)
+                    val isLocked = !isPatronUnlocked && diff == GameDifficulty.PERSONALIZADA
                     val isSelected = selectedDifficulty == diff
                     Card(
                         modifier = Modifier
@@ -183,7 +183,7 @@ fun DifficultySelectionDialog(
                                     }
                                 }
                                 Text(
-                                    text = if (isLocked) "Pase del Patrón • 99 Minas / Libre" else diff.subtitle,
+                                    text = if (isLocked) "Desbloquea con Pase del Patrón" else diff.subtitle,
                                     style = MaterialTheme.typography.bodySmall,
                                     color = if (isLocked) Color(0xFFFFD700).copy(alpha = 0.9f) else if (isDarkTheme) Color.White.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant
                                 )

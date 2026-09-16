@@ -194,14 +194,8 @@ fun PatronPassDialog(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     PatronBenefitRow(
-                        emoji = "💣",
-                        title = "Modo Belikón (99 Minas)",
-                        description = "El reto supremo para los más bravos de la sierra.",
-                        isDarkTheme = isDarkTheme
-                    )
-                    PatronBenefitRow(
                         emoji = "⚙️",
-                        title = "Modo Personalizado Libre",
+                        title = "Modo Personalizado Ilimitado",
                         description = "Crea tableros a tu medida con casillas y densidad a tu gusto.",
                         isDarkTheme = isDarkTheme
                     )
@@ -212,9 +206,15 @@ fun PatronPassDialog(
                         isDarkTheme = isDarkTheme
                     )
                     PatronBenefitRow(
+                        emoji = "👑",
+                        title = "Insignia y Corona de Patrón",
+                        description = "Luce tu distinción dorada en el menú y en tus victorias.",
+                        isDarkTheme = isDarkTheme
+                    )
+                    PatronBenefitRow(
                         emoji = "✨",
-                        title = "Insignia Dorada de Patrón",
-                        description = "Luce tu corona en el menú y apoya el juego 100% libre de anuncios.",
+                        title = "Experiencia 100% Sin Anuncios",
+                        description = "Apoya el desarrollo independiente del rancho y juega sin interrupciones.",
                         isDarkTheme = isDarkTheme
                     )
                 }
