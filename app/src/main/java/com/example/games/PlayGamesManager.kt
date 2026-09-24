@@ -129,9 +129,10 @@ class PlayGamesManager private constructor(private val appContext: Context) {
                         fetchPlayerInfo(targetActivity)
                         Log.d(TAG, "Inicio de sesión exitoso en Google Play Games")
                     } else {
-                        val err = "Autenticación denegada por Google (isAuthenticated=false)"
+                        val err = "Autenticación no autorizada por Google (isAuthenticated=false). Verifica ser evaluador en Play Games Services."
                         _lastAuthError.value = err
                         Log.w(TAG, err)
+                        Log.w(TAG, "signIn: Google retornó isAuthenticated=false. Causas probables: 1) Cuenta de Google no agregada en 'Play Games Services -> Evaluadores', 2) App ejecutada localmente con firma distinta a Play App Signing sin cliente OAuth correspondiente en Google Cloud, 3) Cambios en Play Games Services pendientes de publicar.")
                     }
                     onComplete?.invoke(success)
                 } else {
