@@ -9,6 +9,8 @@
 *.pem
 *.key
 *.pk8
+*.der
+PlayConsole_certificates/
 rancho-release.jks
 my-upload-key.jks
 debug.keystore
