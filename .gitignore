@@ -27,6 +27,16 @@ keystore_env.sh
 !keystore.properties.example
 !keystore_env.sh.example
 
+# --- Listas de Testers y Credenciales SMTP (Prueba Cerrada) ---
+Correo de Invitacion/
+*testers*.json
+!scripts/testers.example.json
+!scripts/testers_example.json
+smtp_credentials*
+*preview*.html
+__pycache__/
+*.pyc
+
 # --- Credenciales de Google Services y APIs ---
 google-services.json
 GoogleService-Info.plist
