@@ -19,6 +19,8 @@ android {
     applicationId = "com.nov0caina.buscaminas.estilo.sinaloa"
     minSdk = 24
     targetSdk = 36
+    // Monotonic integer incremented with every Play Console release (next release MUST be >= 13).
+    // See docs/PLAY_CONSOLE_RELEASES.md for details.
     versionCode = 12
     versionName = "1.0.0"
 
