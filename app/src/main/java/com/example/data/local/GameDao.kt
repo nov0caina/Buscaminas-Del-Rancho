@@ -9,11 +9,14 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface GameDao {
     // Scores / Leaderboard
-    @Query("SELECT * FROM game_scores WHERE isWin = 1 ORDER BY timeInSeconds ASC LIMIT 50")
+    @Query("SELECT * FROM game_scores WHERE isWin = 1 ORDER BY timeInSeconds ASC")
     fun getAllTopScores(): Flow<List<GameScoreEntity>>
 
     @Query("SELECT * FROM game_scores WHERE isWin = 1 AND difficultyName = :difficulty ORDER BY timeInSeconds ASC LIMIT 20")
     fun getTopScoresByDifficulty(difficulty: String): Flow<List<GameScoreEntity>>
+
+    @Query("SELECT MIN(timeInSeconds) FROM game_scores WHERE isWin = 1 AND difficultyName = :difficulty")
+    suspend fun getBestTimeByDifficulty(difficulty: String): Int?
 
     @Query("SELECT * FROM game_scores ORDER BY timestamp DESC LIMIT 50")
     fun getRecentMatches(): Flow<List<GameScoreEntity>>

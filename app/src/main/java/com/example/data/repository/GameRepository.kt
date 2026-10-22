@@ -18,6 +18,12 @@ data class GlobalLeaderboardEntry(
     val avatarEmoji: String
 )
 
+data class LocalDifficultySummary(
+    val difficulty: GameDifficulty,
+    val bestTimeSeconds: Int?,
+    val winCount: Int
+)
+
 class GameRepository(private val gameDao: GameDao) {
 
     val topScores: Flow<List<GameScoreEntity>> = gameDao.getAllTopScores()
@@ -32,6 +38,23 @@ class GameRepository(private val gameDao: GameDao) {
 
     fun getWinCountByDifficulty(difficulty: String): Flow<Int> {
         return gameDao.getWinCountByDifficulty(difficulty)
+    }
+
+    suspend fun getLocalDifficultySummaries(): List<LocalDifficultySummary> {
+        val standardDifficulties = listOf(
+            GameDifficulty.PRINCIPIANTE,
+            GameDifficulty.INTERMEDIO,
+            GameDifficulty.EXPERTO
+        )
+        return standardDifficulties.map { diff ->
+            val bestTime = gameDao.getBestTimeByDifficulty(diff.displayName)
+            val wins = gameDao.getWinCountByDifficulty(diff.displayName).firstOrNull() ?: 0
+            LocalDifficultySummary(
+                difficulty = diff,
+                bestTimeSeconds = bestTime,
+                winCount = wins
+            )
+        }
     }
 
     suspend fun initDefaultAchievementsIfNeeded() {

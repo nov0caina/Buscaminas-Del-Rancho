@@ -98,7 +98,7 @@ fun LeaderboardScreen(
     // Metric: true -> Menor Tiempo, false -> Más Victorias
     var isTimeMetric by remember { mutableStateOf(true) }
 
-    LaunchedEffect(selectedDifficulty, isTimeMetric, selectedTab) {
+    LaunchedEffect(selectedDifficulty, isTimeMetric, selectedTab, isAuthenticatedPlayGames) {
         if (selectedTab == 0) {
             onRefreshGlobal(selectedDifficulty, isTimeMetric)
         }
@@ -449,13 +449,19 @@ fun LeaderboardScreen(
 
                 1 -> {
                     // TAB MIS RÉCORDS
-                    val filteredLocal = localScores.filter { it.difficultyName == selectedDifficulty.displayName && it.isWin }
+                    val filteredLocal = localScores
+                        .filter { it.difficultyName == selectedDifficulty.displayName && it.isWin }
                     if (filteredLocal.isEmpty()) {
                         EmptyLeaderboardState(
                             message = "Todavía no tienes victorias en ${selectedDifficulty.displayName}. ¡Ponte al tiro y échate una partida!",
                             isDarkTheme = isDarkTheme
                         )
                     } else {
+                        val sortedLocal = if (isTimeMetric) {
+                            filteredLocal.sortedBy { it.timeInSeconds }.take(50)
+                        } else {
+                            filteredLocal.sortedByDescending { it.timestamp }.take(50)
+                        }
                         LazyColumn(
                             state = listState,
                             modifier = Modifier
@@ -463,13 +469,30 @@ fun LeaderboardScreen(
                                 .padding(horizontal = 24.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            itemsIndexed(filteredLocal) { index, score ->
+                            if (!isTimeMetric) {
+                                item {
+                                    GlobalScoreCard(
+                                        entry = GlobalLeaderboardEntry(
+                                            rank = 1,
+                                            playerName = playerNamePlayGames ?: "Vaquero Local",
+                                            location = "Victorias Acumuladas • ${selectedDifficulty.displayName}",
+                                            winCount = filteredLocal.size,
+                                            difficulty = selectedDifficulty.displayName,
+                                            avatarEmoji = "👑"
+                                        ),
+                                        isTimeMetric = false,
+                                        isDarkTheme = isDarkTheme,
+                                        modifier = Modifier.staggeredEntrance(index = 0)
+                                    )
+                                }
+                            }
+                            itemsIndexed(sortedLocal) { index, score ->
                                 LocalScoreCard(
                                     rank = index + 1,
                                     score = score,
                                     isTimeMetric = isTimeMetric,
                                     isDarkTheme = isDarkTheme,
-                                    modifier = Modifier.staggeredEntrance(index = index)
+                                    modifier = Modifier.staggeredEntrance(index = if (isTimeMetric) index else index + 1)
                                 )
                             }
                             item { Spacer(modifier = Modifier.height(40.dp)) }

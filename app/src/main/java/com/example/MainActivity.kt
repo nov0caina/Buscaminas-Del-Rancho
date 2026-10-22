@@ -104,6 +104,7 @@ fun RanchoMinesweeperApp(
 
     val uiState by viewModel.uiState.collectAsState()
     val topScores by viewModel.topScores.collectAsState()
+    val recentMatches by viewModel.recentMatches.collectAsState()
     val achievements by viewModel.allAchievements.collectAsState()
     val unviewedAchievementIds by viewModel.unviewedAchievementIds.collectAsState()
     val isPlayGamesAuth: Boolean by viewModel.playGamesManager.isAuthenticated.collectAsState()
@@ -245,7 +246,7 @@ fun RanchoMinesweeperApp(
                     LeaderboardScreen(
                         isDarkTheme = isDark,
                         localScores = topScores,
-                        recentMatches = topScores,
+                        recentMatches = recentMatches,
                         globalEntries = realGlobalEntries,
                         isLoadingGlobal = isLoadingGlobal,
                         isAuthenticatedPlayGames = isPlayGamesAuth,

@@ -7,6 +7,7 @@ import android.widget.Toast
 import com.example.R
 import com.example.data.model.GameDifficulty
 import com.example.data.repository.GlobalLeaderboardEntry
+import com.example.data.repository.LocalDifficultySummary
 import com.google.android.gms.games.PlayGames
 import com.google.android.gms.games.PlayGamesSdk
 import com.google.android.gms.games.leaderboard.LeaderboardVariant
@@ -227,8 +228,12 @@ class PlayGamesManager private constructor(private val appContext: Context) {
         try {
             PlayGames.getAchievementsClient(targetActivity).achievementsIntent
                 .addOnSuccessListener { intent ->
-                    Log.d(TAG, "showAchievementsOverlay: lanzando pantalla oficial de logros")
-                    targetActivity.startActivity(intent)
+                    Log.d(TAG, "showAchievementsOverlay: lanzando pantalla oficial de logros con startActivityForResult")
+                    try {
+                        targetActivity.startActivityForResult(intent, RC_ACHIEVEMENTS_UI)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error lanzando startActivityForResult para logros: ${e.message}", e)
+                    }
                 }
                 .addOnFailureListener { e ->
                     Log.w(TAG, "No se pudo abrir overlay de logros: ${e.message}", e)
@@ -246,40 +251,142 @@ class PlayGamesManager private constructor(private val appContext: Context) {
     // ================= Marcadores / Leaderboards =================
 
     /**
-     * Envía el mejor tiempo registrado (en milisegundos) al marcador de Google Play Games correspondiente.
+     * Envía el mejor tiempo registrado (en milisegundos, mínimo 1000 ms) al marcador de Google Play Games correspondiente.
      */
-    fun submitBestTime(difficulty: GameDifficulty, timeSeconds: Int, activity: Activity? = null) {
-        val targetActivity = resolveActivity(activity) ?: return
-        val leaderboardId = getBestTimeLeaderboardId(targetActivity, difficulty) ?: return
+    fun submitBestTime(
+        difficulty: GameDifficulty,
+        timeSeconds: Int,
+        activity: Activity? = null,
+        onComplete: ((Boolean) -> Unit)? = null
+    ) {
+        val targetActivity = resolveActivity(activity) ?: run {
+            onComplete?.invoke(false)
+            return
+        }
+        val leaderboardId = getBestTimeLeaderboardId(targetActivity, difficulty) ?: run {
+            onComplete?.invoke(false)
+            return
+        }
         try {
-            val timeMillis = timeSeconds.toLong() * 1000L
-            PlayGames.getLeaderboardsClient(targetActivity).submitScore(leaderboardId, timeMillis)
-            Log.d(TAG, "Mejor tiempo enviado a marcador ($difficulty): $timeSeconds seg ($timeMillis ms) -> $leaderboardId")
+            val safeSeconds = timeSeconds.coerceAtLeast(1)
+            val timeMillis = safeSeconds.toLong() * 1000L
+            PlayGames.getLeaderboardsClient(targetActivity)
+                .submitScoreImmediate(leaderboardId, timeMillis)
+                .addOnSuccessListener {
+                    Log.d(TAG, "Mejor tiempo confirmado en marcador ($difficulty): $safeSeconds seg ($timeMillis ms) -> $leaderboardId")
+                    onComplete?.invoke(true)
+                }
+                .addOnFailureListener { e ->
+                    Log.w(TAG, "Error confirmando mejor tiempo en Play Games ($difficulty): ${formatAuthError(e)}")
+                    onComplete?.invoke(false)
+                }
         } catch (e: Exception) {
             Log.w(TAG, "Error enviando mejor tiempo a Play Games: ${e.message}")
+            onComplete?.invoke(false)
         }
     }
 
     /**
      * Envía el conteo acumulado de victorias de un mapa al marcador de Google Play Games.
      */
-    fun submitWinCount(difficulty: GameDifficulty, totalWins: Int, activity: Activity? = null) {
-        val targetActivity = resolveActivity(activity) ?: return
-        val leaderboardId = getWinsLeaderboardId(targetActivity, difficulty) ?: return
+    fun submitWinCount(
+        difficulty: GameDifficulty,
+        totalWins: Int,
+        activity: Activity? = null,
+        onComplete: ((Boolean) -> Unit)? = null
+    ) {
+        if (totalWins <= 0) {
+            onComplete?.invoke(false)
+            return
+        }
+        val targetActivity = resolveActivity(activity) ?: run {
+            onComplete?.invoke(false)
+            return
+        }
+        val leaderboardId = getWinsLeaderboardId(targetActivity, difficulty) ?: run {
+            onComplete?.invoke(false)
+            return
+        }
         try {
-            PlayGames.getLeaderboardsClient(targetActivity).submitScore(leaderboardId, totalWins.toLong())
-            Log.d(TAG, "Total victorias enviado a marcador ($difficulty): $totalWins -> $leaderboardId")
+            PlayGames.getLeaderboardsClient(targetActivity)
+                .submitScoreImmediate(leaderboardId, totalWins.toLong())
+                .addOnSuccessListener {
+                    Log.d(TAG, "Total victorias confirmado en marcador ($difficulty): $totalWins -> $leaderboardId")
+                    onComplete?.invoke(true)
+                }
+                .addOnFailureListener { e ->
+                    Log.w(TAG, "Error confirmando conteo de victorias en Play Games ($difficulty): ${formatAuthError(e)}")
+                    onComplete?.invoke(false)
+                }
         } catch (e: Exception) {
             Log.w(TAG, "Error enviando conteo de victorias a Play Games: ${e.message}")
+            onComplete?.invoke(false)
         }
     }
 
     /**
-     * Carga las puntuaciones globales reales desde Google Play Games.
+     * Sincroniza retroactivamente los mejores tiempos y total de victorias locales hacia Google Play Games.
+     */
+    fun syncAllLocalScores(
+        summaries: List<LocalDifficultySummary>,
+        activity: Activity? = null,
+        onComplete: (() -> Unit)? = null
+    ) {
+        val targetActivity = resolveActivity(activity) ?: run {
+            onComplete?.invoke()
+            return
+        }
+        if (!_isAuthenticated.value) {
+            onComplete?.invoke()
+            return
+        }
+        val activeSummaries = summaries.filter { it.winCount > 0 }
+        if (activeSummaries.isEmpty()) {
+            onComplete?.invoke()
+            return
+        }
+
+        var pendingTasks = 0
+        activeSummaries.forEach { summary ->
+            if (summary.bestTimeSeconds != null) pendingTasks++
+            if (summary.winCount > 0) pendingTasks++
+        }
+        if (pendingTasks == 0) {
+            onComplete?.invoke()
+            return
+        }
+
+        var completedTasks = 0
+        val markTaskDone = {
+            completedTasks++
+            if (completedTasks >= pendingTasks) {
+                onComplete?.invoke()
+            }
+        }
+
+        activeSummaries.forEach { summary ->
+            if (summary.bestTimeSeconds != null) {
+                submitBestTime(summary.difficulty, summary.bestTimeSeconds, targetActivity) {
+                    markTaskDone()
+                }
+            }
+            if (summary.winCount > 0) {
+                submitWinCount(summary.difficulty, summary.winCount, targetActivity) {
+                    markTaskDone()
+                }
+            }
+        }
+    }
+
+    /**
+     * Carga las puntuaciones globales reales desde Google Play Games (con forceReload = true)
+     * e integra el puntaje del jugador actual si no aparece en COLLECTION_PUBLIC (por privacidad de perfil o propagación).
      */
     fun fetchLiveLeaderboard(
         difficulty: GameDifficulty,
         isTimeMetric: Boolean,
+        localBestTimeSeconds: Int? = null,
+        localWinCount: Int = 0,
         activity: Activity? = null,
         onLoaded: (List<GlobalLeaderboardEntry>) -> Unit
     ) {
@@ -297,41 +404,148 @@ class PlayGamesManager private constructor(private val appContext: Context) {
         }
 
         try {
-            PlayGames.getLeaderboardsClient(targetActivity)
-                .loadTopScores(leaderboardId, LeaderboardVariant.TIME_SPAN_ALL_TIME, LeaderboardVariant.COLLECTION_PUBLIC, 25)
-                .addOnSuccessListener { annotatedData ->
-                    val buffer = annotatedData.get()?.scores
-                    val results = mutableListOf<GlobalLeaderboardEntry>()
-                    if (buffer != null) {
-                        for (i in 0 until buffer.count) {
-                            val score = buffer.get(i)
-                            val rank = score.rank.toInt()
-                            val name = score.scoreHolderDisplayName
-                            val rawScore = score.rawScore
-                            results.add(
-                                GlobalLeaderboardEntry(
-                                    rank = rank,
-                                    playerName = name,
-                                    location = "México 🇲🇽",
-                                    timeSeconds = if (isTimeMetric) (rawScore / 1000).toInt() else 0,
-                                    winCount = if (!isTimeMetric) rawScore.toInt() else 0,
-                                    difficulty = difficulty.displayName,
-                                    avatarEmoji = if (rank == 1) "👑" else if (rank <= 3) "🥇" else "🤠"
-                                )
+            val client = PlayGames.getLeaderboardsClient(targetActivity)
+            client.loadTopScores(
+                leaderboardId,
+                LeaderboardVariant.TIME_SPAN_ALL_TIME,
+                LeaderboardVariant.COLLECTION_PUBLIC,
+                25,
+                true
+            ).addOnSuccessListener { annotatedData ->
+                val buffer = annotatedData.get()?.scores
+                val rawEntries = mutableListOf<GlobalLeaderboardEntry>()
+                if (buffer != null) {
+                    for (i in 0 until buffer.count) {
+                        val score = buffer.get(i)
+                        val rank = score.rank.toInt()
+                        val name = score.scoreHolderDisplayName
+                        val rawScore = score.rawScore
+                        rawEntries.add(
+                            GlobalLeaderboardEntry(
+                                rank = rank,
+                                playerName = name,
+                                location = "México 🇲🇽",
+                                timeSeconds = if (isTimeMetric) (rawScore / 1000L).toInt().coerceAtLeast(1) else 0,
+                                winCount = if (!isTimeMetric) rawScore.toInt() else 0,
+                                difficulty = difficulty.displayName,
+                                avatarEmoji = if (rank == 1) "👑" else if (rank <= 3) "🥇" else "🤠"
                             )
-                        }
-                        buffer.release()
+                        )
                     }
-                    Log.d(TAG, "Marcadores reales cargados desde Play Games: ${results.size} registros ($difficulty, isTime: $isTimeMetric)")
-                    onLoaded(results)
+                    buffer.release()
                 }
-                .addOnFailureListener { e ->
-                    Log.w(TAG, "No se pudieron cargar marcadores reales de Google Play Games: ${e.message}")
-                    onLoaded(emptyList())
+
+                // Consultar también el puntaje del jugador actual para garantizar que siempre aparezca
+                client.loadCurrentPlayerLeaderboardScore(
+                    leaderboardId,
+                    LeaderboardVariant.TIME_SPAN_ALL_TIME,
+                    LeaderboardVariant.COLLECTION_PUBLIC
+                ).addOnCompleteListener { playerTask ->
+                    val playerScore = if (playerTask.isSuccessful) playerTask.result?.get() else null
+                    val merged = mergeCurrentPlayerEntry(
+                        publicEntries = rawEntries,
+                        difficulty = difficulty,
+                        isTimeMetric = isTimeMetric,
+                        cloudPlayerName = playerScore?.scoreHolderDisplayName ?: _playerName.value,
+                        cloudRawScore = playerScore?.rawScore,
+                        localBestTimeSeconds = localBestTimeSeconds,
+                        localWinCount = localWinCount
+                    )
+                    Log.d(TAG, "Marcadores reales cargados desde Play Games: ${merged.size} registros ($difficulty, isTime: $isTimeMetric)")
+                    onLoaded(merged)
                 }
+            }.addOnFailureListener { e ->
+                Log.w(TAG, "No se pudieron cargar marcadores reales de Google Play Games: ${e.message}")
+                val fallback = mergeCurrentPlayerEntry(
+                    publicEntries = emptyList(),
+                    difficulty = difficulty,
+                    isTimeMetric = isTimeMetric,
+                    cloudPlayerName = _playerName.value,
+                    cloudRawScore = null,
+                    localBestTimeSeconds = localBestTimeSeconds,
+                    localWinCount = localWinCount
+                )
+                onLoaded(fallback)
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Error cargando marcadores reales: ${e.message}")
             onLoaded(emptyList())
+        }
+    }
+
+    private fun mergeCurrentPlayerEntry(
+        publicEntries: List<GlobalLeaderboardEntry>,
+        difficulty: GameDifficulty,
+        isTimeMetric: Boolean,
+        cloudPlayerName: String?,
+        cloudRawScore: Long?,
+        localBestTimeSeconds: Int?,
+        localWinCount: Int
+    ): List<GlobalLeaderboardEntry> {
+        val currentName = cloudPlayerName?.takeIf { it.isNotBlank() } ?: _playerName.value?.takeIf { it.isNotBlank() }
+        if (!_isAuthenticated.value || currentName == null) {
+            return publicEntries
+        }
+
+        val cloudTime = if (isTimeMetric && cloudRawScore != null && cloudRawScore > 0L) {
+            (cloudRawScore / 1000L).toInt().coerceAtLeast(1)
+        } else null
+        val localTime = localBestTimeSeconds?.coerceAtLeast(1)
+
+        val effectiveTime = when {
+            cloudTime != null && localTime != null -> minOf(cloudTime, localTime)
+            cloudTime != null -> cloudTime
+            else -> localTime
+        }
+
+        val cloudWins = if (!isTimeMetric && cloudRawScore != null && cloudRawScore > 0L) {
+            cloudRawScore.toInt()
+        } else 0
+        val effectiveWins = maxOf(cloudWins, localWinCount)
+
+        val hasPlayerRecord = if (isTimeMetric) effectiveTime != null else effectiveWins > 0
+        if (!hasPlayerRecord) {
+            return publicEntries
+        }
+
+        val mutable = publicEntries.toMutableList()
+        val existingIdx = mutable.indexOfFirst { it.playerName.equals(currentName, ignoreCase = true) }
+
+        if (existingIdx >= 0) {
+            val existing = mutable[existingIdx]
+            val bestTime = if (isTimeMetric && effectiveTime != null) {
+                if (existing.timeSeconds > 0) minOf(existing.timeSeconds, effectiveTime) else effectiveTime
+            } else existing.timeSeconds
+            val bestWins = if (!isTimeMetric) {
+                maxOf(existing.winCount, effectiveWins)
+            } else existing.winCount
+            mutable[existingIdx] = existing.copy(timeSeconds = bestTime, winCount = bestWins)
+        } else {
+            mutable.add(
+                GlobalLeaderboardEntry(
+                    rank = mutable.size + 1,
+                    playerName = currentName,
+                    location = "México 🇲🇽",
+                    timeSeconds = if (isTimeMetric) (effectiveTime ?: 1) else 0,
+                    winCount = if (!isTimeMetric) effectiveWins else 0,
+                    difficulty = difficulty.displayName,
+                    avatarEmoji = "🤠"
+                )
+            )
+        }
+
+        val sorted = if (isTimeMetric) {
+            mutable.sortedBy { it.timeSeconds.takeIf { t -> t > 0 } ?: Int.MAX_VALUE }
+        } else {
+            mutable.sortedByDescending { it.winCount }
+        }
+
+        return sorted.mapIndexed { idx, entry ->
+            val newRank = idx + 1
+            entry.copy(
+                rank = newRank,
+                avatarEmoji = if (newRank == 1) "👑" else if (newRank <= 3) "🥇" else "🤠"
+            )
         }
     }
 
@@ -369,10 +583,16 @@ class PlayGamesManager private constructor(private val appContext: Context) {
 
         try {
             if (leaderboardId != null) {
-                PlayGames.getLeaderboardsClient(targetActivity).getLeaderboardIntent(leaderboardId)
+                PlayGames.getLeaderboardsClient(targetActivity)
+                    .getLeaderboardIntent(leaderboardId, LeaderboardVariant.TIME_SPAN_ALL_TIME)
                     .addOnSuccessListener { intent ->
-                        Log.d(TAG, "Lanzando overlay de marcador específico ($leaderboardId)")
-                        targetActivity.startActivity(intent)
+                        Log.d(TAG, "Lanzando overlay de marcador específico ($leaderboardId) con startActivityForResult")
+                        try {
+                            targetActivity.startActivityForResult(intent, RC_LEADERBOARD_UI)
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error lanzando startActivityForResult de marcador específico: ${e.message}", e)
+                            showAllLeaderboardsOverlay(targetActivity)
+                        }
                     }
                     .addOnFailureListener {
                         showAllLeaderboardsOverlay(targetActivity)
@@ -402,8 +622,12 @@ class PlayGamesManager private constructor(private val appContext: Context) {
         try {
             PlayGames.getLeaderboardsClient(targetActivity).allLeaderboardsIntent
                 .addOnSuccessListener { intent ->
-                    Log.d(TAG, "showAllLeaderboardsOverlay: lanzando pantalla oficial de marcadores")
-                    targetActivity.startActivity(intent)
+                    Log.d(TAG, "showAllLeaderboardsOverlay: lanzando pantalla oficial de marcadores con startActivityForResult")
+                    try {
+                        targetActivity.startActivityForResult(intent, RC_LEADERBOARD_UI)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error en startActivityForResult de todos los marcadores: ${e.message}", e)
+                    }
                 }
                 .addOnFailureListener { e ->
                     Log.w(TAG, "No se pudo abrir overlay de marcadores: ${e.message}", e)
@@ -450,6 +674,8 @@ class PlayGamesManager private constructor(private val appContext: Context) {
 
     companion object {
         private const val TAG = "PlayGamesManager"
+        private const val RC_ACHIEVEMENTS_UI = 9003
+        private const val RC_LEADERBOARD_UI = 9004
 
         @Volatile
         private var instance: PlayGamesManager? = null

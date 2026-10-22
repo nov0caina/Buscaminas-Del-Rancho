@@ -174,6 +174,19 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
 
+        viewModelScope.launch {
+            playGamesManager.isAuthenticated.collect { authenticated ->
+                if (authenticated) {
+                    val unlockedIds = allAchievements.value.filter { it.isUnlocked }.map { it.id }
+                    if (unlockedIds.isNotEmpty()) {
+                        playGamesManager.syncAllUnlockedAchievements(unlockedIds)
+                    }
+                    val summaries = repository.getLocalDifficultySummaries()
+                    playGamesManager.syncAllLocalScores(summaries)
+                }
+            }
+        }
+
         playGamesManager.checkAuthentication()
         checkSavedGameAvailable()
         resetUiStateToDefaultGrid(GameDifficulty.PRINCIPIANTE)
@@ -743,6 +756,17 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 mines = state.mines,
                 flagsPlaced = state.flagsPlaced
             )
+
+            // Enviar inmediatamente mejores tiempos y acumulado de victorias a Google Play Games (Fair Play: solo si no usó blindaje)
+            if (!state.isShieldUsed) {
+                playGamesManager.submitBestTime(state.difficulty, state.timeElapsed.coerceAtLeast(1))
+                val currentWins = repository.getWinCountByDifficulty(state.difficulty.displayName).firstOrNull() ?: 1
+                playGamesManager.submitWinCount(state.difficulty, currentWins)
+            }
+
+            repository.clearSavedGame()
+            checkSavedGameAvailable()
+
             if (newlyUnlocked.isNotEmpty()) {
                 val newIds = newlyUnlocked.map { it.id }.toSet()
                 val updated = _unviewedAchievementIds.value + newIds
@@ -760,16 +784,6 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                     )
                 }
             }
-
-            // Enviar mejores tiempos y acumulado de victorias a Google Play Games (Fair Play: solo si no usó blindaje)
-            if (!state.isShieldUsed) {
-                playGamesManager.submitBestTime(state.difficulty, state.timeElapsed)
-                val currentWins = repository.getWinCountByDifficulty(state.difficulty.displayName).firstOrNull() ?: 1
-                playGamesManager.submitWinCount(state.difficulty, currentWins)
-            }
-
-            repository.clearSavedGame()
-            checkSavedGameAvailable()
         }
     }
 
@@ -895,10 +909,22 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     fun loadGlobalLeaderboard(difficulty: GameDifficulty, isTimeMetric: Boolean, activity: android.app.Activity? = null) {
         _isLoadingGlobalLeaderboard.value = true
-        playGamesManager.fetchLiveLeaderboard(difficulty, isTimeMetric, activity) { entries ->
-            viewModelScope.launch {
-                _realGlobalLeaderboard.value = entries
-                _isLoadingGlobalLeaderboard.value = false
+        viewModelScope.launch {
+            val summaries = repository.getLocalDifficultySummaries()
+            val currentSummary = summaries.find { it.difficulty == difficulty }
+            playGamesManager.syncAllLocalScores(summaries, activity) {
+                playGamesManager.fetchLiveLeaderboard(
+                    difficulty = difficulty,
+                    isTimeMetric = isTimeMetric,
+                    localBestTimeSeconds = currentSummary?.bestTimeSeconds,
+                    localWinCount = currentSummary?.winCount ?: 0,
+                    activity = activity
+                ) { entries ->
+                    viewModelScope.launch {
+                        _realGlobalLeaderboard.value = entries
+                        _isLoadingGlobalLeaderboard.value = false
+                    }
+                }
             }
         }
     }
