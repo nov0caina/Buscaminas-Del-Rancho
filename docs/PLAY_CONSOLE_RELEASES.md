@@ -9,9 +9,9 @@ Google Play Console organiza la distribución de la aplicación en diferentes ca
 
 | Canal | Audiencia | Propósito | Estado Actual |
 | :--- | :--- | :--- | :--- |
-| **Prueba Interna** | Desarrollador y equipo cercano (hasta 100 testers) | Validar builds rápidamente sin revisión de Google. | Build 12 (`1.0.0`) activo. |
-| **Prueba Cerrada (Alpha)** | Grupo selecto de testers registrados (13 testers vía correo) | **Canal crítico.** Cumplir el requisito obligatorio de Google Play de 14 días continuos de pruebas antes de solicitar acceso a Producción. | Build 12 (`1.0.0`) activo. |
-| **Acceso Anticipado / Prueba Abierta** | Cualquier usuario en Play Store (178 países) | Permitir que usuarios descubran la app antes del lanzamiento oficial. | Build 12 (`1.0.0`) activo. |
+| **Prueba Interna** | Desarrollador y equipo cercano (hasta 100 testers) | Validar builds rápidamente sin revisión de Google. | Build 13 (`1.0.0`) activo. |
+| **Prueba Cerrada (Alpha)** | Grupo selecto de testers registrados (13 testers vía correo) | **Canal crítico.** Cumplir el requisito obligatorio de Google Play de 14 días continuos de pruebas antes de solicitar acceso a Producción. | Build 13 (`1.0.0`) activo. |
+| **Acceso Anticipado / Prueba Abierta** | Cualquier usuario en Play Store (178 países) | Permitir que usuarios descubran la app antes del lanzamiento oficial. | Build 13 (`1.0.0`) activo. |
 | **Producción** | Todo el público en Google Play Store | Lanzamiento oficial una vez aprobada la revisión de 14 días de prueba cerrada. | Pendiente de promoción tras el periodo de 14 días. |
 
 > [!IMPORTANT]
@@ -31,9 +31,9 @@ defaultConfig {
     targetSdk = 36
 
     // REGLA: Entero incremental monotónico. Google Play NUNCA permite subir un código igual o menor.
-    // La versión actual en producción/pruebas es 12.
-    // La siguiente versión a compilar DEBE tener versionCode >= 13.
-    versionCode = 12
+    // La versión actual en producción/pruebas es 13.
+    // La siguiente versión a compilar DEBE tener versionCode >= 14.
+    versionCode = 13
 
     // Versión semántica visible para los usuarios finales (Mayor.Menor.Parche)
     versionName = "1.0.0"
@@ -42,8 +42,8 @@ defaultConfig {
 
 ### Reglas obligatorias para próximas versiones:
 1. **`versionCode` estrictamente incremental:**  
-   * Google Play rechazará automáticamente cualquier archivo `.aab` cuyo `versionCode` sea menor o igual a **12**.
-   * El siguiente build generado con `./build_release.sh` debe configurarse con `versionCode = 13`.
+   * Google Play rechazará automáticamente cualquier archivo `.aab` cuyo `versionCode` sea menor o igual a **13**.
+   * El siguiente build generado con `./build_release.sh` debe configurarse con `versionCode = 14`.
 2. **`versionName` semántico:**  
    * Incrementa el parche para correcciones de errores menores (ejemplo: `1.0.1`).
    * Incrementa la versión menor para nuevas funciones o modos de juego (ejemplo: `1.1.0`).
@@ -96,3 +96,4 @@ Cuando se necesite lanzar una actualización:
    * Asigna el nombre de versión con el formato estándar: `X.Y.Z (Build N)`.
    * Agrega las notas de versión (qué cambió o se corrigió).
    * Revisa y confirma el lanzamiento al 100%.
+
